@@ -7,3 +7,4 @@ mkdocstrings
 mkdocstrings-python
 urllib3==1.26.6
 mistune==3.0.2
+setuptools>=78.1.1 # not directly required, pinned by Snyk to avoid a vulnerability
