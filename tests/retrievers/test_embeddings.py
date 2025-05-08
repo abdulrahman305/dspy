@@ -1,6 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import numpy as np
 import pytest
+
 from dspy.retrievers.embeddings import Embeddings
 
 

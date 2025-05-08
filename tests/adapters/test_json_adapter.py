@@ -41,7 +41,12 @@ def test_json_adapter_passes_structured_output_when_supported_by_model():
     response_format = call_kwargs.get("response_format")
     assert response_format is not None
     assert issubclass(response_format, pydantic.BaseModel)
-    assert response_format.model_fields.keys() == {"output1", "output2", "output3", "output4_unannotated"}
+    assert response_format.model_fields.keys() == {
+        "output1",
+        "output2",
+        "output3",
+        "output4_unannotated",
+    }
 
     # Configure DSPy to use a model from a fake provider that doesn't support structured outputs
     dspy.configure(lm=dspy.LM(model="fakeprovider/fakemodel"), adapter=dspy.JSONAdapter())
@@ -61,7 +66,10 @@ def test_json_adapter_falls_back_when_structured_outputs_fails():
     dspy.configure(lm=dspy.LM(model="openai/gpt4o"), adapter=dspy.JSONAdapter())
     program = dspy.Predict(TestSignature)
     with mock.patch("litellm.completion") as mock_completion:
-        mock_completion.side_effect = [Exception("Bad structured outputs!"), mock_completion.return_value]
+        mock_completion.side_effect = [
+            Exception("Bad structured outputs!"),
+            mock_completion.return_value,
+        ]
         program(input1="Test input")
         assert mock_completion.call_count == 2
         _, first_call_kwargs = mock_completion.call_args_list[0]
@@ -108,7 +116,7 @@ async def test_json_adapter_async_call():
 
 
 def test_json_adapter_on_pydantic_model():
-    from litellm.utils import ModelResponse, Message, Choices
+    from litellm.utils import Choices, Message, ModelResponse
 
     class User(pydantic.BaseModel):
         id: int
@@ -140,7 +148,8 @@ def test_json_adapter_on_pydantic_model():
             model="openai/gpt4o",
         )
         result = program(
-            user={"id": 5, "name": "name_test", "email": "email_test"}, question="What is the capital of France?"
+            user={"id": 5, "name": "name_test", "email": "email_test"},
+            question="What is the capital of France?",
         )
 
         # Check that litellm.completion was called exactly once

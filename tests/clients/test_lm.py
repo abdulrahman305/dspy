@@ -1,16 +1,19 @@
+import time
 from unittest import mock
 from unittest.mock import patch
 
-import time
 import litellm
 import pydantic
 import pytest
+from litellm.utils import Choices, Message, ModelResponse
 from openai import RateLimitError
 
 import dspy
 from dspy.utils.usage_tracker import track_usage
-from tests.test_utils.server import litellm_test_server, read_litellm_test_server_request_logs
-from litellm.utils import ModelResponse, Message, Choices
+from tests.test_utils.server import (
+    litellm_test_server,
+    read_litellm_test_server_request_logs,
+)
 
 
 def test_chat_lms_can_be_queried(litellm_test_server):
@@ -289,8 +292,16 @@ def test_logprobs_included_when_requested():
                     message=Message(content="test answer"),
                     logprobs={
                         "content": [
-                            {"token": "test", "logprob": 0.1, "top_logprobs": [{"token": "test", "logprob": 0.1}]},
-                            {"token": "answer", "logprob": 0.2, "top_logprobs": [{"token": "answer", "logprob": 0.2}]},
+                            {
+                                "token": "test",
+                                "logprob": 0.1,
+                                "top_logprobs": [{"token": "test", "logprob": 0.1}],
+                            },
+                            {
+                                "token": "answer",
+                                "logprob": 0.2,
+                                "top_logprobs": [{"token": "answer", "logprob": 0.2}],
+                            },
                         ]
                     },
                 )
@@ -320,7 +331,7 @@ def test_logprobs_included_when_requested():
 
 @pytest.mark.asyncio
 async def test_async_lm_call():
-    from litellm.utils import ModelResponse, Message, Choices
+    from litellm.utils import Choices, Message, ModelResponse
 
     mock_response = ModelResponse(choices=[Choices(message=Message(content="answer"))], model="openai/gpt-4o-mini")
 
@@ -350,7 +361,8 @@ async def test_async_lm_call_with_cache(tmp_path):
 
     with mock.patch("dspy.clients.lm.alitellm_completion") as mock_alitellm_completion:
         mock_alitellm_completion.return_value = ModelResponse(
-            choices=[Choices(message=Message(content="answer"))], model="openai/gpt-4o-mini"
+            choices=[Choices(message=Message(content="answer"))],
+            model="openai/gpt-4o-mini",
         )
         mock_alitellm_completion.__qualname__ = "alitellm_completion"
         await lm.acall("Query")

@@ -1,11 +1,11 @@
+import re
+
+import litellm
+import pytest
 from pydantic import BaseModel
 
-import re
 import dspy
-import litellm
-
 from dspy.utils.dummies import DummyLM
-import pytest
 
 
 def test_tool_calling_with_pydantic_args():
@@ -94,8 +94,16 @@ def test_tool_calling_without_typehint():
     react = dspy.ReAct("a, b -> c:int", tools=[foo])
     lm = DummyLM(
         [
-            {"next_thought": "I need to add two numbers.", "next_tool_name": "foo", "next_tool_args": {"a": 1, "b": 2}},
-            {"next_thought": "I have the sum, now I can finish.", "next_tool_name": "finish", "next_tool_args": {}},
+            {
+                "next_thought": "I need to add two numbers.",
+                "next_tool_name": "foo",
+                "next_tool_args": {"a": 1, "b": 2},
+            },
+            {
+                "next_thought": "I have the sum, now I can finish.",
+                "next_tool_name": "finish",
+                "next_tool_args": {},
+            },
             {"reasoning": "I added the numbers successfully", "c": 3},
         ]
     )

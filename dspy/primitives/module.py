@@ -12,7 +12,6 @@ from dspy.utils.saving import get_dependency_versions
 # NOTE: Note: It's important (temporary decision) to maintain named_parameters that's different in behavior from
 # named_sub_modules for the time being.
 
-
 logger = logging.getLogger(__name__)
 
 

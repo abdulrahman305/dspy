@@ -1,5 +1,6 @@
 import os
 import shutil
+from dataclasses import dataclass
 from unittest.mock import patch
 
 import pydantic
@@ -8,7 +9,6 @@ from cachetools import LRUCache
 from diskcache import FanoutCache
 
 from dspy.clients.cache import Cache
-from dataclasses import dataclass
 
 
 @dataclass
@@ -101,7 +101,10 @@ def test_put_and_get(cache):
     # Test putting and getting from memory cache
     request = {"prompt": "Hello", "model": "openai/gpt-4o-mini", "temperature": 0.7}
 
-    value = DummyResponse(message="This is a test response", usage={"prompt_tokens": 10, "completion_tokens": 20})
+    value = DummyResponse(
+        message="This is a test response",
+        usage={"prompt_tokens": 10, "completion_tokens": 20},
+    )
 
     cache.put(request, value)
     result = cache.get(request)

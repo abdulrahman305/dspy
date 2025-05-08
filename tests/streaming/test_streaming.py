@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 import dspy
@@ -127,7 +128,10 @@ async def test_custom_status_streaming():
         assert status_messages[2].message == "Predict starting!"
 
 
-@pytest.mark.skipif(not os.getenv("OPENAI_API_KEY"), reason="OpenAI API key not found in environment variables")
+@pytest.mark.skipif(
+    not os.getenv("OPENAI_API_KEY"),
+    reason="OpenAI API key not found in environment variables",
+)
 @pytest.mark.anyio
 async def test_stream_listener_chat_adapter():
     class MyProgram(dspy.Module):
@@ -190,7 +194,10 @@ async def test_default_status_streaming_in_async_program():
     assert status_messages[1].message == "Tool calling finished! Querying the LLM with tool calling results..."
 
 
-@pytest.mark.skipif(not os.getenv("OPENAI_API_KEY"), reason="OpenAI API key not found in environment variables")
+@pytest.mark.skipif(
+    not os.getenv("OPENAI_API_KEY"),
+    reason="OpenAI API key not found in environment variables",
+)
 @pytest.mark.anyio
 async def test_stream_listener_json_adapter():
     class MyProgram(dspy.Module):
@@ -227,7 +234,10 @@ async def test_stream_listener_json_adapter():
     assert all_chunks[-1].signature_field_name == "judgement"
 
 
-@pytest.mark.skipif(not os.getenv("OPENAI_API_KEY"), reason="OpenAI API key not found in environment variables")
+@pytest.mark.skipif(
+    not os.getenv("OPENAI_API_KEY"),
+    reason="OpenAI API key not found in environment variables",
+)
 def test_sync_streaming():
     class MyProgram(dspy.Module):
         def __init__(self):
