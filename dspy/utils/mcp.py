@@ -5,7 +5,14 @@ from dspy.primitives.tool import Tool, resolve_json_schema_reference
 if TYPE_CHECKING:
     import mcp
 
-TYPE_MAPPING = {"string": str, "integer": int, "number": float, "boolean": bool, "array": list, "object": dict}
+TYPE_MAPPING = {
+    "string": str,
+    "integer": int,
+    "number": float,
+    "boolean": bool,
+    "array": list,
+    "object": dict,
+}
 
 
 def _convert_input_schema_to_tool_args(
@@ -41,7 +48,9 @@ def _convert_input_schema_to_tool_args(
     return args, arg_types, arg_desc
 
 
-def _convert_mcp_tool_result(call_tool_result: "mcp.types.CallToolResult") -> Union[str, list[Any]]:
+def _convert_mcp_tool_result(
+    call_tool_result: "mcp.types.CallToolResult",
+) -> Union[str, list[Any]]:
     from mcp.types import TextContent
 
     text_contents: list[TextContent] = []
@@ -79,4 +88,11 @@ def convert_mcp_tool(session: "mcp.client.session.ClientSession", tool: "mcp.typ
         result = await session.call_tool(tool.name, arguments=kwargs)
         return _convert_mcp_tool_result(result)
 
-    return Tool(func=func, name=tool.name, desc=tool.description, args=args, arg_types=arg_types, arg_desc=arg_desc)
+    return Tool(
+        func=func,
+        name=tool.name,
+        desc=tool.description,
+        args=args,
+        arg_types=arg_types,
+        arg_desc=arg_desc,
+    )

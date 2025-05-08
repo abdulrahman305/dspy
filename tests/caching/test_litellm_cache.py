@@ -7,7 +7,10 @@ from unittest.mock import patch
 import pytest
 
 import dspy
-from tests.test_utils.server import litellm_test_server, read_litellm_test_server_request_logs
+from tests.test_utils.server import (
+    litellm_test_server,
+    read_litellm_test_server_request_logs,
+)
 
 
 @pytest.fixture()

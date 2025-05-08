@@ -1,15 +1,16 @@
 import logging
 import random
-import textwrap
-from collections import defaultdict
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple
 import select
 import sys
+import textwrap
 import time
+from collections import defaultdict
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple
 
 import numpy as np
 import optuna
 from optuna.distributions import CategoricalDistribution
+
 import dspy
 from dspy.evaluate.evaluate import Evaluate
 from dspy.propose import GroundedProposer
@@ -114,21 +115,24 @@ class MIPROv2(Teleprompter):
         requires_permission_to_run: bool = True,
         provide_traceback: Optional[bool] = None,
     ) -> Any:
-        
         zeroshot_opt = (self.max_bootstrapped_demos == 0) and (self.max_labeled_demos == 0)
-        
+
         # If auto is None, and num_trials is not provided (but num_candidates is), raise an error that suggests a good num_trials value
         if self.auto is None and (self.num_candidates is not None and num_trials is None):
-            raise ValueError(f"If auto is None, num_trials must also be provided. Given num_candidates={self.num_candidates}, we'd recommend setting num_trials to ~{self._set_num_trials_from_num_candidates(student, zeroshot_opt, self.num_candidates)}.")
-        
+            raise ValueError(
+                f"If auto is None, num_trials must also be provided. Given num_candidates={self.num_candidates}, we'd recommend setting num_trials to ~{self._set_num_trials_from_num_candidates(student, zeroshot_opt, self.num_candidates)}."
+            )
+
         # If auto is None, and num_candidates or num_trials is None, raise an error
         if self.auto is None and (self.num_candidates is None or num_trials is None):
             raise ValueError("If auto is None, num_candidates must also be provided.")
-        
+
         # If auto is provided, and either num_candidates or num_trials is not None, raise an error
         if self.auto is not None and (self.num_candidates is not None or num_trials is not None):
-            raise ValueError("If auto is not None, num_candidates and num_trials cannot be set, since they would be overrided by the auto settings. Please either set auto to None, or do not specify num_candidates and num_trials.")
-        
+            raise ValueError(
+                "If auto is not None, num_candidates and num_trials cannot be set, since they would be overrided by the auto settings. Please either set auto to None, or do not specify num_candidates and num_trials."
+            )
+
         # Set random seeds
         seed = seed or self.seed
         self._set_random_seeds(seed)
@@ -226,7 +230,7 @@ class MIPROv2(Teleprompter):
         num_trials = int(max(2 * num_vars * np.log2(num_candidates), 1.5 * num_candidates))
 
         return num_trials
-        
+
     def _set_hyperparams_from_run_mode(
         self,
         program: Any,
@@ -239,15 +243,15 @@ class MIPROv2(Teleprompter):
             return num_trials, valset, minibatch
 
         auto_settings = AUTO_RUN_SETTINGS[self.auto]
-        
+
         valset = create_minibatch(valset, batch_size=auto_settings["val_size"], rng=self.rng)
         minibatch = len(valset) > MIN_MINIBATCH_SIZE
-        
+
         # Set num instruct candidates to 1/2 of N if optimizing with few-shot examples, otherwise set to N
         # This is because we've found that it's generally better to spend optimization budget on few-shot examples
         # When they are allowed.
         self.num_instruct_candidates = auto_settings["n"] if zeroshot_opt else int(auto_settings["n"] * 0.5)
-        self.num_fewshot_candidates = auto_settings["n"] 
+        self.num_fewshot_candidates = auto_settings["n"]
 
         num_trials = self._set_num_trials_from_num_candidates(program, zeroshot_opt, auto_settings["n"])
 
@@ -347,8 +351,7 @@ class MIPROv2(Teleprompter):
             program_aware_proposer,
         )
 
-        user_message = textwrap.dedent(
-            f"""\
+        user_message = textwrap.dedent(f"""\
             {YELLOW}{BOLD}Projected Language Model (LM) Calls{ENDC}
 
             Based on the parameters you have set, the maximum number of LM calls is projected as follows:
@@ -366,22 +369,23 @@ class MIPROv2(Teleprompter):
 
             {YELLOW}- Reducing the number of trials (`num_trials`), the size of the valset, or the number of LM calls in your program.{ENDC}
             {YELLOW}- Using a cheaper task model to optimize the prompt.{ENDC}
-            {YELLOW}- Setting `minibatch=True` if you haven't already.{ENDC}\n"""
-        )
+            {YELLOW}- Setting `minibatch=True` if you haven't already.{ENDC}\n""")
 
-        user_confirmation_message = textwrap.dedent(
-            f"""\
+        user_confirmation_message = textwrap.dedent(f"""\
             To proceed with the execution of this program, please confirm by typing {BLUE}'y'{ENDC} for yes or {BLUE}'n'{ENDC} for no.
             If no input is received within 20 seconds, the program will proceed automatically.
 
             If you would like to bypass this confirmation step in future executions, set the {YELLOW}`requires_permission_to_run`{ENDC} flag to {YELLOW}`False`{ENDC} when calling compile.
 
             {YELLOW}Awaiting your input...{ENDC}
-        """
+        """)
+
+        print(
+            f"{user_message}\n{user_confirmation_message}\nDo you wish to continue? (y/n): ",
+            end="",
+            flush=True,
         )
 
-        print(f"{user_message}\n{user_confirmation_message}\nDo you wish to continue? (y/n): ", end='', flush=True)
-        
         # Wait for input with timeout
         start_time = time.time()
         while time.time() - start_time < 20:
@@ -389,7 +393,7 @@ class MIPROv2(Teleprompter):
                 user_input = sys.stdin.readline().strip().lower()
                 return user_input == "y"
             time.sleep(0.1)
-        
+
         print("\nNo input received within 20 seconds. Proceeding with execution...")
         return True
 
@@ -504,7 +508,11 @@ class MIPROv2(Teleprompter):
 
         # Compute the adjusted total trials that we will run (including full evals)
         run_additional_full_eval_at_end = 1 if num_trials % minibatch_full_eval_steps != 0 else 0
-        adjusted_num_trials = int((num_trials + num_trials // minibatch_full_eval_steps + 1 + run_additional_full_eval_at_end) if minibatch else num_trials)
+        adjusted_num_trials = int(
+            (num_trials + num_trials // minibatch_full_eval_steps + 1 + run_additional_full_eval_at_end)
+            if minibatch
+            else num_trials
+        )
         logger.info(f"== Trial {1} / {adjusted_num_trials} - Full Evaluation of Default Program ==")
 
         default_score, _ = eval_candidate_program(
@@ -570,7 +578,11 @@ class MIPROv2(Teleprompter):
 
             # Log evaluation results
             score_data.append(
-                {"score": score, "program": candidate_program, "full_eval": batch_size >= len(valset)}
+                {
+                    "score": score,
+                    "program": candidate_program,
+                    "full_eval": batch_size >= len(valset),
+                }
             )  # score, prog, full_eval
             if minibatch:
                 self._log_minibatch_eval(
@@ -607,7 +619,9 @@ class MIPROv2(Teleprompter):
             )
 
             # If minibatch, perform full evaluation at intervals (and at the very end)
-            if minibatch and ((trial_num % (minibatch_full_eval_steps+1) == 0) or (trial_num == (adjusted_num_trials-1))):
+            if minibatch and (
+                (trial_num % (minibatch_full_eval_steps + 1) == 0) or (trial_num == (adjusted_num_trials - 1))
+            ):
                 best_score, best_program, total_eval_calls = self._perform_full_evaluation(
                     trial_num,
                     adjusted_num_trials,
@@ -791,7 +805,13 @@ class MIPROv2(Teleprompter):
         )
         logger.info(f"Doing full eval on next top averaging program (Avg Score: {mean_score}) from minibatch trials...")
         full_eval_score = eval_candidate_program(len(valset), valset, highest_mean_program, evaluate, self.rng)
-        score_data.append({"score": full_eval_score, "program": highest_mean_program, "full_eval": True})
+        score_data.append(
+            {
+                "score": full_eval_score,
+                "program": highest_mean_program,
+                "full_eval": True,
+            }
+        )
 
         # Log full eval as a trial so that optuna can learn from the new results
         trial = optuna.trial.create_trial(

@@ -27,7 +27,12 @@ class PythonInterpreter:
     def __init__(self, deno_command: Optional[List[str]] = None) -> None:
         if isinstance(deno_command, dict):
             deno_command = None  # no-op, just a guard in case someone passes a dict
-        self.deno_command = deno_command or ["deno", "run", "--allow-read", self._get_runner_path()]
+        self.deno_command = deno_command or [
+            "deno",
+            "run",
+            "--allow-read",
+            self._get_runner_path(),
+        ]
         self.deno_process = None
 
     def _get_runner_path(self) -> str:

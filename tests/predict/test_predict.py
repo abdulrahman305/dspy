@@ -1,17 +1,17 @@
 import copy
 import enum
+import os
 from datetime import datetime
+from unittest.mock import MagicMock, Mock, patch
 
 import pydantic
 import pytest
 import ujson
-import os
+from litellm import ModelResponse
 
 import dspy
 from dspy import Predict, Signature
 from dspy.utils.dummies import DummyLM
-from unittest.mock import patch, MagicMock, Mock
-from litellm import ModelResponse
 
 
 def test_initialization_with_string_signature():
@@ -129,7 +129,10 @@ def test_typed_demos_after_dump_and_load_state():
         dspy.Example(
             items=[Item(name="apple", quantity=5), Item(name="banana", quantity=3)],
             language="SPANISH",
-            translated_items=[Item(name="manzana", quantity=5), Item(name="plátano", quantity=3)],
+            translated_items=[
+                Item(name="manzana", quantity=5),
+                Item(name="plátano", quantity=3),
+            ],
             total_quantity=8,
         ).with_inputs("items", "language"),
     ]

@@ -36,16 +36,40 @@ class MyCallback(BaseCallback):
         self.calls.append({"handler": "on_lm_end", "outputs": outputs, "exception": exception})
 
     def on_adapter_format_start(self, call_id, instance, inputs):
-        self.calls.append({"handler": "on_adapter_format_start", "instance": instance, "inputs": inputs})
+        self.calls.append(
+            {
+                "handler": "on_adapter_format_start",
+                "instance": instance,
+                "inputs": inputs,
+            }
+        )
 
     def on_adapter_format_end(self, call_id, outputs, exception):
-        self.calls.append({"handler": "on_adapter_format_end", "outputs": outputs, "exception": exception})
+        self.calls.append(
+            {
+                "handler": "on_adapter_format_end",
+                "outputs": outputs,
+                "exception": exception,
+            }
+        )
 
     def on_adapter_parse_start(self, call_id, instance, inputs):
-        self.calls.append({"handler": "on_adapter_parse_start", "instance": instance, "inputs": inputs})
+        self.calls.append(
+            {
+                "handler": "on_adapter_parse_start",
+                "instance": instance,
+                "inputs": inputs,
+            }
+        )
 
     def on_adapter_parse_end(self, call_id, outputs, exception):
-        self.calls.append({"handler": "on_adapter_parse_end", "outputs": outputs, "exception": exception})
+        self.calls.append(
+            {
+                "handler": "on_adapter_parse_end",
+                "outputs": outputs,
+                "exception": exception,
+            }
+        )
 
     def on_tool_start(self, call_id, instance, inputs):
         self.calls.append({"handler": "on_tool_start", "instance": instance, "inputs": inputs})
@@ -158,7 +182,14 @@ def test_multiple_callbacks():
 def test_callback_complex_module():
     callback = MyCallback()
     dspy.settings.configure(
-        lm=DummyLM({"How are you?": {"answer": "test output", "reasoning": "No more responses"}}),
+        lm=DummyLM(
+            {
+                "How are you?": {
+                    "answer": "test output",
+                    "reasoning": "No more responses",
+                }
+            }
+        ),
         callbacks=[callback],
     )
 
@@ -186,11 +217,19 @@ def test_callback_complex_module():
         "on_module_end",
     ]
 
+
 @pytest.mark.asyncio
 async def test_callback_async_module():
     callback = MyCallback()
     dspy.settings.configure(
-        lm=DummyLM({"How are you?": {"answer": "test output", "reasoning": "No more responses"}}),
+        lm=DummyLM(
+            {
+                "How are you?": {
+                    "answer": "test output",
+                    "reasoning": "No more responses",
+                }
+            }
+        ),
         callbacks=[callback],
     )
 
