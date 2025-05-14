@@ -58,7 +58,10 @@ class BootstrapFinetune(FinetuneTeleprompter):
         self.num_threads = num_threads
 
     def compile(
-        self, student: Program, trainset: List[Example], teacher: Optional[Union[Program, List[Program]]] = None
+        self,
+        student: Program,
+        trainset: List[Example],
+        teacher: Optional[Union[Program, List[Program]]] = None,
     ) -> Program:
         # TODO: Print statements can be converted to logger.info if we ensure
         # that the default DSPy logger logs info level messages in notebook
@@ -87,7 +90,9 @@ class BootstrapFinetune(FinetuneTeleprompter):
                 train_data, data_format = self._prepare_finetune_data(
                     trace_data=trace_data, lm=pred.lm, pred_ind=data_pred_ind
                 )
-                logger.info(f"Using {len(train_data)} data points for fine-tuning the model: {pred.lm.model}")
+                logger.info(
+                    f"Using {len(train_data)} data points for fine-tuning the model: {pred.lm.model}"
+                )
                 finetune_kwargs = dict(
                     lm=pred.lm,
                     train_data=train_data,
@@ -118,7 +123,9 @@ class BootstrapFinetune(FinetuneTeleprompter):
             training_key = (pred.lm, data_pred_ind)
             finetuned_lm = key_to_lm[training_key]
             if isinstance(finetuned_lm, Exception):
-                raise RuntimeError(f"Finetuned LM for predictor {pred_ind} failed.") from finetuned_lm
+                raise RuntimeError(
+                    f"Finetuned LM for predictor {pred_ind} failed."
+                ) from finetuned_lm
             pred.lm = finetuned_lm
             # TODO: What should the correct behavior be here? Should
             # BootstrapFinetune modify the prompt demos according to the
@@ -161,12 +168,16 @@ class BootstrapFinetune(FinetuneTeleprompter):
 
         return key_to_lm
 
-    def _prepare_finetune_data(self, trace_data: List[Dict[str, Any]], lm: LM, pred_ind: Optional[int] = None):
+    def _prepare_finetune_data(
+        self, trace_data: List[Dict[str, Any]], lm: LM, pred_ind: Optional[int] = None
+    ):
         # TODO(nit) Log dataset details/size; make logs nicer
         if self.metric:
             logger.info(f"Collected data for {len(trace_data)} examples")
             trace_data = [d for d in trace_data if d["score"]]
-            logger.info(f"After filtering with the metric, {len(trace_data)} examples remain")
+            logger.info(
+                f"After filtering with the metric, {len(trace_data)} examples remain"
+            )
 
         data = []
         adapter = self.adapter[lm] or settings.adapter or ChatAdapter()
@@ -176,7 +187,10 @@ class BootstrapFinetune(FinetuneTeleprompter):
                 include_data = pred_ind is None or pred_ind == pred_ind
                 if include_data:
                     call_data = build_call_data_from_trace(
-                        trace=item["trace"], pred_ind=pred_ind, adapter=adapter, exclude_demos=self.exclude_demos
+                        trace=item["trace"],
+                        pred_ind=pred_ind,
+                        adapter=adapter,
+                        exclude_demos=self.exclude_demos,
                     )
                     data.append(call_data)
 
@@ -235,7 +249,9 @@ def bootstrap_trace_data(
     data = []
     for example_ind, (example, prediction, score) in enumerate(outputs):
         prediction, trace = prediction
-        data_dict = dict(example=example, prediction=prediction, trace=trace, example_ind=example_ind)
+        data_dict = dict(
+            example=example, prediction=prediction, trace=trace, example_ind=example_ind
+        )
         if metric:
             data_dict["score"] = score
         data.append(data_dict)
