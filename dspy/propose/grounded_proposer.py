@@ -2,28 +2,33 @@ import random
 
 import dspy
 from dspy.propose.dataset_summary_generator import create_dataset_summary
-from dspy.propose.utils import create_example_string, create_predictor_level_history_string, strip_prefix, get_dspy_source_code
-from dspy.teleprompt.utils import get_signature, get_prompt_model
 from dspy.propose.propose_base import Proposer
+from dspy.propose.utils import (
+    create_example_string,
+    create_predictor_level_history_string,
+    get_dspy_source_code,
+    strip_prefix,
+)
+from dspy.teleprompt.utils import get_prompt_model, get_signature
 
 # Hardcoded variables (TODO: update)
 MAX_INSTRUCT_IN_HISTORY = 5  # 10
 
 TIPS = {
-        "none": "",
-        "creative": "Don't be afraid to be creative when creating the new instruction!",
-        "simple": "Keep the instruction clear and concise.",
-        "description": "Make sure your instruction is very informative and descriptive.",
-        "high_stakes": "The instruction should include a high stakes scenario in which the LM must solve the task!",
-        "persona": 'Include a persona that is relevant to the task in the instruction (ie. "You are a ...")',
-    }
+    "none": "",
+    "creative": "Don't be afraid to be creative when creating the new instruction!",
+    "simple": "Keep the instruction clear and concise.",
+    "description": "Make sure your instruction is very informative and descriptive.",
+    "high_stakes": "The instruction should include a high stakes scenario in which the LM must solve the task!",
+    "persona": 'Include a persona that is relevant to the task in the instruction (ie. "You are a ...")',
+}
 
 ### SIGNATURES USED TO HELP WITH INSTRUCTION GENERATION ###
 
+
 class DescribeProgram(dspy.Signature):
-    (
-        """Below is some pseudo-code for a pipeline that solves tasks with calls to language models. Please describe what type of task this program appears to be designed to solve, and how it appears to work."""
-    )
+    """Below is some pseudo-code for a pipeline that solves tasks with calls to language models. Please describe what type of task this program appears to be designed to solve, and how it appears to work."""
+
     program_code = dspy.InputField(
         format=str,
         desc="Pseudocode for a language model program designed to solve a particular task.",
@@ -41,9 +46,8 @@ class DescribeProgram(dspy.Signature):
 
 
 class DescribeModule(dspy.Signature):
-    (
-        """Below is some pseudo-code for a pipeline that solves tasks with calls to language models. Please describe the purpose of one of the specified module in this pipeline."""
-    )
+    """Below is some pseudo-code for a pipeline that solves tasks with calls to language models. Please describe the purpose of one of the specified module in this pipeline."""
+
     program_code = dspy.InputField(
         format=str,
         desc="Pseudocode for a language model program designed to solve a particular task.",
@@ -59,7 +63,8 @@ class DescribeModule(dspy.Signature):
         prefix="SUMMARY OF PROGRAM ABOVE:",
     )
     module = dspy.InputField(
-        desc="The module in the program that we want to describe.", prefix="MODULE:",
+        desc="The module in the program that we want to describe.",
+        prefix="MODULE:",
     )
     module_description = dspy.OutputField(
         desc="Description of the module's role in the broader program.",
@@ -75,9 +80,8 @@ def generate_instruction_class(
     use_tip=True,
 ):
     class GenerateSingleModuleInstruction(dspy.Signature):
-        (
-            """Use the information below to learn about a task that we are trying to solve using calls to an LM, then generate a new instruction that will be used to prompt a Language Model to better solve the task."""
-        )
+        """Use the information below to learn about a task that we are trying to solve using calls to an LM, then generate a new instruction that will be used to prompt a Language Model to better solve the task."""
+
         if use_dataset_summary:
             dataset_description = dspy.InputField(
                 desc="A description of the dataset that we are using.",
@@ -94,10 +98,12 @@ def generate_instruction_class(
                 prefix="PROGRAM DESCRIPTION:",
             )
             module = dspy.InputField(
-                desc="The module to create an instruction for.", prefix="MODULE:",
+                desc="The module to create an instruction for.",
+                prefix="MODULE:",
             )
             module_description = dspy.InputField(
-                desc="Description of the module to create an instruction for.", prefix="MODULE DESCRIPTION:",
+                desc="Description of the module to create an instruction for.",
+                prefix="MODULE DESCRIPTION:",
             )
         task_demos = dspy.InputField(
             format=str,
@@ -111,7 +117,9 @@ def generate_instruction_class(
                 prefix="PREVIOUS INSTRUCTIONS:",
             )
         basic_instruction = dspy.InputField(
-            format=str, desc="Basic instruction.", prefix="BASIC INSTRUCTION:",
+            format=str,
+            desc="Basic instruction.",
+            prefix="BASIC INSTRUCTION:",
         )
         if use_tip:
             tip = dspy.InputField(
@@ -126,7 +134,9 @@ def generate_instruction_class(
 
     return dspy.Predict(GenerateSingleModuleInstruction)
 
+
 ### CLASS RESPONSIBLE FOR GENERATING A NEW INSTRUCTION, USING THE HELPER SIGNATURES ABOVE ###
+
 
 class GenerateModuleInstruction(dspy.Module):
     def __init__(
@@ -184,15 +194,15 @@ class GenerateModuleInstruction(dspy.Module):
         # Construct full program demo or single module demo depending on settings
         basic_instruction = get_signature(program.predictors()[pred_i]).instructions
         task_demos = ""
-        
+
         if self.use_task_demos:
             # Combine current and adjacent sets
             adjacent_sets = (
-                [demo_candidates[pred_i][demo_set_i]] +
-                demo_candidates[pred_i][demo_set_i + 1:] +
-                demo_candidates[pred_i][:demo_set_i]
+                [demo_candidates[pred_i][demo_set_i]]
+                + demo_candidates[pred_i][demo_set_i + 1 :]
+                + demo_candidates[pred_i][:demo_set_i]
             )
-            
+
             # Gather examples up to the required count
             example_strings = gather_examples_from_sets(adjacent_sets, num_demos_in_context)
             task_demos = "\n\n".join(example_strings) + "\n\n"
@@ -209,7 +219,8 @@ class GenerateModuleInstruction(dspy.Module):
             try:
                 program_description = strip_prefix(
                     self.describe_program(
-                        program_code=self.program_code_string, program_example=task_demos,
+                        program_code=self.program_code_string,
+                        program_example=task_demos,
                     ).program_description,
                 )
                 if self.verbose:
@@ -219,15 +230,17 @@ class GenerateModuleInstruction(dspy.Module):
                 outputs = []
                 for field_name, field in get_signature(program.predictors()[pred_i]).fields.items():
                     # Access the '__dspy_field_type' from the extra metadata
-                    dspy_field_type = field.json_schema_extra.get('__dspy_field_type')
-                    
+                    dspy_field_type = field.json_schema_extra.get("__dspy_field_type")
+
                     # Based on the '__dspy_field_type', append to the respective list
                     if dspy_field_type == "input":
                         inputs.append(field_name)
                     else:
                         outputs.append(field_name)
 
-                module_code = f"{program.predictors()[pred_i].__class__.__name__}({', '.join(inputs)}) -> {', '.join(outputs)}"
+                module_code = (
+                    f"{program.predictors()[pred_i].__class__.__name__}({', '.join(inputs)}) -> {', '.join(outputs)}"
+                )
 
                 module_description = self.describe_module(
                     program_code=self.program_code_string,
@@ -261,7 +274,9 @@ class GenerateModuleInstruction(dspy.Module):
 
         return dspy.Prediction(proposed_instruction=proposed_instruction)
 
+
 ### CLASS USED TO GENERATE THE FULL SET OF INSTRUCTIONS GIVEN THE SPECIFIED CRITERIA ###
+
 
 class GroundedProposer(Proposer):
     def __init__(
@@ -273,13 +288,13 @@ class GroundedProposer(Proposer):
         use_dataset_summary=True,
         program_aware=True,
         use_task_demos=True,
-        num_demos_in_context = 3,
+        num_demos_in_context=3,
         use_instruct_history=True,
         use_tip=True,
         set_tip_randomly=True,
         set_history_randomly=True,
         verbose=False,
-        rng=None
+        rng=None,
     ):
         super().__init__()
         self.program_aware = program_aware
@@ -288,8 +303,8 @@ class GroundedProposer(Proposer):
         self.num_demos_in_context = num_demos_in_context
         self.use_instruct_history = use_instruct_history
         self.use_tip = use_tip
-        self.set_tip_randomly=set_tip_randomly
-        self.set_history_randomly=set_history_randomly
+        self.set_tip_randomly = set_tip_randomly
+        self.set_history_randomly = set_history_randomly
         self.verbose = verbose
         self.rng = rng or random
 
@@ -300,16 +315,18 @@ class GroundedProposer(Proposer):
             try:
                 self.program_code_string = get_dspy_source_code(program)
                 if self.verbose:
-                    print("SOURCE CODE:",self.program_code_string)
+                    print("SOURCE CODE:", self.program_code_string)
             except Exception as e:
                 print(f"Error getting source code: {e}.\n\nRunning without program aware proposer.")
                 self.program_aware = False
 
-        self.data_summary  = None
+        self.data_summary = None
         if self.use_dataset_summary:
             try:
                 self.data_summary = create_dataset_summary(
-                    trainset=trainset, view_data_batch_size=view_data_batch_size, prompt_model=prompt_model,
+                    trainset=trainset,
+                    view_data_batch_size=view_data_batch_size,
+                    prompt_model=prompt_model,
                 )
                 if self.verbose:
                     print(f"DATA SUMMARY: {self.data_summary}")
@@ -329,7 +346,7 @@ class GroundedProposer(Proposer):
     ) -> list[str]:
         """This method is responsible for returning the full set of new instructions for our program, given the specified criteria."""
 
-        proposed_instructions = {}      
+        proposed_instructions = {}
 
         if self.set_history_randomly:
             # Randomly select whether or not we're using instruction history
@@ -347,9 +364,9 @@ class GroundedProposer(Proposer):
         else:
             num_demos = max(len(demo_candidates[0]), 1)
 
-        # Create an instruction for each predictor 
+        # Create an instruction for each predictor
         for pred_i, predictor in enumerate(program.predictors()):
-            for demo_set_i in range(num_demos)[:min(N, num_demos)]:
+            for demo_set_i in range(num_demos)[: min(N, num_demos)]:
                 if pred_i not in proposed_instructions:
                     proposed_instructions[pred_i] = []
                 selected_tip = None
@@ -377,7 +394,7 @@ class GroundedProposer(Proposer):
                         tip=selected_tip,
                     ),
                 )
-        
+
         return proposed_instructions
 
     def propose_instruction_for_predictor(
@@ -395,7 +412,10 @@ class GroundedProposer(Proposer):
 
         # Create an instruction history string for our predictor
         instruction_history = create_predictor_level_history_string(
-            program, pred_i, trial_logs, MAX_INSTRUCT_IN_HISTORY,
+            program,
+            pred_i,
+            trial_logs,
+            MAX_INSTRUCT_IN_HISTORY,
         )
 
         # Create our instruction generator class (given specific criteria for this round of proposal)
@@ -406,7 +426,7 @@ class GroundedProposer(Proposer):
             use_task_demos=self.use_task_demos and demo_candidates,
             use_instruct_history=self.use_instruct_history and instruction_history,
             use_tip=self.use_tip,
-            verbose=self.verbose
+            verbose=self.verbose,
         )
 
         # Generate a new instruction for our predictor, using the temperature specified for this round
@@ -424,7 +444,7 @@ class GroundedProposer(Proposer):
                 program=program,
                 data_summary=self.data_summary,
                 previous_instructions=instruction_history,
-                num_demos_in_context = self.num_demos_in_context,
+                num_demos_in_context=self.num_demos_in_context,
                 tip=tip,
             ).proposed_instruction
         self.prompt_model.kwargs["temperature"] = original_temp

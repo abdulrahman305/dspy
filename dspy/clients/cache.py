@@ -62,7 +62,11 @@ class Cache:
         """Check if a key is in the cache."""
         return key in self.memory_cache or key in self.disk_cache
 
-    def cache_key(self, request: Dict[str, Any], ignored_args_for_cache_key: Optional[list[str]] = None) -> str:
+    def cache_key(
+        self,
+        request: Dict[str, Any],
+        ignored_args_for_cache_key: Optional[list[str]] = None,
+    ) -> str:
         """
         Obtain a unique cache key for the given request dictionary by hashing its JSON
         representation. For request fields having types that are known to be JSON-incompatible,
@@ -95,7 +99,11 @@ class Cache:
         params = {k: transform_value(v) for k, v in request.items() if k not in ignored_args_for_cache_key}
         return sha256(ujson.dumps(params, sort_keys=True).encode()).hexdigest()
 
-    def get(self, request: Dict[str, Any], ignored_args_for_cache_key: Optional[list[str]] = None) -> Any:
+    def get(
+        self,
+        request: Dict[str, Any],
+        ignored_args_for_cache_key: Optional[list[str]] = None,
+    ) -> Any:
         try:
             key = self.cache_key(request, ignored_args_for_cache_key)
         except Exception:
@@ -185,7 +193,11 @@ def request_cache(
         enable_memory_cache: Whether to enable in-memory cache at call time. If False, the memory cache will not be
             written to on new data.
     """
-    ignored_args_for_cache_key = ignored_args_for_cache_key or ["api_key", "api_base", "base_url"]
+    ignored_args_for_cache_key = ignored_args_for_cache_key or [
+        "api_key",
+        "api_base",
+        "base_url",
+    ]
     # Deprecation notice
     if maxsize is not None:
         logger.warning(
@@ -231,7 +243,12 @@ def request_cache(
             # Otherwise, compute and store the result
             result = fn(*args, **kwargs)
             # `enable_memory_cache` can be provided at call time to avoid indefinite growth.
-            cache.put(modified_request, result, ignored_args_for_cache_key, enable_memory_cache)
+            cache.put(
+                modified_request,
+                result,
+                ignored_args_for_cache_key,
+                enable_memory_cache,
+            )
 
             return result
 
@@ -249,7 +266,12 @@ def request_cache(
 
             # Otherwise, compute and store the result
             result = await fn(*args, **kwargs)
-            cache.put(modified_request, result, ignored_args_for_cache_key, enable_memory_cache)
+            cache.put(
+                modified_request,
+                result,
+                ignored_args_for_cache_key,
+                enable_memory_cache,
+            )
 
             return result
 

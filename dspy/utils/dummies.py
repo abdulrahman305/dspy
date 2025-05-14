@@ -4,7 +4,11 @@ from typing import Any, Dict, Union
 
 import numpy as np
 
-from dspy.adapters.chat_adapter import ChatAdapter, FieldInfoWithName, field_header_pattern
+from dspy.adapters.chat_adapter import (
+    ChatAdapter,
+    FieldInfoWithName,
+    field_header_pattern,
+)
 from dspy.clients.lm import LM
 from dspy.dsp.utils.utils import dotdict
 from dspy.signatures.field import OutputField
@@ -67,7 +71,11 @@ class DummyLM(LM):
 
     """
 
-    def __init__(self, answers: Union[list[dict[str, str]], dict[str, dict[str, str]]], follow_examples: bool = False):
+    def __init__(
+        self,
+        answers: Union[list[dict[str, str]], dict[str, dict[str, str]]],
+        follow_examples: bool = False,
+    ):
         super().__init__("dummy", "chat", 0.0, 1000, True)
         self.answers = answers
         if isinstance(answers, list):

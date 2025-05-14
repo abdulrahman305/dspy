@@ -76,7 +76,8 @@ def configure_cache(
 
 
 litellm.telemetry = False
-litellm.cache = None  # By default we disable litellm cache and use DSPy on-disk cache.
+# By default we disable litellm cache and use DSPy on-disk cache.
+litellm.cache = None
 
 DSPY_CACHE = Cache(
     enable_disk_cache=True,

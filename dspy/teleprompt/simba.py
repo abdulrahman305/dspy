@@ -1,11 +1,17 @@
-import dspy
-import random
 import logging
+import random
+from typing import Callable
 
 import numpy as np
-from typing import Callable
+
+import dspy
+from dspy.teleprompt.simba_utils import (
+    append_a_demo,
+    append_a_rule,
+    prepare_models_for_resampling,
+    wrap_program,
+)
 from dspy.teleprompt.teleprompt import Teleprompter
-from dspy.teleprompt.simba_utils import prepare_models_for_resampling, wrap_program, append_a_demo, append_a_rule
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +209,9 @@ class SIMBA(Teleprompter):
 
                 # pick source program
                 src_prog_idx = softmax_sample(
-                    rng, top_k_plus_baseline(self.num_candidates), self.temperature_for_candidates
+                    rng,
+                    top_k_plus_baseline(self.num_candidates),
+                    self.temperature_for_candidates,
                 )
                 system_candidate = programs[src_prog_idx].deepcopy()
 
@@ -218,7 +226,10 @@ class SIMBA(Teleprompter):
                     num_demos_list.append(len(predictor.demos))
 
                 num_demos = max(num_demos_list) if num_demos_list else 0
-                num_demos_to_drop = max(rng_np.poisson(num_demos / max_demos_tmp), int(num_demos >= max_demos_tmp))
+                num_demos_to_drop = max(
+                    rng_np.poisson(num_demos / max_demos_tmp),
+                    int(num_demos >= max_demos_tmp),
+                )
                 num_demos_to_drop = min(num_demos_to_drop, num_demos)
                 demos_to_drop = [rng.randrange(num_demos) for _ in range(num_demos_to_drop)]
 
@@ -284,7 +295,7 @@ class SIMBA(Teleprompter):
                 end = (idx_cand + 1) * self.bsize
                 sys_scores = [outputs[i]["score"] for i in range(start, end)]
                 register_new_program(cand_sys, sys_scores)
-            
+
         M = len(winning_programs) - 1
         N = self.num_candidates + 1
         if M < 1:

@@ -161,13 +161,19 @@ class JSONAdapter(ChatAdapter):
             return json.dumps(serialize_for_json(d), indent=2)
 
     def format_finetune_data(
-        self, signature: Type[Signature], demos: list[dict[str, Any]], inputs: dict[str, Any], outputs: dict[str, Any]
+        self,
+        signature: Type[Signature],
+        demos: list[dict[str, Any]],
+        inputs: dict[str, Any],
+        outputs: dict[str, Any],
     ) -> dict[str, list[Any]]:
         # TODO: implement format_finetune_data method in JSONAdapter
         raise NotImplementedError
 
 
-def _get_structured_outputs_response_format(signature: SignatureMeta) -> type[pydantic.BaseModel]:
+def _get_structured_outputs_response_format(
+    signature: SignatureMeta,
+) -> type[pydantic.BaseModel]:
     """
     Builds a Pydantic model from a DSPy signature's output_fields and ensures the generated JSON schema
     is compatible with OpenAI Structured Outputs (all objects have a "required" key listing every property,
