@@ -15,11 +15,14 @@ Welcome to DSPy tutorials! We've organized our tutorials into three main categor
 - Build AI Programs with DSPy
     - [Retrieval-Augmented Generation (RAG)](/tutorials/rag/)
     - [Building RAG as Agent](/tutorials/agents/)
+    - [Build AI Agents with DSPy](/tutorials/customer_service_agent/)
     - [Entity Extraction](/tutorials/entity_extraction/)
     - [Classification](/tutorials/classification/)
     - [Multi-Hop RAG](/tutorials/multihop_search/)
     - [Privacy-Conscious Delegation](/tutorials/papillon/)
+    - [Program Of Thought](/tutorials/program_of_thought/)
     - [Image Generation Prompt iteration](/tutorials/image_generation_prompting/)
+    - [Audio](/tutorials/audio/)
 
 
 - Optimize AI Programs with DSPy
@@ -32,8 +35,10 @@ Welcome to DSPy tutorials! We've organized our tutorials into three main categor
     - [Use MCP in DSPy](/tutorials/mcp/)
     - [Output Refinement](/tutorials/output_refinement/best-of-n-and-refine/)
     - [Saving and Loading](/tutorials/saving/)
+    - [Cache](/tutorials/cache/)
     - [Deployment](/tutorials/deployment/)
     - [Debugging & Observability](/tutorials/observability/)
+    - [Tracking DSPy Optimizers](/tutorials/optimizer_tracking/)
     - [Streaming](/tutorials/streaming/)
     - [Async](/tutorials/async/)
 

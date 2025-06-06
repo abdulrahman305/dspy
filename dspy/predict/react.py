@@ -4,8 +4,8 @@ from typing import Any, Callable, Literal
 from litellm import ContextWindowExceededError
 
 import dspy
+from dspy.adapters.types.tool import Tool
 from dspy.primitives.program import Module
-from dspy.primitives.tool import Tool
 from dspy.signatures.signature import ensure_signature
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ class ReAct(Module):
         """
         `tools` is either a list of functions, callable classes, or `dspy.Tool` instances.
         """
-
+        super().__init__()
         self.signature = signature = ensure_signature(signature)
         self.max_iters = max_iters
 
@@ -46,10 +46,8 @@ class ReAct(Module):
         )
 
         for idx, tool in enumerate(tools.values()):
-            args = getattr(tool, "args")
-            desc = (f", whose description is <desc>{tool.desc}</desc>." if tool.desc else ".").replace("\n", "  ")
-            desc += f" It takes arguments {args} in JSON format."
-            instr.append(f"({idx + 1}) {tool.name}{desc}")
+            instr.append(f"({idx + 1}) {tool}")
+        instr.append("When providing `next_tool_args`, the value inside the field must be in JSON format")
 
         react_signature = (
             dspy.Signature({**signature.input_fields}, "\n".join(instr))
@@ -167,7 +165,7 @@ class ReAct(Module):
 def _fmt_exc(err: BaseException, *, limit: int = 5) -> str:
     """
     Return a one-string traceback summary.
-    * `limit`  – how many stack frames to keep (from the innermost outwards).
+    * `limit` - how many stack frames to keep (from the innermost outwards).
     """
 
     import traceback
@@ -197,7 +195,6 @@ trace of every module repeating the prefix.
 
 
 TOPIC 03: Simplifying ReAct's __init__ by moving modular logic to the Tool class.
-    * Handling descriptions and casting.
     * Handling exceptions and error messages.
     * More cleanly defining the "finish" tool, perhaps as a runtime-defined function?
 

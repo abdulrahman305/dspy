@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -83,13 +83,17 @@ jobs:
           args: check --fix-only
       - name: Run tests with pytest
         run: uv run -p .venv pytest tests/
+      - name: Install optional dependencies
+        run: uv sync -p .venv --extra dev --extra test_extras
+      - name: Run extra tests
+        run: uv run -p .venv pytest tests/ -m extra --extra
 
   build_package:
     name: Build Package
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
