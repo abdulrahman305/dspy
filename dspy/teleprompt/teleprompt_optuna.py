@@ -28,14 +28,21 @@ class BootstrapFewShotWithOptuna(Teleprompter):
         # self.max_bootstrapped_demos = self.max_num_traces
         self.max_labeled_demos = max_labeled_demos
 
-        print("Going to sample between", self.min_num_samples, "and", self.max_num_samples, "traces per predictor.")
+        print(
+            "Going to sample between",
+            self.min_num_samples,
+            "and",
+            self.max_num_samples,
+            "traces per predictor.",
+        )
         # print("Going to sample", self.max_num_traces, "traces in total.")
         print("Will attempt to train", self.num_candidate_sets, "candidate sets.")
 
     def objective(self, trial):
         program2 = self.student.reset_copy()
         for (name, compiled_predictor), (_, program2_predictor) in zip(
-            self.compiled_teleprompter.named_predictors(), program2.named_predictors(),
+            self.compiled_teleprompter.named_predictors(),
+            program2.named_predictors(),
         ):
             all_demos = compiled_predictor.demos
             demo_index = trial.suggest_int(f"demo_index_for_{name}", 0, len(all_demos) - 1)
@@ -54,6 +61,7 @@ class BootstrapFewShotWithOptuna(Teleprompter):
 
     def compile(self, student, *, teacher=None, max_demos, trainset, valset=None):
         import optuna
+
         self.trainset = trainset
         self.valset = valset or trainset
         self.student = student.reset_copy()
@@ -66,7 +74,9 @@ class BootstrapFewShotWithOptuna(Teleprompter):
             max_rounds=self.max_rounds,
         )
         self.compiled_teleprompter = teleprompter_optimize.compile(
-            self.student, teacher=self.teacher, trainset=self.trainset,
+            self.student,
+            teacher=self.teacher,
+            trainset=self.trainset,
         )
         study = optuna.create_study(direction="maximize")
         study.optimize(self.objective, n_trials=self.num_candidate_sets)

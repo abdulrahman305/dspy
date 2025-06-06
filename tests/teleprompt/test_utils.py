@@ -52,7 +52,11 @@ def test_eval_candidate_program_failure(return_all_scores):
     batch_size = 3
 
     result = eval_candidate_program(
-        batch_size, trainset, candidate_program, evaluate, return_all_scores=return_all_scores
+        batch_size,
+        trainset,
+        candidate_program,
+        evaluate,
+        return_all_scores=return_all_scores,
     )
 
     if return_all_scores:

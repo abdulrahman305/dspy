@@ -6,7 +6,15 @@ from dspy.dsp.utils import dotdict
 
 
 class Dataset:
-    def __init__(self, train_seed=0, train_size=None, eval_seed=0, dev_size=None, test_size=None, input_keys=None):
+    def __init__(
+        self,
+        train_seed=0,
+        train_size=None,
+        eval_seed=0,
+        dev_size=None,
+        test_size=None,
+        input_keys=None,
+    ):
         self.train_size = train_size
         self.train_seed = train_seed
         self.dev_size = dev_size
@@ -19,7 +27,14 @@ class Dataset:
 
         self.name = self.__class__.__name__
 
-    def reset_seeds(self, train_seed=None, train_size=None, eval_seed=None, dev_size=None, test_size=None):
+    def reset_seeds(
+        self,
+        train_seed=None,
+        train_size=None,
+        eval_seed=None,
+        dev_size=None,
+        test_size=None,
+    ):
         self.train_size = train_size or self.train_size
         self.train_seed = train_seed or self.train_seed
         self.dev_size = dev_size or self.dev_size
@@ -92,7 +107,13 @@ class Dataset:
         **kwargs,
     ):
         train_seeds = train_seeds or [1, 2, 3, 4, 5]
-        data_args = dotdict(train_size=train_size, eval_seed=eval_seed, dev_size=dev_size, test_size=0, **kwargs)
+        data_args = dotdict(
+            train_size=train_size,
+            eval_seed=eval_seed,
+            dev_size=dev_size,
+            test_size=0,
+            **kwargs,
+        )
         dataset = cls(**data_args)
 
         eval_set = dataset.dev

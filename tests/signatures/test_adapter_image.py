@@ -79,14 +79,20 @@ def setup_predictor(signature, expected_output):
         {
             "name": "probabilistic_classification",
             "signature": "image: dspy.Image, class_labels: List[str] -> probabilities: Dict[str, float]",
-            "inputs": {"image": "https://example.com/dog.jpg", "class_labels": ["dog", "cat", "bird"]},
+            "inputs": {
+                "image": "https://example.com/dog.jpg",
+                "class_labels": ["dog", "cat", "bird"],
+            },
             "key_output": "probabilities",
             "expected": {"probabilities": {"dog": 0.8, "cat": 0.1, "bird": 0.1}},
         },
         {
             "name": "image_to_code",
             "signature": "ui_image: dspy.Image, target_language: str -> generated_code: str",
-            "inputs": {"ui_image": "https://example.com/button.png", "target_language": "HTML"},
+            "inputs": {
+                "ui_image": "https://example.com/button.png",
+                "target_language": "HTML",
+            },
             "key_output": "generated_code",
             "expected": {"generated_code": "<button>Click me</button>"},
         },
@@ -100,10 +106,17 @@ def setup_predictor(signature, expected_output):
         {
             "name": "multilingual_caption",
             "signature": "image: dspy.Image, languages: List[str] -> captions: Dict[str, str]",
-            "inputs": {"image": "https://example.com/dog.jpg", "languages": ["en", "es", "fr"]},
+            "inputs": {
+                "image": "https://example.com/dog.jpg",
+                "languages": ["en", "es", "fr"],
+            },
             "key_output": "captions",
             "expected": {
-                "captions": {"en": "A golden retriever", "es": "Un golden retriever", "fr": "Un golden retriever"}
+                "captions": {
+                    "en": "A golden retriever",
+                    "es": "Un golden retriever",
+                    "fr": "Un golden retriever",
+                }
             },
         },
     ],
@@ -114,7 +127,7 @@ def test_basic_image_operations(test_case):
 
     # Convert string URLs to dspy.Image objects
     inputs = {
-        k: dspy.Image.from_url(v) if isinstance(v, str) and k in ["image", "ui_image"] else v
+        k: (dspy.Image.from_url(v) if isinstance(v, str) and k in ["image", "ui_image"] else v)
         for k, v in test_case["inputs"].items()
     }
 
@@ -136,7 +149,12 @@ def test_basic_image_operations(test_case):
     ],
 )
 def test_image_input_formats(
-    request, sample_pil_image, sample_dspy_image_download, sample_dspy_image_no_download, image_input, description
+    request,
+    sample_pil_image,
+    sample_dspy_image_download,
+    sample_dspy_image_no_download,
+    image_input,
+    description,
 ):
     """Test different input formats for image fields"""
     signature = "image: dspy.Image, class_labels: List[str] -> probabilities: Dict[str, float]"
@@ -240,7 +258,12 @@ class ImageListSignature(dspy.Signature):
         {
             "name": "list_dspy_signature",
             "signature_class": ImageListSignature,
-            "inputs": {"image_list": ["https://example.com/dog.jpg", "https://example.com/cat.jpg"]},
+            "inputs": {
+                "image_list": [
+                    "https://example.com/dog.jpg",
+                    "https://example.com/cat.jpg",
+                ]
+            },
             "expected": {"output": "Multiple photos"},
             "expected_image_urls": 4,
         },

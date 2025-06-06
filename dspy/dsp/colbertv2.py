@@ -83,19 +83,19 @@ class ColBERTv2RetrieverLocal:
             colbert_config (ColBERTConfig, optional): colbert config for building and searching. Defaults to None.
             load_only (bool, optional): whether to load the index or build and then load. Defaults to False.
         """
-        assert (
-            colbert_config is not None
-        ), "Please pass a valid colbert_config, which you can import from colbert.infra.config import ColBERTConfig and modify it"
+        assert colbert_config is not None, (
+            "Please pass a valid colbert_config, which you can import from colbert.infra.config import ColBERTConfig and modify it"
+        )
         self.colbert_config = colbert_config
 
-        assert (
-            self.colbert_config.checkpoint is not None
-        ), "Please pass a valid checkpoint like colbert-ir/colbertv2.0, which you can modify in the ColBERTConfig with attribute name checkpoint"
+        assert self.colbert_config.checkpoint is not None, (
+            "Please pass a valid checkpoint like colbert-ir/colbertv2.0, which you can modify in the ColBERTConfig with attribute name checkpoint"
+        )
         self.passages = passages
 
-        assert (
-            self.colbert_config.index_name is not None
-        ), "Please pass a valid index_name, which you can modify in the ColBERTConfig with attribute name index_name"
+        assert self.colbert_config.index_name is not None, (
+            "Please pass a valid index_name, which you can modify in the ColBERTConfig with attribute name index_name"
+        )
         self.passages = passages
 
         if not load_only:
@@ -123,9 +123,18 @@ class ColBERTv2RetrieverLocal:
         from colbert import Indexer
         from colbert.infra import Run, RunConfig
 
-        with Run().context(RunConfig(nranks=self.colbert_config.nranks, experiment=self.colbert_config.experiment)):
+        with Run().context(
+            RunConfig(
+                nranks=self.colbert_config.nranks,
+                experiment=self.colbert_config.experiment,
+            )
+        ):
             indexer = Indexer(checkpoint=self.colbert_config.checkpoint, config=self.colbert_config)
-            indexer.index(name=self.colbert_config.index_name, collection=self.passages, overwrite=True)
+            indexer.index(
+                name=self.colbert_config.index_name,
+                collection=self.passages,
+                overwrite=True,
+            )
 
     def get_index(self):
         try:
@@ -151,7 +160,9 @@ class ColBERTv2RetrieverLocal:
 
         if kwargs.get("filtered_pids"):
             filtered_pids = kwargs.get("filtered_pids")
-            assert isinstance(filtered_pids, list) and all(isinstance(pid, int) for pid in filtered_pids), "The filtered pids should be a list of integers"
+            assert isinstance(filtered_pids, list) and all(isinstance(pid, int) for pid in filtered_pids), (
+                "The filtered pids should be a list of integers"
+            )
             device = "cuda" if torch.cuda.is_available() else "cpu"
             results = self.searcher.search(
                 query,
@@ -166,7 +177,15 @@ class ColBERTv2RetrieverLocal:
             searcher_results = self.searcher.search(query, k=k)
         results = []
         for pid, rank, score in zip(*searcher_results):  # noqa: B007
-            results.append(dotdict({"long_text": self.searcher.collection[pid], "score": score, "pid": pid}))
+            results.append(
+                dotdict(
+                    {
+                        "long_text": self.searcher.collection[pid],
+                        "score": score,
+                        "pid": pid,
+                    }
+                )
+            )
         return results
 
 

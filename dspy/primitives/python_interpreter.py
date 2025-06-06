@@ -1,9 +1,9 @@
 import json
 import os
 import subprocess
+from os import PathLike
 from types import TracebackType
 from typing import Any, Dict, List, Optional, Union
-from os import PathLike
 
 
 class InterpreterError(RuntimeError):
@@ -56,8 +56,8 @@ class PythonInterpreter:
         if deno_command:
             self.deno_command = list(deno_command)
         else:
-            args = ['deno', 'run', '--allow-read']
-            self._env_arg  = ""
+            args = ["deno", "run", "--allow-read"]
+            self._env_arg = ""
             if self.enable_env_vars:
                 user_vars = [str(v).strip() for v in self.enable_env_vars]
                 args.append("--allow-env=" + ",".join(user_vars))
@@ -66,7 +66,7 @@ class PythonInterpreter:
                 args.append(f"--allow-net={','.join(str(x) for x in self.enable_network_access)}")
             if self.enable_write_paths:
                 args.append(f"--allow-write={','.join(str(x) for x in self.enable_write_paths)}")
-                
+
             args.append(self._get_runner_path())
 
             # For runner.js to load in env vars
@@ -110,13 +110,9 @@ class PythonInterpreter:
             return
         for path in self.enable_write_paths:
             virtual_path = f"/sandbox/{os.path.basename(path)}"
-            sync_msg = json.dumps({
-                "sync_file": virtual_path,
-                "host_file": str(path)
-            })
+            sync_msg = json.dumps({"sync_file": virtual_path, "host_file": str(path)})
             self.deno_process.stdin.write(sync_msg + "\n")
             self.deno_process.stdin.flush()
-
 
     def _ensure_deno_process(self) -> None:
         if self.deno_process is None or self.deno_process.poll() is not None:
@@ -127,7 +123,7 @@ class PythonInterpreter:
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
-                    env=os.environ.copy()
+                    env=os.environ.copy(),
                 )
             except FileNotFoundError as e:
                 install_instructions = (

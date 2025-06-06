@@ -1,6 +1,15 @@
 import asyncio
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Type, get_origin, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Optional,
+    Tuple,
+    Type,
+    get_origin,
+    get_type_hints,
+)
 
 from jsonschema import ValidationError, validate
 from pydantic import BaseModel, TypeAdapter, create_model
@@ -12,7 +21,14 @@ if TYPE_CHECKING:
     import mcp
     from langchain.tools import BaseTool
 
-_TYPE_MAPPING = {"string": str, "integer": int, "number": float, "boolean": bool, "array": list, "object": dict}
+_TYPE_MAPPING = {
+    "string": str,
+    "integer": int,
+    "number": float,
+    "boolean": bool,
+    "array": list,
+    "object": dict,
+}
 
 
 class Tool(BaseType):
@@ -67,7 +83,14 @@ class Tool(BaseType):
         # Expected output: {'x': {'type': 'integer'}, 'y': {'type': 'string', 'default': 'hello'}}
         ```
         """
-        super().__init__(func=func, name=name, desc=desc, args=args, arg_types=arg_types, arg_desc=arg_desc)
+        super().__init__(
+            func=func,
+            name=name,
+            desc=desc,
+            args=args,
+            arg_types=arg_types,
+            arg_desc=arg_desc,
+        )
         self._parse_function(func, arg_desc)
 
     def _parse_function(self, func: Callable, arg_desc: Optional[dict[str, str]] = None):

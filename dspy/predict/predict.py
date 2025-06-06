@@ -151,10 +151,22 @@ class Predict(Module, Parameter):
 
         if self._should_stream():
             with settings.context(caller_predict=self):
-                completions = adapter(lm, lm_kwargs=config, signature=signature, demos=demos, inputs=kwargs)
+                completions = adapter(
+                    lm,
+                    lm_kwargs=config,
+                    signature=signature,
+                    demos=demos,
+                    inputs=kwargs,
+                )
         else:
             with settings.context(send_stream=None):
-                completions = adapter(lm, lm_kwargs=config, signature=signature, demos=demos, inputs=kwargs)
+                completions = adapter(
+                    lm,
+                    lm_kwargs=config,
+                    signature=signature,
+                    demos=demos,
+                    inputs=kwargs,
+                )
 
         return self._forward_postprocess(completions, signature, **kwargs)
 
@@ -164,10 +176,22 @@ class Predict(Module, Parameter):
         adapter = settings.adapter or ChatAdapter()
         if self._should_stream():
             with settings.context(caller_predict=self):
-                completions = await adapter.acall(lm, lm_kwargs=config, signature=signature, demos=demos, inputs=kwargs)
+                completions = await adapter.acall(
+                    lm,
+                    lm_kwargs=config,
+                    signature=signature,
+                    demos=demos,
+                    inputs=kwargs,
+                )
         else:
             with settings.context(send_stream=None):
-                completions = await adapter.acall(lm, lm_kwargs=config, signature=signature, demos=demos, inputs=kwargs)
+                completions = await adapter.acall(
+                    lm,
+                    lm_kwargs=config,
+                    signature=signature,
+                    demos=demos,
+                    inputs=kwargs,
+                )
 
         return self._forward_postprocess(completions, signature, **kwargs)
 

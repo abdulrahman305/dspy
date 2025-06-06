@@ -11,10 +11,8 @@ except ImportError:
 class ModuleGraph:
     def __init__(self, module_name, module):
         if graphviz_available is False:
-            raise ImportError(
-                """Please install graphviz to use this feature.
-                Run 'pip install graphviz'"""
-            )
+            raise ImportError("""Please install graphviz to use this feature.
+                Run 'pip install graphviz'""")
 
         self.graph = graphviz.Digraph(format="png")
         self.nodes = set()

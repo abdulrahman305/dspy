@@ -57,7 +57,10 @@ def test_bootstrap_effectiveness():
     # This test verifies if the bootstrapping process improves the student's predictions
     student = SimpleModule("input -> output")
     teacher = SimpleModule("input -> output")
-    lm = DummyLM([{"output": "blue"}, {"output": "Ring-ding-ding-ding-dingeringeding!"}], follow_examples=True)
+    lm = DummyLM(
+        [{"output": "blue"}, {"output": "Ring-ding-ding-ding-dingeringeding!"}],
+        follow_examples=True,
+    )
     dspy.settings.configure(lm=lm, trace=[])
 
     bootstrap = BootstrapFewShot(metric=simple_metric, max_bootstrapped_demos=1, max_labeled_demos=1)

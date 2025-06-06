@@ -6,10 +6,9 @@ if TYPE_CHECKING:
     from langchain.tools import BaseTool
 
 
-
 def convert_langchain_tool(tool: "BaseTool") -> Tool:
     """Build a DSPy tool from a LangChain tool.
-    
+
     This function converts a LangChain tool (either created with @tool decorator
     or by subclassing BaseTool) into a DSPy Tool.
 
@@ -19,6 +18,7 @@ def convert_langchain_tool(tool: "BaseTool") -> Tool:
     Returns:
         A DSPy Tool object.
     """
+
     async def func(**kwargs):
         try:
             result = await tool.ainvoke(kwargs)
@@ -43,5 +43,5 @@ def convert_langchain_tool(tool: "BaseTool") -> Tool:
         desc=tool.description,
         args=args,
         arg_types=arg_types,
-        arg_desc=arg_desc
+        arg_desc=arg_desc,
     )

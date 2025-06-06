@@ -7,7 +7,8 @@ class Actor(dspy.Signature):
 
     You will output action needed to accomplish the `Goal`. `Action` should have a tool to use and the input query to pass to the tool.
 
-    Note: You can opt to use no tools and provide the final answer directly. You can also one tool multiple times with different input queries if applicable."""
+    Note: You can opt to use no tools and provide the final answer directly. You can also one tool multiple times with different input queries if applicable.
+    """
 
     goal: str = dspy.InputField(
         prefix="Goal:",

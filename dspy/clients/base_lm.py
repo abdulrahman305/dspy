@@ -41,7 +41,15 @@ class BaseLM:
     ```
     """
 
-    def __init__(self, model, model_type="chat", temperature=0.0, max_tokens=1000, cache=True, **kwargs):
+    def __init__(
+        self,
+        model,
+        model_type="chat",
+        temperature=0.0,
+        max_tokens=1000,
+        cache=True,
+        **kwargs,
+    ):
         self.model = model
         self.model_type = model_type
         self.cache = cache

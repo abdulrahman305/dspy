@@ -1,4 +1,3 @@
-
 import pydantic
 import pytest
 
@@ -8,14 +7,12 @@ from dspy import Signature
 
 def test_basic_custom_type_resolution():
     """Test basic custom type resolution with both explicit and automatic mapping."""
+
     class CustomType(pydantic.BaseModel):
         value: str
 
     # Custom types can be explicitly mapped
-    explicit_sig = Signature(
-        "input: CustomType -> output: str",
-        custom_types={"CustomType": CustomType}
-    )
+    explicit_sig = Signature("input: CustomType -> output: str", custom_types={"CustomType": CustomType})
     assert explicit_sig.input_fields["input"].annotation == CustomType
 
     # Custom types can also be auto-resolved from caller's scope
@@ -25,6 +22,7 @@ def test_basic_custom_type_resolution():
 
 def test_type_alias_for_nested_types():
     """Test using type aliases for nested types."""
+
     class Container:
         class NestedType(pydantic.BaseModel):
             value: str
@@ -36,6 +34,7 @@ def test_type_alias_for_nested_types():
     class Container2:
         class Query(pydantic.BaseModel):
             text: str
+
         class Score(pydantic.BaseModel):
             score: float
 
@@ -45,6 +44,7 @@ def test_type_alias_for_nested_types():
 
 class GlobalCustomType(pydantic.BaseModel):
     """A type defined at module level for testing module-level resolution."""
+
     value: str
     notes: str = ""
 
@@ -90,10 +90,12 @@ def test_recommended_patterns():
     sig5 = Signature("input: str -> output: OuterContainer.InnerType")
     assert sig5.output_fields["output"].annotation == OuterContainer.InnerType
 
+
 def test_expected_failure():
     # InnerType DNE when not OuterContainer.InnerTypes, so this type shouldnt be resolved
     with pytest.raises(ValueError):
         Signature("input: str -> output: InnerType")
+
 
 def test_module_type_resolution():
     class TestModule(dspy.Module):
@@ -107,6 +109,7 @@ def test_module_type_resolution():
     module = TestModule()
     sig = module.predict.signature
     assert sig.output_fields["output"].annotation == OuterContainer.InnerType
+
 
 def test_basic_custom_type_resolution():
     class CustomType(pydantic.BaseModel):

@@ -96,8 +96,7 @@ def test_signature_instructions_none():
 
 
 def test_signature_from_dict():
-    signature = Signature(
-        {"input1": InputField(), "input2": InputField(), "output": OutputField()})
+    signature = Signature({"input1": InputField(), "input2": InputField(), "output": OutputField()})
     for k in ["input1", "input2", "output"]:
         assert k in signature.fields
         assert signature.fields[k].annotation == str
@@ -156,8 +155,7 @@ def test_order_preserved_with_mixed_annotations():
 
 
 def test_infer_prefix():
-    assert infer_prefix(
-        "someAttributeName42IsCool") == "Some Attribute Name 42 Is Cool"
+    assert infer_prefix("someAttributeName42IsCool") == "Some Attribute Name 42 Is Cool"
     assert infer_prefix("version2Update") == "Version 2 Update"
     assert infer_prefix("modelT45Enhanced") == "Model T 45 Enhanced"
     assert infer_prefix("someAttributeName") == "Some Attribute Name"
@@ -253,8 +251,7 @@ def test_typed_signatures_basic_types():
 
 
 def test_typed_signatures_generics():
-    sig = Signature(
-        "input_list: List[int], input_dict: Dict[str, float] -> output_tuple: Tuple[str, int]")
+    sig = Signature("input_list: List[int], input_dict: Dict[str, float] -> output_tuple: Tuple[str, int]")
     assert "input_list" in sig.input_fields
     assert sig.input_fields["input_list"].annotation == List[int]
     assert "input_dict" in sig.input_fields
@@ -264,8 +261,7 @@ def test_typed_signatures_generics():
 
 
 def test_typed_signatures_unions_and_optionals():
-    sig = Signature(
-        "input_opt: Optional[str], input_union: Union[int, None] -> output_union: Union[int, str]")
+    sig = Signature("input_opt: Optional[str], input_union: Union[int, None] -> output_union: Union[int, str]")
     assert "input_opt" in sig.input_fields
     # Optional[str] is actually Union[str, None]
     # Depending on the environment, it might resolve to Union[str, None] or Optional[str], either is correct.
@@ -303,8 +299,7 @@ def test_typed_signatures_any():
 
 
 def test_typed_signatures_nested():
-    sig = Signature(
-        "input_nested: List[Union[str, int]] -> output_nested: Tuple[int, Optional[float], List[str]]")
+    sig = Signature("input_nested: List[Union[str, int]] -> output_nested: Tuple[int, Optional[float], List[str]]")
     input_nested_ann = sig.input_fields["input_nested"].annotation
     assert getattr(input_nested_ann, "__origin__", None) is list
     assert len(input_nested_ann.__args__) == 1
@@ -365,18 +360,15 @@ def test_typed_signatures_complex_combinations():
     # Expecting List[str] and Dict[str, Any]
     # Because sets don't preserve order, just check membership.
     # Find the List[str] arg
-    list_arg = next(a for a in possible_args if getattr(
-        a, "__origin__", None) is list)
-    dict_arg = next(a for a in possible_args if getattr(
-        a, "__origin__", None) is dict)
+    list_arg = next(a for a in possible_args if getattr(a, "__origin__", None) is list)
+    dict_arg = next(a for a in possible_args if getattr(a, "__origin__", None) is dict)
     assert list_arg.__args__ == (str,)
     k, v = dict_arg.__args__
     assert k == str and v == Any
 
 
 def test_make_signature_from_string():
-    sig = Signature(
-        "input1: int, input2: Dict[str, int] -> output1: List[str], output2: Union[int, str]")
+    sig = Signature("input1: int, input2: Dict[str, int] -> output1: List[str], output2: Union[int, str]")
     assert "input1" in sig.input_fields
     assert sig.input_fields["input1"].annotation == int
     assert "input2" in sig.input_fields
@@ -409,10 +401,7 @@ def test_basic_custom_type():
     class CustomType(pydantic.BaseModel):
         value: str
 
-    test_signature = dspy.Signature(
-        "input: CustomType -> output: str",
-        custom_types={"CustomType": CustomType}
-    )
+    test_signature = dspy.Signature("input: CustomType -> output: str", custom_types={"CustomType": CustomType})
 
     assert test_signature.input_fields["input"].annotation == CustomType
 

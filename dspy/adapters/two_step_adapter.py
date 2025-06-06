@@ -45,7 +45,10 @@ class TwoStepAdapter(Adapter):
         self.extraction_model = extraction_model
 
     def format(
-        self, signature: Type[Signature], demos: list[dict[str, Any]], inputs: dict[str, Any]
+        self,
+        signature: Type[Signature],
+        demos: list[dict[str, Any]],
+        inputs: dict[str, Any],
     ) -> list[dict[str, Any]]:
         """
         Format a prompt for the first stage with the main LM.
@@ -69,7 +72,12 @@ class TwoStepAdapter(Adapter):
         messages.extend(self.format_demos(signature, demos))
 
         # Format the current input
-        messages.append({"role": "user", "content": self.format_user_message_content(signature, inputs)})
+        messages.append(
+            {
+                "role": "user",
+                "content": self.format_user_message_content(signature, inputs),
+            }
+        )
 
         return messages
 

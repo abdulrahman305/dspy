@@ -211,11 +211,7 @@ class BootstrapFewShot(Teleprompter):
             with self.error_lock:
                 self.error_count += 1
                 current_error_count = self.error_count
-            effective_max_errors = (
-                self.max_errors
-                if self.max_errors is not None
-                else dspy.settings.max_errors
-            )
+            effective_max_errors = self.max_errors if self.max_errors is not None else dspy.settings.max_errors
             if current_error_count >= effective_max_errors:
                 raise e
             logger.error(f"Failed to run or to evaluate example {example} with {self.metric} due to {e}.")

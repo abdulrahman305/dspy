@@ -1,5 +1,8 @@
 import dspy
-from dspy.primitives.program import Module, set_attribute_by_name  # Adjust the import based on your file structure
+from dspy.primitives.program import (  # Adjust the import based on your file structure
+    Module,
+    set_attribute_by_name,
+)
 from dspy.utils import DummyLM
 
 
@@ -78,7 +81,11 @@ def test_multiple_levels():
     module = Module()
     module.sub = Module()
     module.sub.subsub = Module()
-    expected = [("self", module), ("self.sub", module.sub), ("self.sub.subsub", module.sub.subsub)]
+    expected = [
+        ("self", module),
+        ("self.sub", module.sub),
+        ("self.sub.subsub", module.sub.subsub),
+    ]
     assert list(module.named_sub_modules()) == expected
 
 
@@ -86,7 +93,11 @@ def test_multiple_sub_modules():
     module = Module()
     module.sub1 = Module()
     module.sub2 = Module()
-    expected = [("self", module), ("self.sub1", module.sub1), ("self.sub2", module.sub2)]
+    expected = [
+        ("self", module),
+        ("self.sub1", module.sub1),
+        ("self.sub2", module.sub2),
+    ]
     assert sorted(module.named_sub_modules()) == sorted(expected)
 
 
@@ -114,9 +125,9 @@ def test_complex_module_traversal():
     }
     found_names = {name for name, _ in root.named_sub_modules()}
 
-    assert (
-        found_names == expected_names
-    ), f"Missing or extra modules found. Missing: {expected_names-found_names}, Extra: {found_names-expected_names}"
+    assert found_names == expected_names, (
+        f"Missing or extra modules found. Missing: {expected_names - found_names}, Extra: {found_names - expected_names}"
+    )
 
 
 def test_complex_module_traversal_with_same_module():
@@ -129,15 +140,17 @@ def test_complex_module_traversal_with_same_module():
         "self",
         "self.sub_module",
         "self.sub_module.nested_list[0]",
-        "self.sub_module.nested_list[1][key]",  # NOTE: named_sub_modules allows recursive structures
+        # NOTE: named_sub_modules allows recursive structures
+        "self.sub_module.nested_list[1][key]",
         "self.sub_module.nested_tuple[0]",
-        "self.sub_module.nested_tuple[1][0]",  # NEW: named_sub_modules allows recursive structures, but named_parameters does not
+        # NEW: named_sub_modules allows recursive structures, but named_parameters does not
+        "self.sub_module.nested_tuple[1][0]",
     }
     found_names = {name for name, _ in root.named_sub_modules()}
 
-    assert (
-        found_names == expected_names
-    ), f"Missing or extra modules found. Missing: {expected_names-found_names}, Extra: {found_names-expected_names}"
+    assert found_names == expected_names, (
+        f"Missing or extra modules found. Missing: {expected_names - found_names}, Extra: {found_names - expected_names}"
+    )
 
 
 def test_complex_module_set_attribute_by_name():

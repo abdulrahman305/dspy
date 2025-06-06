@@ -27,7 +27,14 @@ class HotPotQA(Dataset):
         for raw_example in hf_official_train:
             if raw_example["level"] == "hard":
                 if keep_details is True:
-                    keys = ["id", "question", "answer", "type", "supporting_facts", "context"]
+                    keys = [
+                        "id",
+                        "question",
+                        "answer",
+                        "type",
+                        "supporting_facts",
+                        "context",
+                    ]
                 elif keep_details == "dev_titles":
                     keys = ["question", "answer", "supporting_facts"]
                 else:
@@ -82,7 +89,6 @@ if __name__ == "__main__":
     print(dataset.dev[0].question)
     print(dataset.dev[340].question)
     print(dataset.dev[937].question)
-
 """
 What was the population of the city where Woodward Avenue ends in 2010?
 Where did the star , who is also an executive producer, of the Mick begin her carrer?

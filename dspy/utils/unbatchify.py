@@ -10,7 +10,7 @@ class Unbatchify:
         self,
         batch_fn: Callable[[List[Any]], List[Any]],
         max_batch_size: int = 32,
-        max_wait_time: float = 0.1
+        max_wait_time: float = 0.1,
     ):
         """
         Initializes the Unbatchify.

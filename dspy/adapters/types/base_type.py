@@ -68,7 +68,9 @@ class BaseType(pydantic.BaseModel):
         return formatted
 
 
-def split_message_content_for_custom_types(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def split_message_content_for_custom_types(
+    messages: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     """Split user message content into a list of content blocks.
 
     This method splits each user message's content in the `messages` list to be a list of content block, so that

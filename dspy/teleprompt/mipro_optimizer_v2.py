@@ -5,8 +5,7 @@ import sys
 import textwrap
 import time
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Literal,
-                    Optional, Tuple)
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Optional, Tuple
 
 import numpy as np
 
@@ -14,12 +13,16 @@ import dspy
 from dspy.evaluate.evaluate import Evaluate
 from dspy.propose import GroundedProposer
 from dspy.teleprompt.teleprompt import Teleprompter
-from dspy.teleprompt.utils import (create_minibatch,
-                                   create_n_fewshot_demo_sets,
-                                   eval_candidate_program,
-                                   get_program_with_highest_avg_score,
-                                   get_signature, print_full_program,
-                                   save_candidate_program, set_signature)
+from dspy.teleprompt.utils import (
+    create_minibatch,
+    create_n_fewshot_demo_sets,
+    eval_candidate_program,
+    get_program_with_highest_avg_score,
+    get_signature,
+    print_full_program,
+    save_candidate_program,
+    set_signature,
+)
 
 if TYPE_CHECKING:
     import optuna
@@ -113,11 +116,7 @@ class MIPROv2(Teleprompter):
         requires_permission_to_run: bool = True,
         provide_traceback: Optional[bool] = None,
     ) -> Any:
-        effective_max_errors = (
-            self.max_errors
-            if self.max_errors is not None
-            else dspy.settings.max_errors
-        )
+        effective_max_errors = self.max_errors if self.max_errors is not None else dspy.settings.max_errors
         zeroshot_opt = (self.max_bootstrapped_demos == 0) and (self.max_labeled_demos == 0)
 
         # If auto is None, and num_trials is not provided (but num_candidates is), raise an error that suggests a good num_trials value
@@ -354,8 +353,7 @@ class MIPROv2(Teleprompter):
             program_aware_proposer,
         )
 
-        user_message = textwrap.dedent(
-            f"""\
+        user_message = textwrap.dedent(f"""\
             {YELLOW}{BOLD}Projected Language Model (LM) Calls{ENDC}
 
             Based on the parameters you have set, the maximum number of LM calls is projected as follows:
@@ -373,21 +371,22 @@ class MIPROv2(Teleprompter):
 
             {YELLOW}- Reducing the number of trials (`num_trials`), the size of the valset, or the number of LM calls in your program.{ENDC}
             {YELLOW}- Using a cheaper task model to optimize the prompt.{ENDC}
-            {YELLOW}- Setting `minibatch=True` if you haven't already.{ENDC}\n"""
-        )
+            {YELLOW}- Setting `minibatch=True` if you haven't already.{ENDC}\n""")
 
-        user_confirmation_message = textwrap.dedent(
-            f"""\
+        user_confirmation_message = textwrap.dedent(f"""\
             To proceed with the execution of this program, please confirm by typing {BLUE}'y'{ENDC} for yes or {BLUE}'n'{ENDC} for no.
             If no input is received within 20 seconds, the program will proceed automatically.
 
             If you would like to bypass this confirmation step in future executions, set the {YELLOW}`requires_permission_to_run`{ENDC} flag to {YELLOW}`False`{ENDC} when calling compile.
 
             {YELLOW}Awaiting your input...{ENDC}
-        """
-        )
+        """)
 
-        print(f"{user_message}\n{user_confirmation_message}\nDo you wish to continue? (y/n): ", end="", flush=True)
+        print(
+            f"{user_message}\n{user_confirmation_message}\nDo you wish to continue? (y/n): ",
+            end="",
+            flush=True,
+        )
 
         # Wait for input with timeout
         start_time = time.time()
@@ -414,9 +413,7 @@ class MIPROv2(Teleprompter):
         zeroshot = self.max_bootstrapped_demos == 0 and self.max_labeled_demos == 0
 
         try:
-            effective_max_errors = (
-                self.max_errors if self.max_errors is not None else dspy.settings.max_errors
-            )
+            effective_max_errors = self.max_errors if self.max_errors is not None else dspy.settings.max_errors
 
             demo_candidates = create_n_fewshot_demo_sets(
                 student=program,
@@ -587,7 +584,11 @@ class MIPROv2(Teleprompter):
 
             # Log evaluation results
             score_data.append(
-                {"score": score, "program": candidate_program, "full_eval": batch_size >= len(valset)}
+                {
+                    "score": score,
+                    "program": candidate_program,
+                    "full_eval": batch_size >= len(valset),
+                }
             )  # score, prog, full_eval
             if minibatch:
                 self._log_minibatch_eval(
@@ -814,7 +815,13 @@ class MIPROv2(Teleprompter):
         )
         logger.info(f"Doing full eval on next top averaging program (Avg Score: {mean_score}) from minibatch trials...")
         full_eval_score = eval_candidate_program(len(valset), valset, highest_mean_program, evaluate, self.rng)
-        score_data.append({"score": full_eval_score, "program": highest_mean_program, "full_eval": True})
+        score_data.append(
+            {
+                "score": full_eval_score,
+                "program": highest_mean_program,
+                "full_eval": True,
+            }
+        )
 
         # Log full eval as a trial so that optuna can learn from the new results
         trial = optuna.trial.create_trial(

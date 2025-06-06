@@ -187,7 +187,7 @@ def get_annotation_name(annotation):
 
     if origin is Literal:
         args_str = ", ".join(
-            _quoted_string_for_literal_type_annotation(a) if isinstance(a, str) else get_annotation_name(a)
+            (_quoted_string_for_literal_type_annotation(a) if isinstance(a, str) else get_annotation_name(a))
             for a in args
         )
         return f"{get_annotation_name(origin)}[{args_str}]"

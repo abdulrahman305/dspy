@@ -85,7 +85,8 @@ class GenerateFieldDescription(dspy.Signature):
 class GenerateInputFieldsData(dspy.Signature):
     """Create synthetic data using the task description and the provided knowledge seed. Your task is to generate diverse and imaginative data that aligns with the given task description and knowledge seed. You are encouraged to be creative and not limit yourself, allowing for a wide range of synthetic data that reflects the characteristics and details provided in the task description. The data should be unique and varied, showcasing originality and creativity while maintaining relevance to the task and knowledge seed.
 
-    A knowledge seed is the index of the knowledge base you have, each index represents a different knowledge base."""
+    A knowledge seed is the index of the knowledge base you have, each index represents a different knowledge base.
+    """
 
     knowledge_seed = dspy.InputField(
         prefix="Knowledge Seed:",

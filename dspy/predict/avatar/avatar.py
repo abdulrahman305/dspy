@@ -58,13 +58,13 @@ class Avatar(dspy.Module):
             return dspy.InputField(
                 prefix=field_info.json_schema_extra["prefix"],
                 desc=field_info.json_schema_extra["desc"],
-                format=field_info.json_schema_extra["format"] if "format" in field_info.json_schema_extra else None,
+                format=(field_info.json_schema_extra["format"] if "format" in field_info.json_schema_extra else None),
             )
         elif field_info.json_schema_extra["__dspy_field_type"] == "output":
             return dspy.OutputField(
                 prefix=field_info.json_schema_extra["prefix"],
                 desc=field_info.json_schema_extra["desc"],
-                format=field_info.json_schema_extra["format"] if "format" in field_info.json_schema_extra else None,
+                format=(field_info.json_schema_extra["format"] if "format" in field_info.json_schema_extra else None),
             )
         else:
             raise ValueError(f"Unknown field type: {field_info.json_schema_extra['__dspy_field_type']}")
@@ -92,14 +92,14 @@ class Avatar(dspy.Module):
                 )
         else:
             self.actor.signature = self.actor.signature.append(
-                f"action_{idx+1}",
+                f"action_{idx + 1}",
                 dspy.OutputField(
-                    prefix=f"Action {idx+1}:",
-                    desc=f"{get_number_with_suffix(idx+1)} action to taken",
+                    prefix=f"Action {idx + 1}:",
+                    desc=f"{get_number_with_suffix(idx + 1)} action to taken",
                 ),
             )
             self.actor.signature = self.actor.signature.with_updated_fields(
-                f"action_{idx+1}",
+                f"action_{idx + 1}",
                 Action,
             )
 
@@ -139,7 +139,11 @@ class Avatar(dspy.Module):
             if tool_name != "Finish":
                 tool_output = self._call_tool(tool_name, tool_input_query)
                 action_results.append(
-                    ActionOutput(tool_name=tool_name, tool_input_query=tool_input_query, tool_output=tool_output)
+                    ActionOutput(
+                        tool_name=tool_name,
+                        tool_input_query=tool_input_query,
+                        tool_output=tool_output,
+                    )
                 )
 
                 self._update_signature(idx)

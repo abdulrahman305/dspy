@@ -41,7 +41,12 @@ def test_json_adapter_passes_structured_output_when_supported_by_model():
     response_format = call_kwargs.get("response_format")
     assert response_format is not None
     assert issubclass(response_format, pydantic.BaseModel)
-    assert response_format.model_fields.keys() == {"output1", "output2", "output3", "output4_unannotated"}
+    assert response_format.model_fields.keys() == {
+        "output1",
+        "output2",
+        "output3",
+        "output4_unannotated",
+    }
 
     # Configure DSPy to use a model from a fake provider that doesn't support structured outputs
     dspy.configure(lm=dspy.LM(model="fakeprovider/fakemodel"), adapter=dspy.JSONAdapter())
@@ -61,7 +66,10 @@ def test_json_adapter_falls_back_when_structured_outputs_fails():
     dspy.configure(lm=dspy.LM(model="openai/gpt4o", cache=False), adapter=dspy.JSONAdapter())
     program = dspy.Predict(TestSignature)
     with mock.patch("litellm.completion") as mock_completion:
-        mock_completion.side_effect = [Exception("Bad structured outputs!"), mock_completion.return_value]
+        mock_completion.side_effect = [
+            Exception("Bad structured outputs!"),
+            mock_completion.return_value,
+        ]
         program(input1="Test input")
         assert mock_completion.call_count == 2
         _, first_call_kwargs = mock_completion.call_args_list[0]
@@ -140,7 +148,8 @@ def test_json_adapter_on_pydantic_model():
             model="openai/gpt4o",
         )
         result = program(
-            user={"id": 5, "name": "name_test", "email": "email_test"}, question="What is the capital of France?"
+            user={"id": 5, "name": "name_test", "email": "email_test"},
+            question="What is the capital of France?",
         )
 
         # Check that litellm.completion was called exactly once
@@ -242,7 +251,10 @@ def test_json_adapter_formats_image():
     assert user_message_content[2]["type"] == "text"
 
     # Assert that the image is formatted correctly
-    expected_image_content = {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}
+    expected_image_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image.jpg"},
+    }
     assert expected_image_content in user_message_content
 
 
@@ -268,9 +280,18 @@ def test_json_adapter_formats_image_with_few_shot_examples():
     # 1 system message, 2 few shot examples (1 user and assistant message for each example), 1 user message
     assert len(messages) == 6
 
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}} in messages[1]["content"]
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}} in messages[3]["content"]
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image3.jpg"}} in messages[5]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image1.jpg"},
+    } in messages[1]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image2.jpg"},
+    } in messages[3]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image3.jpg"},
+    } in messages[5]["content"]
 
 
 def test_json_adapter_formats_image_with_nested_images():
@@ -291,9 +312,18 @@ def test_json_adapter_formats_image_with_nested_images():
     adapter = dspy.JSONAdapter()
     messages = adapter.format(MySignature, [], {"image": image_wrapper})
 
-    expected_image1_content = {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}}
-    expected_image2_content = {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}}
-    expected_image3_content = {"type": "image_url", "image_url": {"url": "https://example.com/image3.jpg"}}
+    expected_image1_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image1.jpg"},
+    }
+    expected_image2_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image2.jpg"},
+    }
+    expected_image3_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image3.jpg"},
+    }
 
     assert expected_image1_content in messages[1]["content"]
     assert expected_image2_content in messages[1]["content"]
@@ -321,22 +351,37 @@ def test_json_adapter_formats_image_with_few_shot_examples_with_nested_images():
         ),
     ]
 
-    image_wrapper_2 = ImageWrapper(images=[dspy.Image(url="https://example.com/image4.jpg")], tag=["test", "example"])
+    image_wrapper_2 = ImageWrapper(
+        images=[dspy.Image(url="https://example.com/image4.jpg")],
+        tag=["test", "example"],
+    )
     adapter = dspy.JSONAdapter()
     messages = adapter.format(MySignature, demos, {"image": image_wrapper_2})
 
     assert len(messages) == 4
 
     # Image information in the few-shot example's user message
-    expected_image1_content = {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}}
-    expected_image2_content = {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}}
-    expected_image3_content = {"type": "image_url", "image_url": {"url": "https://example.com/image3.jpg"}}
+    expected_image1_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image1.jpg"},
+    }
+    expected_image2_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image2.jpg"},
+    }
+    expected_image3_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image3.jpg"},
+    }
     assert expected_image1_content in messages[1]["content"]
     assert expected_image2_content in messages[1]["content"]
     assert expected_image3_content in messages[1]["content"]
 
     # The query image is formatted in the last user message
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image4.jpg"}} in messages[-1]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image4.jpg"},
+    } in messages[-1]["content"]
 
 
 def test_json_adapter_with_tool():
@@ -377,7 +422,13 @@ def test_json_adapter_with_tool():
 
     with mock.patch("litellm.completion") as mock_completion:
         lm = dspy.LM(model="openai/gpt-4o-mini")
-        adapter(lm, {}, MySignature, [], {"question": "What is the weather in Tokyo?", "tools": tools})
+        adapter(
+            lm,
+            {},
+            MySignature,
+            [],
+            {"question": "What is the weather in Tokyo?", "tools": tools},
+        )
 
     mock_completion.assert_called_once()
     _, call_kwargs = mock_completion.call_args

@@ -60,7 +60,10 @@ class BootstrapFinetune(FinetuneTeleprompter):
         self.num_threads = num_threads
 
     def compile(
-        self, student: Program, trainset: List[Example], teacher: Optional[Union[Program, List[Program]]] = None
+        self,
+        student: Program,
+        trainset: List[Example],
+        teacher: Optional[Union[Program, List[Program]]] = None,
     ) -> Program:
         # TODO: Print statements can be converted to logger.info if we ensure
         # that the default DSPy logger logs info level messages in notebook
@@ -175,7 +178,10 @@ class BootstrapFinetune(FinetuneTeleprompter):
                 include_data = pred_ind is None or pred_ind == pred_ind
                 if include_data:
                     call_data = build_call_data_from_trace(
-                        trace=item["trace"], pred_ind=pred_ind, adapter=adapter, exclude_demos=self.exclude_demos
+                        trace=item["trace"],
+                        pred_ind=pred_ind,
+                        adapter=adapter,
+                        exclude_demos=self.exclude_demos,
                     )
                     data.append(call_data)
 
@@ -273,7 +279,10 @@ def bootstrap_trace_data(
                         + (failure_score - format_failure_score) * (present / expected),
                     )
                 else:
-                    failed_pred = FailedPrediction(completion_text=completion_str, format_reward=format_failure_score)
+                    failed_pred = FailedPrediction(
+                        completion_text=completion_str,
+                        format_reward=format_failure_score,
+                    )
 
                 trace.append(
                     (
@@ -308,7 +317,12 @@ def bootstrap_trace_data(
                 raise ve
             else:
                 continue
-        data_dict = {"example": example, "prediction": prediction, "trace": trace, "example_ind": example_ind}
+        data_dict = {
+            "example": example,
+            "prediction": prediction,
+            "trace": trace,
+            "example_ind": example_ind,
+        }
         if metric:
             data_dict["score"] = score
         data.append(data_dict)

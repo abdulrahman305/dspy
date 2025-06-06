@@ -129,7 +129,12 @@ def test_nested_parallel_module():
     # For nested structure, check first two outputs and nested outputs separately
     assert {output[0].output, output[1].output} <= {f"test output {i}" for i in range(1, 5)}
     assert {output[2][0].output, output[2][1].output} <= {f"test output {i}" for i in range(1, 5)}
-    all_outputs = {output[0].output, output[1].output, output[2][0].output, output[2][1].output}
+    all_outputs = {
+        output[0].output,
+        output[1].output,
+        output[2][0].output,
+        output[2][1].output,
+    }
     assert len(all_outputs) == 4
 
 
@@ -157,7 +162,12 @@ def test_nested_batch_method():
 
     result = MyModule().batch([dspy.Example(input="test input").with_inputs("input")] * 2)
 
-    assert {result[0][0].output, result[0][1].output, result[1][0].output, result[1][1].output} == {
+    assert {
+        result[0][0].output,
+        result[0][1].output,
+        result[1][0].output,
+        result[1][1].output,
+    } == {
         "test output 1",
         "test output 2",
         "test output 3",

@@ -196,7 +196,12 @@ class DatabricksRM(dspy.Retrieve):
         extra_columns = {
             k: v
             for k, v in item.items()
-            if k not in [self.docs_id_column_name, self.text_column_name, self.docs_uri_column_name]
+            if k
+            not in [
+                self.docs_id_column_name,
+                self.text_column_name,
+                self.docs_uri_column_name,
+            ]
         }
         if self.docs_id_column_name == "metadata":
             extra_columns = {
@@ -306,7 +311,7 @@ class DatabricksRM(dspy.Retrieve):
                     page_content=doc[self.text_column_name],
                     metadata={
                         "doc_id": self._extract_doc_ids(doc),
-                        "doc_uri": doc[self.docs_uri_column_name] if self.docs_uri_column_name else None,
+                        "doc_uri": (doc[self.docs_uri_column_name] if self.docs_uri_column_name else None),
                     }
                     | self._get_extra_columns(doc),
                     type="Document",
@@ -318,7 +323,9 @@ class DatabricksRM(dspy.Retrieve):
             return Prediction(
                 docs=[doc[self.text_column_name] for doc in sorted_docs],
                 doc_ids=[self._extract_doc_ids(doc) for doc in sorted_docs],
-                doc_uris=[doc[self.docs_uri_column_name] for doc in sorted_docs] if self.docs_uri_column_name else None,
+                doc_uris=(
+                    [doc[self.docs_uri_column_name] for doc in sorted_docs] if self.docs_uri_column_name else None
+                ),
                 extra_columns=[self._get_extra_columns(item) for item in sorted_docs],
             )
 

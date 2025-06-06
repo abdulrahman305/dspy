@@ -5,7 +5,12 @@ from typing import Callable
 import numpy as np
 
 import dspy
-from dspy.teleprompt.simba_utils import append_a_demo, append_a_rule, prepare_models_for_resampling, wrap_program
+from dspy.teleprompt.simba_utils import (
+    append_a_demo,
+    append_a_rule,
+    prepare_models_for_resampling,
+    wrap_program,
+)
 from dspy.teleprompt.teleprompt import Teleprompter
 
 logger = logging.getLogger(__name__)
@@ -135,7 +140,7 @@ class SIMBA(Teleprompter):
         for batch_idx in range(self.max_steps):
             trial_logs[batch_idx] = {}
 
-            logger.info(f"Starting batch {batch_idx+1} of {self.max_steps}.")
+            logger.info(f"Starting batch {batch_idx + 1} of {self.max_steps}.")
 
             # STEP 1: Get next batch
             if instance_idx + self.bsize > len(trainset):
@@ -201,20 +206,22 @@ class SIMBA(Teleprompter):
             # Baseline for the batch is just the average of all runs
             all_scores_in_this_batch = [o["score"] for o in outputs]
             baseline_score = sum(all_scores_in_this_batch) / len(all_scores_in_this_batch)
-            logger.info(f"Batch {batch_idx+1}: Baseline mini-batch score: {baseline_score}\n")
+            logger.info(f"Batch {batch_idx + 1}: Baseline mini-batch score: {baseline_score}\n")
 
             # STEP 4: Build new candidate programs by applying a strategy to some top buckets.
             system_candidates = []
             for bucket_idx, (bucket, bucket_stats) in enumerate(buckets):
                 max_to_min_gap, max_score, max_to_avg_gap = bucket_stats
                 logger.info(
-                    f"Batch {batch_idx+1}: Processing bucket #{bucket_idx+1}, with max score {max_score}, "
+                    f"Batch {batch_idx + 1}: Processing bucket #{bucket_idx + 1}, with max score {max_score}, "
                     f"max-to-min gap {max_to_min_gap}, and max-to-avg gap {max_to_avg_gap}."
                 )
 
                 # pick source program
                 src_prog_idx = softmax_sample(
-                    rng, top_k_plus_baseline(self.num_candidates), self.temperature_for_candidates
+                    rng,
+                    top_k_plus_baseline(self.num_candidates),
+                    self.temperature_for_candidates,
                 )
                 system_candidate = programs[src_prog_idx].deepcopy()
 
@@ -229,7 +236,10 @@ class SIMBA(Teleprompter):
                     num_demos_list.append(len(predictor.demos))
 
                 num_demos = max(num_demos_list) if num_demos_list else 0
-                num_demos_to_drop = max(rng_np.poisson(num_demos / max_demos_tmp), int(num_demos >= max_demos_tmp))
+                num_demos_to_drop = max(
+                    rng_np.poisson(num_demos / max_demos_tmp),
+                    int(num_demos >= max_demos_tmp),
+                )
                 num_demos_to_drop = min(num_demos_to_drop, num_demos)
                 demos_to_drop = [rng.randrange(num_demos) for _ in range(num_demos_to_drop)]
 
@@ -239,7 +249,7 @@ class SIMBA(Teleprompter):
                 # Pick a strategy
                 strategy = rng.choice(self.strategies)
                 logger.info(
-                    f"Batch {batch_idx+1}: Invoking strategy: {strategy.__name__}"
+                    f"Batch {batch_idx + 1}: Invoking strategy: {strategy.__name__}"
                     + (f", having dropped {num_demos_to_drop} demos per predictor" if num_demos_to_drop else "")
                 )
 
@@ -263,7 +273,9 @@ class SIMBA(Teleprompter):
                     break
 
             # STEP 5: Evaluate these new system_candidates on the same mini-batch
-            logger.info(f"Batch {batch_idx+1}: Evaluating {len(system_candidates)} programs on {self.bsize} examples.")
+            logger.info(
+                f"Batch {batch_idx + 1}: Evaluating {len(system_candidates)} programs on {self.bsize} examples."
+            )
 
             exec_pairs = [(wrap_program(sys, self.metric), ex) for sys in system_candidates for ex in batch]
             outputs = run_parallel(exec_pairs)
@@ -279,7 +291,7 @@ class SIMBA(Teleprompter):
                 candidate_scores.append(avg_sys_score)
 
             logger.info(
-                f"Scores after {batch_idx+1} batches: {candidate_scores}, "
+                f"Scores after {batch_idx + 1} batches: {candidate_scores}, "
                 f"Best: {max(candidate_scores) if candidate_scores else 'N/A'}\n"
             )
 

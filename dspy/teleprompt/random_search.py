@@ -54,15 +54,20 @@ class BootstrapFewShotWithRandomSearch(Teleprompter):
         print(f"Going to sample between {self.min_num_samples} and {self.max_num_samples} traces per predictor.")
         print(f"Will attempt to bootstrap {self.num_candidate_sets} candidate sets.")
 
-    def compile(self, student, *, teacher=None, trainset, valset=None, restrict=None, labeled_sample=True):
+    def compile(
+        self,
+        student,
+        *,
+        teacher=None,
+        trainset,
+        valset=None,
+        restrict=None,
+        labeled_sample=True,
+    ):
         self.trainset = trainset
         self.valset = valset or trainset  # TODO: FIXME: Note this choice.
 
-        effective_max_errors = (
-            self.max_errors
-            if self.max_errors is not None
-            else dspy.settings.max_errors
-        )
+        effective_max_errors = self.max_errors if self.max_errors is not None else dspy.settings.max_errors
 
         scores = []
         all_subscores = []
@@ -142,7 +147,14 @@ class BootstrapFewShotWithRandomSearch(Teleprompter):
             print(f"Scores so far: {scores}")
             print(f"Best score so far: {max(scores)}")
 
-            score_data.append({"score": score, "subscores": subscores, "seed": seed, "program": program})
+            score_data.append(
+                {
+                    "score": score,
+                    "subscores": subscores,
+                    "seed": seed,
+                    "program": program,
+                }
+            )
 
             if self.stop_at_score is not None and score >= self.stop_at_score:
                 print(f"Stopping early because score {score} is >= stop_at_score {self.stop_at_score}")

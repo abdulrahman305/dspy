@@ -1,4 +1,10 @@
-from dspy.signatures.field import InputField, OldField, OldInputField, OldOutputField, OutputField
+from dspy.signatures.field import (
+    InputField,
+    OldField,
+    OldInputField,
+    OldOutputField,
+    OutputField,
+)
 from dspy.signatures.signature import (
     Signature,
     SignatureMeta,
