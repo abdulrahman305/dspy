@@ -152,11 +152,7 @@ class Evaluate:
         executor = ParallelExecutor(
             num_threads=num_threads,
             disable_progress_bar=not display_progress,
-            max_errors=(
-                self.max_errors
-                if self.max_errors is not None
-                else dspy.settings.max_errors
-            ),
+            max_errors=(self.max_errors if self.max_errors is not None else dspy.settings.max_errors),
             provide_traceback=self.provide_traceback,
             compare_results=True,
         )
@@ -191,7 +187,11 @@ class Evaluate:
             self._display_result_table(result_df, display_table, metric_name)
 
         if return_all_scores and return_outputs:
-            return round(100 * ncorrect / ntotal, 2), results, [score for *_, score in results]
+            return (
+                round(100 * ncorrect / ntotal, 2),
+                results,
+                [score for *_, score in results],
+            )
         if return_all_scores:
             return round(100 * ncorrect / ntotal, 2), [score for *_, score in results]
         if return_outputs:
@@ -230,7 +230,12 @@ class Evaluate:
 
         return result_df.rename(columns={"correct": metric_name})
 
-    def _display_result_table(self, result_df: "pd.DataFrame", display_table: Union[bool, int], metric_name: str):
+    def _display_result_table(
+        self,
+        result_df: "pd.DataFrame",
+        display_table: Union[bool, int],
+        metric_name: str,
+    ):
         """
         Display the specified result DataFrame in a table format.
 
@@ -305,7 +310,7 @@ def stylize_metric_name(df: "pd.DataFrame", metric_name: str) -> "pd.DataFrame":
     :param metric_name: The name of the metric for which to stylize DataFrame cell contents.
     """
     df[metric_name] = df[metric_name].apply(
-        lambda x: f"✔️ [{x:.3f}]" if x and isinstance(x, float) else f"✔️ [{x}]" if x else ""
+        lambda x: (f"✔️ [{x:.3f}]" if x and isinstance(x, float) else f"✔️ [{x}]" if x else "")
     )
     return df
 
@@ -328,7 +333,9 @@ def display_dataframe(df: "pd.DataFrame"):
             print(df)
 
 
-def configure_dataframe_for_ipython_notebook_display(df: "pd.DataFrame") -> "pd.DataFrame":
+def configure_dataframe_for_ipython_notebook_display(
+    df: "pd.DataFrame",
+) -> "pd.DataFrame":
     """Set various pandas display options for DataFrame in an IPython notebook environment."""
     import pandas as pd
 

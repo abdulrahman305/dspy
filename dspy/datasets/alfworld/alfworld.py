@@ -67,7 +67,7 @@ class EnvPool:
         try:
             import multiprocess as mp
         except ImportError:
-            raise ImportError("multiprocess is not installed. " "Please install it via `pip install multiprocess`.")
+            raise ImportError("multiprocess is not installed. Please install it via `pip install multiprocess`.")
 
         # Must call set_start_method('spawn') here, before creating any processes
         try:

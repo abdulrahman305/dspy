@@ -58,7 +58,8 @@ def complex_dummy_function(profile: UserProfile, priority: int, notes: Optional[
         notes: Optional processing notes
     """
     primary_address = next(
-        (addr for addr in profile.contact.addresses if addr.is_primary), profile.contact.addresses[0]
+        (addr for addr in profile.contact.addresses if addr.is_primary),
+        profile.contact.addresses[0],
     )
 
     return {
@@ -101,7 +102,8 @@ async def async_complex_dummy_function(
     await asyncio.sleep(0.1)
 
     primary_address = next(
-        (addr for addr in profile.contact.addresses if addr.is_primary), profile.contact.addresses[0]
+        (addr for addr in profile.contact.addresses if addr.is_primary),
+        profile.contact.addresses[0],
     )
 
     # Simulate more async work after finding primary address
@@ -117,7 +119,12 @@ async def async_complex_dummy_function(
 
 
 def test_basic_initialization():
-    tool = Tool(name="test_tool", desc="A test tool", args={"param1": {"type": "string"}}, func=lambda x: x)
+    tool = Tool(
+        name="test_tool",
+        desc="A test tool",
+        args={"param1": {"type": "string"}},
+        func=lambda x: x,
+    )
     assert tool.name == "test_tool"
     assert tool.desc == "A test tool"
     assert tool.args == {"param1": {"type": "string"}}
@@ -172,7 +179,10 @@ def test_tool_from_function_with_pydantic_nesting():
     assert tool.args["profile"]["type"] == "object"
     assert tool.args["profile"]["properties"]["user_id"]["type"] == "integer"
     assert tool.args["profile"]["properties"]["name"]["type"] == "string"
-    assert tool.args["profile"]["properties"]["age"]["anyOf"] == [{"type": "integer"}, {"type": "null"}]
+    assert tool.args["profile"]["properties"]["age"]["anyOf"] == [
+        {"type": "integer"},
+        {"type": "null"},
+    ]
     assert tool.args["profile"]["properties"]["contact"]["type"] == "object"
     assert tool.args["profile"]["properties"]["contact"]["properties"]["email"]["type"] == "string"
 
@@ -312,7 +322,12 @@ async def test_async_tool_with_complex_pydantic():
         contact=ContactInfo(
             email="test@example.com",
             addresses=[
-                Address(street="123 Main St", city="Test City", zip_code="12345", is_primary=True),
+                Address(
+                    street="123 Main St",
+                    city="Test City",
+                    zip_code="12345",
+                    is_primary=True,
+                ),
                 Address(street="456 Side St", city="Test City", zip_code="12345"),
             ],
         ),

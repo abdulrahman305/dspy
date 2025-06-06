@@ -121,7 +121,8 @@ class Refine(Module):
                             def __call__(self, lm, lm_kwargs, signature, demos, inputs):
                                 inputs["hint_"] = advice.get(signature2name[signature], "N/A")  # noqa: B023
                                 signature = signature.append(
-                                    "hint_", InputField(desc="A hint to the module from an earlier run")
+                                    "hint_",
+                                    InputField(desc="A hint to the module from an earlier run"),
                                 )
                                 return adapter(lm, lm_kwargs, signature, demos, inputs)
 
@@ -144,7 +145,10 @@ class Refine(Module):
                 if idx == self.N - 1:
                     break
 
-                modules = {"program_code": self.module_code, "modules_defn": inspect_modules(mod)}
+                modules = {
+                    "program_code": self.module_code,
+                    "modules_defn": inspect_modules(mod),
+                }
                 trajectory = [{"module_name": predictor2name[p], "inputs": i, "outputs": dict(o)} for p, i, o in trace]
                 trajectory = {
                     "program_inputs": kwargs,
@@ -161,7 +165,7 @@ class Refine(Module):
                 # advise_kwargs = {k: ujson.dumps(recursive_mask(v), indent=2) for k, v in advise_kwargs.items()}
                 # only dumps if it's a list or dict
                 advise_kwargs = {
-                    k: v if isinstance(v, str) else ujson.dumps(recursive_mask(v), indent=2)
+                    k: (v if isinstance(v, str) else ujson.dumps(recursive_mask(v), indent=2))
                     for k, v in advise_kwargs.items()
                 }
                 advice = dspy.Predict(OfferFeedback)(**advise_kwargs).advice

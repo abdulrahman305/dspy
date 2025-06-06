@@ -28,7 +28,10 @@ def test_two_step_adapter_call():
     mock_extraction_lm.kwargs = {"temperature": 1.0}
     mock_extraction_lm.model = "openai/gpt-4o"
 
-    dspy.configure(lm=mock_main_lm, adapter=dspy.TwoStepAdapter(extraction_model=mock_extraction_lm))
+    dspy.configure(
+        lm=mock_main_lm,
+        adapter=dspy.TwoStepAdapter(extraction_model=mock_extraction_lm),
+    )
 
     result = program(question="What is 5 + 7?")
 
@@ -94,7 +97,10 @@ async def test_two_step_adapter_async_call():
     mock_extraction_lm.kwargs = {"temperature": 1.0}
     mock_extraction_lm.model = "openai/gpt-4o"
 
-    dspy.configure(lm=mock_main_lm, adapter=dspy.TwoStepAdapter(extraction_model=mock_extraction_lm))
+    dspy.configure(
+        lm=mock_main_lm,
+        adapter=dspy.TwoStepAdapter(extraction_model=mock_extraction_lm),
+    )
 
     result = await program.acall(question="What is 5 + 7?")
 

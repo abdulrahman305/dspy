@@ -14,7 +14,11 @@ class DescriptionSignature(dspy.Signature):
 
 
 class SyntheticDataGenerator:
-    def __init__(self, schema_class: Optional[BaseModel] = None, examples: Optional[List[dspy.Example]] = None):
+    def __init__(
+        self,
+        schema_class: Optional[BaseModel] = None,
+        examples: Optional[List[dspy.Example]] = None,
+    ):
         self.schema_class = schema_class
         self.examples = examples
 

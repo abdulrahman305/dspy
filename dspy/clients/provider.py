@@ -47,7 +47,11 @@ class ReinforceJob:
         raise NotImplementedError
 
     @abstractmethod
-    def step(self, train_data: List[Dict[str, Any]], train_data_format: Optional[Union[TrainDataFormat, str]] = None):
+    def step(
+        self,
+        train_data: List[Dict[str, Any]],
+        train_data_format: Optional[Union[TrainDataFormat, str]] = None,
+    ):
         raise NotImplementedError
 
     @abstractmethod

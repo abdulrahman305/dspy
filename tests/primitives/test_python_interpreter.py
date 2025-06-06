@@ -1,7 +1,9 @@
+import os
 import random
 import shutil
-import os
+
 import pytest
+
 from dspy.primitives.python_interpreter import InterpreterError, PythonInterpreter
 
 # This test suite requires deno to be installed. Please install deno following https://docs.deno.com/runtime/getting_started/installation/
@@ -59,8 +61,12 @@ def test_final_answer_trick():
         result = interpreter(code)
 
         # They should maintain the same order
-        assert result == ["The result is", token], "The returned results are differ, `final_answer` trick doesn't work"
-    
+        assert result == [
+            "The result is",
+            token,
+        ], "The returned results are differ, `final_answer` trick doesn't work"
+
+
 def test_enable_env_vars_flag():
     os.environ["FOO_TEST_ENV"] = "test_value"
 
@@ -75,7 +81,6 @@ def test_enable_env_vars_flag():
         assert result == "test_value", "Environment variables should be accessible with allow-env"
 
 
-
 def test_read_file_access_control(tmp_path):
     testfile_path = tmp_path / "test_temp_file.txt"
     virtual_path = f"/sandbox/{testfile_path.name}"
@@ -83,11 +88,7 @@ def test_read_file_access_control(tmp_path):
         f.write("test content")
 
     with PythonInterpreter(enable_read_paths=[str(testfile_path)]) as interpreter:
-        code = (
-            f"with open({repr(virtual_path)}, 'r') as f:\n"
-            f"    data = f.read()\n"
-            f"data"
-        )
+        code = f"with open({repr(virtual_path)}, 'r') as f:\n    data = f.read()\ndata"
         result = interpreter.execute(code)
         assert result == "test content", "Test file should be accessible with enable_read_paths and specified file"
 
@@ -101,7 +102,10 @@ def test_read_file_access_control(tmp_path):
             f"data"
         )
         result = interpreter.execute(code)
-        assert ("PermissionDenied" in result or "denied" in result.lower() or "no such file" in result.lower()), "Test file should not be accessible without enable_read_paths"
+        assert "PermissionDenied" in result or "denied" in result.lower() or "no such file" in result.lower(), (
+            "Test file should not be accessible without enable_read_paths"
+        )
+
 
 def test_enable_write_flag(tmp_path):
     testfile_path = tmp_path / "test_temp_output.txt"
@@ -118,52 +122,37 @@ def test_enable_write_flag(tmp_path):
             f"result"
         )
         result = interpreter.execute(code)
-        assert ("PermissionDenied" in result or "denied" in result.lower() or "no such file" in result.lower()), "Test file should not be writable without enable_write_paths"
+        assert "PermissionDenied" in result or "denied" in result.lower() or "no such file" in result.lower(), (
+            "Test file should not be writable without enable_write_paths"
+        )
 
     with PythonInterpreter(enable_write_paths=[str(testfile_path)]) as interpreter:
-        code = (
-            f"with open({repr(virtual_path)}, 'w') as f:\n"
-            f"    f.write('allowed')\n"
-            f"'ok'"
-        )
+        code = f"with open({repr(virtual_path)}, 'w') as f:\n    f.write('allowed')\n'ok'"
         result = interpreter.execute(code)
         assert result == "ok", "Test file should be writable with enable_write_paths"
     assert testfile_path.exists()
     with open(testfile_path, "r") as f:
         assert f.read() == "allowed", "Test file outputs should match content written during execution"
-    
+
     with open(testfile_path, "w") as f:
         f.write("original_content")
     with PythonInterpreter(enable_write_paths=[str(testfile_path)], sync_files=False) as interpreter:
-        code = (
-            f"with open({repr(virtual_path)}, 'w') as f:\n"
-            f"    f.write('should_not_sync')\n"
-            f"'done_no_sync'"
-        )
+        code = f"with open({repr(virtual_path)}, 'w') as f:\n    f.write('should_not_sync')\n'done_no_sync'"
         result = interpreter.execute(code)
         assert result == "done_no_sync"
     with open(testfile_path, "r") as f:
         assert f.read() == "original_content", "File should not be changed when sync_files is False"
 
 
-
 def test_enable_net_flag():
     test_url = "https://example.com"
 
     with PythonInterpreter(enable_network_access=None) as interpreter:
-        code = (
-            "import js\n"
-            f"resp = await js.fetch({repr(test_url)})\n"
-            "resp.status"
-        )
+        code = f"import js\nresp = await js.fetch({repr(test_url)})\nresp.status"
         with pytest.raises(InterpreterError, match="PythonError"):
             interpreter.execute(code)
 
     with PythonInterpreter(enable_network_access=["example.com"]) as interpreter:
-        code = (
-            "import js\n"
-            f"resp = await js.fetch({repr(test_url)})\n"
-            "resp.status"
-        )
+        code = f"import js\nresp = await js.fetch({repr(test_url)})\nresp.status"
         result = interpreter.execute(code)
         assert int(result) == 200, "Network access is permitted with enable_network_access"

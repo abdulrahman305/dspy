@@ -83,16 +83,42 @@ def test_save_and_load_with_pkl(tmp_path):
         date_diff: int = dspy.OutputField(desc="The difference in days between the current_date and the target_date")
 
     trainset = [
-        {"current_date": datetime.date(2024, 1, 1), "target_date": datetime.date(2024, 1, 2), "date_diff": 1},
-        {"current_date": datetime.date(2024, 1, 1), "target_date": datetime.date(2024, 1, 3), "date_diff": 2},
-        {"current_date": datetime.date(2024, 1, 1), "target_date": datetime.date(2024, 1, 4), "date_diff": 3},
-        {"current_date": datetime.date(2024, 1, 1), "target_date": datetime.date(2024, 1, 5), "date_diff": 4},
-        {"current_date": datetime.date(2024, 1, 1), "target_date": datetime.date(2024, 1, 6), "date_diff": 5},
+        {
+            "current_date": datetime.date(2024, 1, 1),
+            "target_date": datetime.date(2024, 1, 2),
+            "date_diff": 1,
+        },
+        {
+            "current_date": datetime.date(2024, 1, 1),
+            "target_date": datetime.date(2024, 1, 3),
+            "date_diff": 2,
+        },
+        {
+            "current_date": datetime.date(2024, 1, 1),
+            "target_date": datetime.date(2024, 1, 4),
+            "date_diff": 3,
+        },
+        {
+            "current_date": datetime.date(2024, 1, 1),
+            "target_date": datetime.date(2024, 1, 5),
+            "date_diff": 4,
+        },
+        {
+            "current_date": datetime.date(2024, 1, 1),
+            "target_date": datetime.date(2024, 1, 6),
+            "date_diff": 5,
+        },
     ]
     trainset = [dspy.Example(**example).with_inputs("current_date", "target_date") for example in trainset]
 
     dspy.settings.configure(
-        lm=DummyLM([{"date_diff": "1", "reasoning": "n/a"}, {"date_diff": "2", "reasoning": "n/a"}] * 10)
+        lm=DummyLM(
+            [
+                {"date_diff": "1", "reasoning": "n/a"},
+                {"date_diff": "2", "reasoning": "n/a"},
+            ]
+            * 10
+        )
     )
 
     cot = dspy.ChainOfThought(MySignature)
@@ -227,7 +253,10 @@ def test_load_with_version_mismatch(tmp_path):
         logger.removeHandler(handler)
 
 
-@pytest.mark.skipif(not os.getenv("OPENAI_API_KEY"), reason="Skip the test if OPENAI_API_KEY is not set.")
+@pytest.mark.skipif(
+    not os.getenv("OPENAI_API_KEY"),
+    reason="Skip the test if OPENAI_API_KEY is not set.",
+)
 def test_single_module_call_with_usage_tracker():
     dspy.settings.configure(lm=dspy.LM("openai/gpt-4o-mini", cache=False), track_usage=True)
 
@@ -248,7 +277,10 @@ def test_single_module_call_with_usage_tracker():
     assert len(output.get_lm_usage()) == 0
 
 
-@pytest.mark.skipif(not os.getenv("OPENAI_API_KEY"), reason="Skip the test if OPENAI_API_KEY is not set.")
+@pytest.mark.skipif(
+    not os.getenv("OPENAI_API_KEY"),
+    reason="Skip the test if OPENAI_API_KEY is not set.",
+)
 def test_multi_module_call_with_usage_tracker():
     dspy.settings.configure(lm=dspy.LM("openai/gpt-4o-mini", cache=False), track_usage=True)
 
@@ -273,7 +305,10 @@ def test_multi_module_call_with_usage_tracker():
     assert lm_usage["openai/gpt-4o-mini"]["total_tokens"] > 0
 
 
-@pytest.mark.skipif(not os.getenv("OPENAI_API_KEY"), reason="Skip the test if OPENAI_API_KEY is not set.")
+@pytest.mark.skipif(
+    not os.getenv("OPENAI_API_KEY"),
+    reason="Skip the test if OPENAI_API_KEY is not set.",
+)
 def test_usage_tracker_in_parallel():
     class MyProgram(dspy.Module):
         def __init__(self, lm):

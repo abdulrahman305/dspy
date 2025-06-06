@@ -179,7 +179,7 @@ class Synthesizer:
         self.input_predictor, self.output_predictor = self._prepare_synthetic_data_predictors(
             input_keys=input_keys,
             output_keys=output_keys,
-            ground_source=ground_source if self.config.num_example_for_optim else None,
+            ground_source=(ground_source if self.config.num_example_for_optim else None),
         )
 
         data = []

@@ -7,7 +7,15 @@ class Teleprompter:
     def __init__(self):
         pass
 
-    def compile(self, student: Module, *, trainset: list[Example], teacher: Optional[Module] = None, valset: Optional[list[Example]] = None, **kwargs) -> Module:
+    def compile(
+        self,
+        student: Module,
+        *,
+        trainset: list[Example],
+        teacher: Optional[Module] = None,
+        valset: Optional[list[Example]] = None,
+        **kwargs,
+    ) -> Module:
         """
         Optimize the student program.
 

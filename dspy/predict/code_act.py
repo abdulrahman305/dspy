@@ -1,7 +1,7 @@
 import inspect
-from typing import Callable, Union, Type, Optional
 import logging
 from inspect import Signature
+from typing import Callable, Optional, Type, Union
 
 import dspy
 from dspy.adapters.types.tool import Tool
@@ -12,12 +12,19 @@ from dspy.signatures.signature import ensure_signature
 
 logger = logging.getLogger(__name__)
 
+
 class CodeAct(ReAct, ProgramOfThought):
     """
     CodeAct is a module that utilizes the Code Interpreter and predefined tools to solve the problem.
     """
 
-    def __init__(self, signature: Union[str, Type[Signature]], tools: list[Callable], max_iters: int = 5, interpreter: Optional[PythonInterpreter] = None):
+    def __init__(
+        self,
+        signature: Union[str, Type[Signature]],
+        tools: list[Callable],
+        max_iters: int = 5,
+        interpreter: Optional[PythonInterpreter] = None,
+    ):
         """
         Initializes the CodeAct class with the specified model, temperature, and max tokens.
 
@@ -43,9 +50,7 @@ class CodeAct(ReAct, ProgramOfThought):
         self.history = []
 
         tools = [t if isinstance(t, Tool) else Tool(t) for t in tools]
-        if any(
-            not inspect.isfunction(tool.func) for tool in tools
-        ):
+        if any(not inspect.isfunction(tool.func) for tool in tools):
             raise ValueError("CodeAct only accepts functions and not callable objects.")
         tools = {tool.name: tool for tool in tools}
 
@@ -54,8 +59,18 @@ class CodeAct(ReAct, ProgramOfThought):
         codeact_signature = (
             dspy.Signature({**self.signature.input_fields}, "\n".join(instructions))
             .append("trajectory", dspy.InputField(), type_=str)
-            .append("generated_code", dspy.OutputField(desc="Python code that when executed, produces output relevant to answering the question"), type_=str)
-            .append("finished", dspy.OutputField(desc="a boolean flag to determine if the process is done"), type_=bool)
+            .append(
+                "generated_code",
+                dspy.OutputField(
+                    desc="Python code that when executed, produces output relevant to answering the question"
+                ),
+                type_=str,
+            )
+            .append(
+                "finished",
+                dspy.OutputField(desc="a boolean flag to determine if the process is done"),
+                type_=bool,
+            )
         )
 
         extract_signature = dspy.Signature(
@@ -68,7 +83,7 @@ class CodeAct(ReAct, ProgramOfThought):
         self.extractor = dspy.ChainOfThought(extract_signature)
         # It will raises exception when dspy cannot find available deno instance by now.
         self.interpreter = interpreter or PythonInterpreter()
-    
+
     def _build_instructions(self, signature, tools):
         instructions = [f"{signature.instructions}\n"] if signature.instructions else []
         inputs = ", ".join([f"`{k}`" for k in signature.input_fields.keys()])

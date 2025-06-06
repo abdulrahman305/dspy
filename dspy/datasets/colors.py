@@ -2,7 +2,7 @@ import random
 
 from dspy.datasets.dataset import Dataset
 
-### A bunch of colors, originally from matplotlib
+# A bunch of colors, originally from matplotlib
 all_colors = [
     "alice blue",
     "dodger blue",

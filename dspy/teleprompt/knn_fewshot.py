@@ -8,7 +8,13 @@ from dspy.teleprompt.teleprompt import Teleprompter
 
 
 class KNNFewShot(Teleprompter):
-    def __init__(self, k: int, trainset: list[Example], vectorizer: Embedder, **few_shot_bootstrap_args):
+    def __init__(
+        self,
+        k: int,
+        trainset: list[Example],
+        vectorizer: Embedder,
+        **few_shot_bootstrap_args,
+    ):
         """
         KNNFewShot is an optimizer that uses an in-memory KNN retriever to find the k nearest neighbors
         in a trainset at test time. For each input example in a forward call, it identifies the k most

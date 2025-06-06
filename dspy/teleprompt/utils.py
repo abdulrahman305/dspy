@@ -306,7 +306,10 @@ def log_token_usage(trial_logs, trial_num, model_dict):
 
     for model_name, model in model_dict.items():
         in_tokens, out_tokens = get_token_usage(model)
-        token_usage_dict[model_name] = {"total_input_tokens": in_tokens, "total_output_tokens": out_tokens}
+        token_usage_dict[model_name] = {
+            "total_input_tokens": in_tokens,
+            "total_output_tokens": out_tokens,
+        }
 
     # Store token usage info in trial logs
     trial_logs[trial_num]["token_usage"] = token_usage_dict

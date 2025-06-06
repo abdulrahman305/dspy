@@ -157,9 +157,10 @@ def test_evaluate_call_bad():
         ),
         (
             lambda text: Predict("text: str -> entities: List[Dict[str, str]]")(text=text).entities,
-            dspy.Example(text="United States", entities=[{"name": "United States", "type": "location"}]).with_inputs(
-                "text"
-            ),
+            dspy.Example(
+                text="United States",
+                entities=[{"name": "United States", "type": "location"}],
+            ).with_inputs("text"),
         ),
         (
             lambda text: Predict("text: str -> first_word: Tuple[str, int]")(text=text).words,
@@ -190,7 +191,8 @@ def test_evaluate_display_table(program_with_example, display_table, is_in_ipyth
     assert ev.display_table == display_table
 
     with patch(
-        "dspy.evaluate.evaluate.is_in_ipython_notebook_environment", return_value=is_in_ipython_notebook_environment
+        "dspy.evaluate.evaluate.is_in_ipython_notebook_environment",
+        return_value=is_in_ipython_notebook_environment,
     ):
         ev(program)
         out, _ = capfd.readouterr()

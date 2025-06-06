@@ -31,14 +31,12 @@ class Audio(BaseType):
             data = self.data
         except Exception as e:
             raise ValueError(f"Failed to format audio for DSPy: {e}")
-        return [{
-            "type": "input_audio",
-            "input_audio": {
-                "data": data,
-                "format": self.audio_format
+        return [
+            {
+                "type": "input_audio",
+                "input_audio": {"data": data, "format": self.audio_format},
             }
-        }]
-
+        ]
 
     @pydantic.model_validator(mode="before")
     @classmethod
@@ -84,9 +82,7 @@ class Audio(BaseType):
         return cls(data=encoded_data, format=audio_format)
 
     @classmethod
-    def from_array(
-        cls, array: Any, sampling_rate: int, format: str = "wav"
-    ) -> "Audio":
+    def from_array(cls, array: Any, sampling_rate: int, format: str = "wav") -> "Audio":
         """
         Process numpy-like array and encode it as base64. Uses sampling rate and audio format for encoding.
         """
@@ -111,10 +107,15 @@ class Audio(BaseType):
         length = len(self.data)
         return f"Audio(data=<AUDIO_BASE_64_ENCODED({length})>, format='{self.audio_format}')"
 
-def encode_audio(audio: Union[str, bytes, dict, "Audio", Any], sampling_rate: int = 16000, format: str = "wav") -> dict:
+
+def encode_audio(
+    audio: Union[str, bytes, dict, "Audio", Any],
+    sampling_rate: int = 16000,
+    format: str = "wav",
+) -> dict:
     """
     Encode audio to a dict with 'data' and 'format'.
-    
+
     Accepts: local file path, URL, data URI, dict, Audio instance, numpy array, or bytes (with known format).
     """
     if isinstance(audio, dict) and "data" in audio and "format" in audio:
