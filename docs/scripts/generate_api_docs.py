@@ -1,9 +1,10 @@
-from pathlib import Path
 import importlib
 import inspect
 import pkgutil
 import shutil
+from pathlib import Path
 from typing import Any
+
 import dspy
 
 API_MAPPING = {
@@ -78,7 +79,7 @@ API_MAPPING = {
         dspy.KNN,
         dspy.KNNFewShot,
         dspy.InferRules,
-        dspy.GEPA
+        dspy.GEPA,
     ],
 }
 
@@ -103,13 +104,13 @@ def get_module_contents(module):
     for name, obj in inspect.getmembers(module):
         if contents_in_all and name not in contents_in_all:
             continue
-        if inspect.ismodule(obj) and obj.__name__.startswith(module.__name__) and not name.startswith("_"):
+        if inspect.ismodule(obj) and obj.__name__.startswith(
+                module.__name__) and not name.startswith("_"):
             contents[name] = obj
-        elif (
-            (inspect.isclass(obj) or (inspect.isroutine(obj) and should_document_method(obj)))
-            and obj.__module__.startswith(module.__name__)
-            and not name.startswith("_")
-        ):
+        elif ((inspect.isclass(obj) or
+               (inspect.isroutine(obj) and should_document_method(obj)))
+              and obj.__module__.startswith(module.__name__)
+              and not name.startswith("_")):
             contents[name] = obj
     return contents
 
@@ -117,20 +118,24 @@ def get_module_contents(module):
 def get_public_methods(cls):
     """Returns a list of all public methods in a class."""
     return [
-        name
-        for name, member in inspect.getmembers(
-            cls, predicate=lambda x: inspect.isroutine(x) and should_document_method(x)
-        )
+        name for name, member in
+        inspect.getmembers(cls,
+                           predicate=lambda x: inspect.isroutine(x) and
+                           should_document_method(x))
     ]
 
 
-def generate_doc_page(name: str, module_path: str, obj: Any, is_root: bool = False) -> str:
+def generate_doc_page(name: str,
+                      module_path: str,
+                      obj: Any,
+                      is_root: bool = False) -> str:
     """Generate documentation page content for an object."""
     members_config = ""
     if inspect.isclass(obj):
         methods = get_public_methods(obj)
         if methods:
-            methods_list = "\n".join(f"            - {method}" for method in methods)
+            methods_list = "\n".join(f"            - {method}"
+                                     for method in methods)
             members_config = f"""
         members:
 {methods_list}"""
@@ -200,7 +205,8 @@ def write_doc_file(file_path: Path, title: str, api_content: str):
         pre_content = f"# {title}\n"
 
     # Combine all sections
-    full_content = f"{pre_content}\n\n{api_content}\n{post_content}".strip() + "\n"
+    full_content = f"{pre_content}\n\n{api_content}\n{post_content}".strip(
+    ) + "\n"
 
     # Write the combined content
     file_path.write_text(full_content)
@@ -235,17 +241,23 @@ def generate_md_docs(output_dir: Path, excluded_modules=None):
 
         objects_processed[f"{obj.__module__}.{name}"] = obj
 
-    for submodule in pkgutil.iter_modules(module.__path__, prefix=f"{module.__name__}."):
+    for submodule in pkgutil.iter_modules(module.__path__,
+                                          prefix=f"{module.__name__}."):
         submodule_name = submodule.name.split(".")[-1]
 
         # Skip if this is a private module or not in __init__.py
-        if submodule_name.startswith("_") or submodule_name not in init_contents:
+        if submodule_name.startswith(
+                "_") or submodule_name not in init_contents:
             continue
 
-        generate_md_docs_submodule(submodule.name, output_dir, objects_processed, excluded_modules)
+        generate_md_docs_submodule(submodule.name, output_dir,
+                                   objects_processed, excluded_modules)
 
 
-def generate_md_docs_submodule(module_path: str, output_dir: Path, objects_processed=None, excluded_modules=None):
+def generate_md_docs_submodule(module_path: str,
+                               output_dir: Path,
+                               objects_processed=None,
+                               excluded_modules=None):
     """Recursively generate documentation for a submodule.
 
     We generate docs for all public classes and functions in the submodule, then recursively generate docs for all
@@ -280,7 +292,10 @@ def generate_md_docs_submodule(module_path: str, output_dir: Path, objects_proce
         full_name = f"{obj.__module__}.{name}"
         if full_name not in objects_processed:
             # Only generate docs for objects that are not root-level objects.
-            page_content = generate_doc_page(name, module_path, obj, is_root=False)
+            page_content = generate_doc_page(name,
+                                             module_path,
+                                             obj,
+                                             is_root=False)
             file_path = output_dir / category / f"{name}.md"
             write_doc_file(file_path, f"{module_path}.{name}", page_content)
 
@@ -288,7 +303,8 @@ def generate_md_docs_submodule(module_path: str, output_dir: Path, objects_proce
 
     for name, obj in init_contents.items():
         if inspect.ismodule(obj):
-            generate_md_docs_submodule(f"{module_path}.{name}", output_dir / name, objects_processed)
+            generate_md_docs_submodule(f"{module_path}.{name}",
+                                       output_dir / name, objects_processed)
 
 
 def remove_empty_dirs(path: Path):

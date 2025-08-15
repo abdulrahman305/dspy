@@ -8,7 +8,8 @@ from typing import Any
 
 import pytest
 
-from tests.test_utils.server.litellm_server import LITELLM_TEST_SERVER_LOG_FILE_PATH_ENV_VAR
+from tests.test_utils.server.litellm_server import (
+    LITELLM_TEST_SERVER_LOG_FILE_PATH_ENV_VAR, )
 
 
 @pytest.fixture()
@@ -19,7 +20,8 @@ def litellm_test_server() -> tuple[str, str]:
     """
     with tempfile.TemporaryDirectory() as server_log_dir_path:
         # Create a server log file used to store request logs
-        server_log_file_path = os.path.join(server_log_dir_path, "request_logs.jsonl")
+        server_log_file_path = os.path.join(server_log_dir_path,
+                                            "request_logs.jsonl")
         open(server_log_file_path, "a").close()
 
         port = _get_random_port()
@@ -27,8 +29,20 @@ def litellm_test_server() -> tuple[str, str]:
         print(f"Starting LiteLLM proxy server on port {port}")
 
         process = subprocess.Popen(
-            ["litellm", "--host", host, "--port", str(port), "--config", _get_litellm_config_path()],
-            env={LITELLM_TEST_SERVER_LOG_FILE_PATH_ENV_VAR: server_log_file_path, **os.environ.copy()},
+            [
+                "litellm",
+                "--host",
+                host,
+                "--port",
+                str(port),
+                "--config",
+                _get_litellm_config_path(),
+            ],
+            env={
+                LITELLM_TEST_SERVER_LOG_FILE_PATH_ENV_VAR:
+                server_log_file_path,
+                **os.environ.copy(),
+            },
             text=True,
         )
 
@@ -45,7 +59,8 @@ def litellm_test_server() -> tuple[str, str]:
         process.wait()
 
 
-def read_litellm_test_server_request_logs(server_log_file_path: str) -> list[dict[str, Any]]:
+def read_litellm_test_server_request_logs(
+        server_log_file_path: str, ) -> list[dict[str, Any]]:
     """
     Read request logs from a LiteLLM server used during DSPy integration tests.
 
@@ -82,4 +97,6 @@ def _wait_for_port(host, port, timeout=10):
                 return True
             except ConnectionRefusedError:
                 time.sleep(0.5)  # Wait briefly before trying again
-    raise TimeoutError(f"Server on port {port} did not become ready within {timeout} seconds.")
+    raise TimeoutError(
+        f"Server on port {port} did not become ready within {timeout} seconds."
+    )

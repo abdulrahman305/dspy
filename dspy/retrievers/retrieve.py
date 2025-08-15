@@ -56,6 +56,7 @@ class Retrieve(Parameter):
         passages = dspy.settings.rm(query, k=k, **kwargs)
 
         from collections.abc import Iterable
+
         if not isinstance(passages, Iterable):
             # it's not an iterable yet; make it one.
             # TODO: we should unify the type signatures of dspy.Retriever
@@ -63,5 +64,6 @@ class Retrieve(Parameter):
         passages = [psg.long_text for psg in passages]
 
         return Prediction(passages=passages)
+
 
 # TODO: Consider doing Prediction.from_completions with the individual sets of passages (per query) too.

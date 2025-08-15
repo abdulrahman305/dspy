@@ -6,6 +6,7 @@ import dspy
 
 
 def test_two_step_adapter_call():
+
     class TestSignature(dspy.Signature):
         question: str = dspy.InputField(desc="The math question to solve")
         solution: str = dspy.OutputField(desc="Step by step solution")
@@ -28,7 +29,10 @@ def test_two_step_adapter_call():
     mock_extraction_lm.kwargs = {"temperature": 1.0}
     mock_extraction_lm.model = "openai/gpt-4o"
 
-    dspy.configure(lm=mock_main_lm, adapter=dspy.TwoStepAdapter(extraction_model=mock_extraction_lm))
+    dspy.configure(
+        lm=mock_main_lm,
+        adapter=dspy.TwoStepAdapter(extraction_model=mock_extraction_lm),
+    )
 
     result = program(question="What is 5 + 7?")
 
@@ -72,6 +76,7 @@ def test_two_step_adapter_call():
 
 @pytest.mark.asyncio
 async def test_two_step_adapter_async_call():
+
     class TestSignature(dspy.Signature):
         question: str = dspy.InputField(desc="The math question to solve")
         solution: str = dspy.OutputField(desc="Step by step solution")
@@ -94,7 +99,10 @@ async def test_two_step_adapter_async_call():
     mock_extraction_lm.kwargs = {"temperature": 1.0}
     mock_extraction_lm.model = "openai/gpt-4o"
 
-    with dspy.context(lm=mock_main_lm, adapter=dspy.TwoStepAdapter(extraction_model=mock_extraction_lm)):
+    with dspy.context(
+            lm=mock_main_lm,
+            adapter=dspy.TwoStepAdapter(extraction_model=mock_extraction_lm),
+    ):
         result = await program.acall(question="What is 5 + 7?")
 
     assert result.answer == 12
@@ -136,6 +144,7 @@ async def test_two_step_adapter_async_call():
 
 
 def test_two_step_adapter_parse():
+
     class ComplexSignature(dspy.Signature):
         input_text: str = dspy.InputField()
         tags: list[str] = dspy.OutputField(desc="List of relevant tags")
@@ -164,6 +173,7 @@ def test_two_step_adapter_parse():
 
 
 def test_two_step_adapter_parse_errors():
+
     class TestSignature(dspy.Signature):
         question: str = dspy.InputField()
         answer: str = dspy.OutputField()

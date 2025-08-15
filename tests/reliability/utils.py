@@ -78,16 +78,23 @@ def judge_dspy_configuration(**extra_judge_config):
     adapter = get_adapter(reliability_conf)
     judge_params = reliability_conf.models.get(JUDGE_MODEL_NAME)
     if judge_params is None:
-        raise ValueError(f"No LiteLLM configuration found for judge model: {JUDGE_MODEL_NAME}")
+        raise ValueError(
+            f"No LiteLLM configuration found for judge model: {JUDGE_MODEL_NAME}"
+        )
 
-    with dspy.settings.context(lm=dspy.LM(**judge_params, **extra_judge_config), adapter=adapter):
+    with dspy.settings.context(lm=dspy.LM(**judge_params,
+                                          **extra_judge_config),
+                               adapter=adapter):
         yield
 
 
 def _get_judge_program():
+
     class JudgeResponse(pydantic.BaseModel):
-        correct: bool = pydantic.Field("Whether or not the judge output is correct")
-        justification: str = pydantic.Field("Justification for the correctness of the judge output")
+        correct: bool = pydantic.Field(
+            "Whether or not the judge output is correct")
+        justification: str = pydantic.Field(
+            "Justification for the correctness of the judge output")
 
     class JudgeSignature(dspy.Signature):
         """
@@ -98,16 +105,15 @@ def _get_judge_program():
         you don't miss certain fields or values.
         """
 
-        program_input: str = dspy.InputField(description="The input to an AI program / model that is being judged")
+        program_input: str = dspy.InputField(
+            description="The input to an AI program / model that is being judged")
         program_output: str = dspy.InputField(
             description="The resulting output from the AI program / model that is being judged"
         )
-        guidelines: str = dspy.InputField(
-            description=(
-                "Grading guidelines for judging the correctness of the program output."
-                " If the output satisfies the guidelines, the judge will return correct=True."
-            )
-        )
+        guidelines: str = dspy.InputField(description=(
+            "Grading guidelines for judging the correctness of the program output."
+            " If the output satisfies the guidelines, the judge will return correct=True."
+        ))
         judge_response: JudgeResponse = dspy.OutputField()
 
     return dspy.Predict(JudgeSignature)
@@ -136,11 +142,14 @@ def parse_reliability_conf_yaml(conf_file_path: str) -> ReliabilityTestConf:
 
         adapter = conf.get("adapter")
         if adapter is None:
-            raise ValueError("No adapter configuration found in reliability_conf.yaml")
+            raise ValueError(
+                "No adapter configuration found in reliability_conf.yaml")
 
         return ReliabilityTestConf(adapter=adapter, models=model_dict)
     except Exception as e:
-        raise ValueError(f"Error parsing LiteLLM configuration file: {conf_file_path}") from e
+        raise ValueError(
+            f"Error parsing LiteLLM configuration file: {conf_file_path}"
+        ) from e
 
 
 def get_adapter(reliability_conf: ReliabilityTestConf) -> dspy.Adapter:
@@ -149,4 +158,6 @@ def get_adapter(reliability_conf: ReliabilityTestConf) -> dspy.Adapter:
     elif reliability_conf.adapter.lower() == "json":
         return dspy.JSONAdapter()
     else:
-        raise ValueError(f"Unknown adapter specification '{reliability_conf.adapter}' in reliability_conf.yaml")
+        raise ValueError(
+            f"Unknown adapter specification '{reliability_conf.adapter}' in reliability_conf.yaml"
+        )

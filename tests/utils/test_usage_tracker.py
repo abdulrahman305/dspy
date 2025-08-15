@@ -11,7 +11,10 @@ def test_add_usage_entry():
         "prompt_tokens": 1117,
         "completion_tokens": 46,
         "total_tokens": 1163,
-        "prompt_tokens_details": {"cached_tokens": 0, "audio_tokens": 0},
+        "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+        },
         "completion_tokens_details": {
             "reasoning_tokens": 0,
             "audio_tokens": 0,
@@ -35,7 +38,10 @@ def test_get_total_tokens():
             "prompt_tokens": 1117,
             "completion_tokens": 46,
             "total_tokens": 1163,
-            "prompt_tokens_details": {"cached_tokens": 200, "audio_tokens": 50},
+            "prompt_tokens_details": {
+                "cached_tokens": 200,
+                "audio_tokens": 50
+            },
             "completion_tokens_details": {
                 "reasoning_tokens": 20,
                 "audio_tokens": 10,
@@ -47,7 +53,10 @@ def test_get_total_tokens():
             "prompt_tokens": 800,
             "completion_tokens": 100,
             "total_tokens": 900,
-            "prompt_tokens_details": {"cached_tokens": 300, "audio_tokens": 0},
+            "prompt_tokens_details": {
+                "cached_tokens": 300,
+                "audio_tokens": 0
+            },
             "completion_tokens_details": {
                 "reasoning_tokens": 50,
                 "audio_tokens": 0,
@@ -59,7 +68,10 @@ def test_get_total_tokens():
             "prompt_tokens": 500,
             "completion_tokens": 80,
             "total_tokens": 580,
-            "prompt_tokens_details": {"cached_tokens": 100, "audio_tokens": 25},
+            "prompt_tokens_details": {
+                "cached_tokens": 100,
+                "audio_tokens": 25
+            },
             "completion_tokens_details": {
                 "reasoning_tokens": 30,
                 "audio_tokens": 15,
@@ -74,15 +86,24 @@ def test_get_total_tokens():
 
     total_usage = tracker.get_total_tokens()
     assert "gpt-4o-mini" in total_usage
-    assert total_usage["gpt-4o-mini"]["prompt_tokens"] == 2417  # 1117 + 800 + 500
-    assert total_usage["gpt-4o-mini"]["completion_tokens"] == 226  # 46 + 100 + 80
-    assert total_usage["gpt-4o-mini"]["total_tokens"] == 2643  # 1163 + 900 + 580
-    assert total_usage["gpt-4o-mini"]["prompt_tokens_details"]["cached_tokens"] == 600  # 200 + 300 + 100
-    assert total_usage["gpt-4o-mini"]["prompt_tokens_details"]["audio_tokens"] == 75  # 50 + 0 + 25
-    assert total_usage["gpt-4o-mini"]["completion_tokens_details"]["reasoning_tokens"] == 100  # 20 + 50 + 30
-    assert total_usage["gpt-4o-mini"]["completion_tokens_details"]["audio_tokens"] == 25  # 10 + 0 + 15
-    assert total_usage["gpt-4o-mini"]["completion_tokens_details"]["accepted_prediction_tokens"] == 81  # 16 + 40 + 25
-    assert total_usage["gpt-4o-mini"]["completion_tokens_details"]["rejected_prediction_tokens"] == 20  # 0 + 10 + 10
+    assert total_usage["gpt-4o-mini"][
+        "prompt_tokens"] == 2417  # 1117 + 800 + 500
+    assert total_usage["gpt-4o-mini"][
+        "completion_tokens"] == 226  # 46 + 100 + 80
+    assert total_usage["gpt-4o-mini"][
+        "total_tokens"] == 2643  # 1163 + 900 + 580
+    assert total_usage["gpt-4o-mini"]["prompt_tokens_details"][
+        "cached_tokens"] == 600  # 200 + 300 + 100
+    assert total_usage["gpt-4o-mini"]["prompt_tokens_details"][
+        "audio_tokens"] == 75  # 50 + 0 + 25
+    assert total_usage["gpt-4o-mini"]["completion_tokens_details"][
+        "reasoning_tokens"] == 100  # 20 + 50 + 30
+    assert total_usage["gpt-4o-mini"]["completion_tokens_details"][
+        "audio_tokens"] == 25  # 10 + 0 + 15
+    assert total_usage["gpt-4o-mini"]["completion_tokens_details"][
+        "accepted_prediction_tokens"] == 81  # 16 + 40 + 25
+    assert total_usage["gpt-4o-mini"]["completion_tokens_details"][
+        "rejected_prediction_tokens"] == 20  # 0 + 10 + 10
 
 
 def test_track_usage_with_multiple_models():
@@ -97,7 +118,10 @@ def test_track_usage_with_multiple_models():
                 "prompt_tokens": 1117,
                 "completion_tokens": 46,
                 "total_tokens": 1163,
-                "prompt_tokens_details": {"cached_tokens": 0, "audio_tokens": 0},
+                "prompt_tokens_details": {
+                    "cached_tokens": 0,
+                    "audio_tokens": 0
+                },
                 "completion_tokens_details": {
                     "reasoning_tokens": 0,
                     "audio_tokens": 0,
@@ -112,7 +136,10 @@ def test_track_usage_with_multiple_models():
                 "prompt_tokens": 800,
                 "completion_tokens": 100,
                 "total_tokens": 900,
-                "prompt_tokens_details": {"cached_tokens": 0, "audio_tokens": 0},
+                "prompt_tokens_details": {
+                    "cached_tokens": 0,
+                    "audio_tokens": 0
+                },
                 "completion_tokens_details": {
                     "reasoning_tokens": 0,
                     "audio_tokens": 0,
@@ -186,7 +213,10 @@ def test_merge_usage_entries_with_none_values():
                 "prompt_tokens": 800,
                 "completion_tokens": 100,
                 "total_tokens": 900,
-                "prompt_tokens_details": {"cached_tokens": 50, "audio_tokens": 50},
+                "prompt_tokens_details": {
+                    "cached_tokens": 50,
+                    "audio_tokens": 50
+                },
                 "completion_tokens_details": None,
             },
         },
@@ -215,9 +245,15 @@ def test_merge_usage_entries_with_none_values():
     assert total_usage["gpt-4o-mini"]["prompt_tokens"] == 2717
     assert total_usage["gpt-4o-mini"]["completion_tokens"] == 246
     assert total_usage["gpt-4o-mini"]["total_tokens"] == 2963
-    assert total_usage["gpt-4o-mini"]["prompt_tokens_details"]["cached_tokens"] == 50
-    assert total_usage["gpt-4o-mini"]["prompt_tokens_details"]["audio_tokens"] == 50
-    assert total_usage["gpt-4o-mini"]["completion_tokens_details"]["reasoning_tokens"] == 1
-    assert total_usage["gpt-4o-mini"]["completion_tokens_details"]["audio_tokens"] == 1
-    assert total_usage["gpt-4o-mini"]["completion_tokens_details"]["accepted_prediction_tokens"] == 1
-    assert total_usage["gpt-4o-mini"]["completion_tokens_details"]["rejected_prediction_tokens"] == 1
+    assert total_usage["gpt-4o-mini"]["prompt_tokens_details"][
+        "cached_tokens"] == 50
+    assert total_usage["gpt-4o-mini"]["prompt_tokens_details"][
+        "audio_tokens"] == 50
+    assert total_usage["gpt-4o-mini"]["completion_tokens_details"][
+        "reasoning_tokens"] == 1
+    assert total_usage["gpt-4o-mini"]["completion_tokens_details"][
+        "audio_tokens"] == 1
+    assert total_usage["gpt-4o-mini"]["completion_tokens_details"][
+        "accepted_prediction_tokens"] == 1
+    assert total_usage["gpt-4o-mini"]["completion_tokens_details"][
+        "rejected_prediction_tokens"] == 1

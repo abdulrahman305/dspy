@@ -76,10 +76,12 @@ class LM(BaseLM):
         self.train_kwargs = train_kwargs or {}
 
         # Handle model-specific configuration for different model families
-        model_family = model.split("/")[-1].lower() if "/" in model else model.lower()
+        model_family = model.split(
+            "/")[-1].lower() if "/" in model else model.lower()
 
         # Match pattern: o[1,3,4] at the start, optionally followed by -mini and anything else
-        model_pattern = re.match(r"^(?:o([1345])|gpt-(5))(?:-mini)?", model_family)
+        model_pattern = re.match(r"^(?:o([1345])|gpt-(5))(?:-mini)?",
+                                 model_family)
 
         if model_pattern:
             if max_tokens < 20000 or temperature != 1.0:
@@ -87,11 +89,16 @@ class LM(BaseLM):
                     "OpenAI's reasoning models require passing temperature=1.0 and max_tokens >= 20000 to "
                     "`dspy.LM(...)`, e.g., dspy.LM('openai/gpt-5o', temperature=1.0, max_tokens=20000)"
                 )
-            self.kwargs = dict(temperature=temperature, max_completion_tokens=max_tokens, **kwargs)
+            self.kwargs = dict(temperature=temperature,
+                               max_completion_tokens=max_tokens,
+                               **kwargs)
         else:
-            self.kwargs = dict(temperature=temperature, max_tokens=max_tokens, **kwargs)
+            self.kwargs = dict(temperature=temperature,
+                               max_tokens=max_tokens,
+                               **kwargs)
 
-    def _get_cached_completion_fn(self, completion_fn, cache, enable_memory_cache):
+    def _get_cached_completion_fn(self, completion_fn, cache,
+                                  enable_memory_cache):
         ignored_args_for_cache_key = ["api_key", "api_base", "base_url"]
         if cache and enable_memory_cache:
             completion_fn = request_cache(
@@ -117,13 +124,15 @@ class LM(BaseLM):
     def forward(self, prompt=None, messages=None, **kwargs):
         # Build the request.
         cache = kwargs.pop("cache", self.cache)
-        enable_memory_cache = kwargs.pop("cache_in_memory", self.cache_in_memory)
+        enable_memory_cache = kwargs.pop("cache_in_memory",
+                                         self.cache_in_memory)
 
         messages = messages or [{"role": "user", "content": prompt}]
         kwargs = {**self.kwargs, **kwargs}
 
         completion = litellm_completion if self.model_type == "chat" else litellm_text_completion
-        completion, litellm_cache_args = self._get_cached_completion_fn(completion, cache, enable_memory_cache)
+        completion, litellm_cache_args = self._get_cached_completion_fn(
+            completion, cache, enable_memory_cache)
 
         results = completion(
             request=dict(model=self.model, messages=messages, **kwargs),
@@ -137,23 +146,26 @@ class LM(BaseLM):
                 "You can inspect the latest LM interactions with `dspy.inspect_history()`. "
                 "To avoid truncation, consider passing a larger max_tokens when setting up dspy.LM. "
                 f"You may also consider increasing the temperature (currently {self.kwargs['temperature']}) "
-                " if the reason for truncation is repetition."
-            )
+                " if the reason for truncation is repetition.")
 
-        if not getattr(results, "cache_hit", False) and dspy.settings.usage_tracker and hasattr(results, "usage"):
+        if not getattr(results, "cache_hit",
+                       False) and dspy.settings.usage_tracker and hasattr(
+                           results, "usage"):
             settings.usage_tracker.add_usage(self.model, dict(results.usage))
         return results
 
     async def aforward(self, prompt=None, messages=None, **kwargs):
         # Build the request.
         cache = kwargs.pop("cache", self.cache)
-        enable_memory_cache = kwargs.pop("cache_in_memory", self.cache_in_memory)
+        enable_memory_cache = kwargs.pop("cache_in_memory",
+                                         self.cache_in_memory)
 
         messages = messages or [{"role": "user", "content": prompt}]
         kwargs = {**self.kwargs, **kwargs}
 
         completion = alitellm_completion if self.model_type == "chat" else alitellm_text_completion
-        completion, litellm_cache_args = self._get_cached_completion_fn(completion, cache, enable_memory_cache)
+        completion, litellm_cache_args = self._get_cached_completion_fn(
+            completion, cache, enable_memory_cache)
 
         results = await completion(
             request=dict(model=self.model, messages=messages, **kwargs),
@@ -167,10 +179,11 @@ class LM(BaseLM):
                 "You can inspect the latest LM interactions with `dspy.inspect_history()`. "
                 "To avoid truncation, consider passing a larger max_tokens when setting up dspy.LM. "
                 f"You may also consider increasing the temperature (currently {self.kwargs['temperature']}) "
-                " if the reason for truncation is repetition."
-            )
+                " if the reason for truncation is repetition.")
 
-        if not getattr(results, "cache_hit", False) and dspy.settings.usage_tracker and hasattr(results, "usage"):
+        if not getattr(results, "cache_hit",
+                       False) and dspy.settings.usage_tracker and hasattr(
+                           results, "usage"):
             settings.usage_tracker.add_usage(self.model, dict(results.usage))
         return results
 
@@ -277,7 +290,8 @@ def _get_stream_completion_fn(
     if dspy.settings.track_usage:
         request["stream_options"] = {"include_usage": True}
 
-    async def stream_completion(request: dict[str, Any], cache_kwargs: dict[str, Any]):
+    async def stream_completion(request: dict[str, Any],
+                                cache_kwargs: dict[str, Any]):
         response = await litellm.acompletion(
             cache=cache_kwargs,
             stream=True,
@@ -305,7 +319,9 @@ def _get_stream_completion_fn(
         return async_stream_completion
 
 
-def litellm_completion(request: dict[str, Any], num_retries: int, cache: dict[str, Any] | None = None):
+def litellm_completion(request: dict[str, Any],
+                       num_retries: int,
+                       cache: dict[str, Any] | None = None):
     cache = cache or {"no-cache": True, "no-store": True}
     stream_completion = _get_stream_completion_fn(request, cache, sync=True)
     if stream_completion is None:
@@ -319,7 +335,9 @@ def litellm_completion(request: dict[str, Any], num_retries: int, cache: dict[st
     return stream_completion()
 
 
-def litellm_text_completion(request: dict[str, Any], num_retries: int, cache: dict[str, Any] | None = None):
+def litellm_text_completion(request: dict[str, Any],
+                            num_retries: int,
+                            cache: dict[str, Any] | None = None):
     cache = cache or {"no-cache": True, "no-store": True}
     # Extract the provider and model from the model string.
     # TODO: Not all the models are in the format of "provider/model"
@@ -328,10 +346,12 @@ def litellm_text_completion(request: dict[str, Any], num_retries: int, cache: di
 
     # Use the API key and base from the request, or from the environment.
     api_key = request.pop("api_key", None) or os.getenv(f"{provider}_API_KEY")
-    api_base = request.pop("api_base", None) or os.getenv(f"{provider}_API_BASE")
+    api_base = request.pop("api_base",
+                           None) or os.getenv(f"{provider}_API_BASE")
 
     # Build the prompt from the messages.
-    prompt = "\n\n".join([x["content"] for x in request.pop("messages")] + ["BEGIN RESPONSE:"])
+    prompt = "\n\n".join([x["content"] for x in request.pop("messages")] +
+                         ["BEGIN RESPONSE:"])
 
     return litellm.text_completion(
         cache=cache,
@@ -345,7 +365,9 @@ def litellm_text_completion(request: dict[str, Any], num_retries: int, cache: di
     )
 
 
-async def alitellm_completion(request: dict[str, Any], num_retries: int, cache: dict[str, Any] | None = None):
+async def alitellm_completion(request: dict[str, Any],
+                              num_retries: int,
+                              cache: dict[str, Any] | None = None):
     cache = cache or {"no-cache": True, "no-store": True}
     stream_completion = _get_stream_completion_fn(request, cache, sync=False)
     if stream_completion is None:
@@ -359,17 +381,21 @@ async def alitellm_completion(request: dict[str, Any], num_retries: int, cache: 
     return await stream_completion()
 
 
-async def alitellm_text_completion(request: dict[str, Any], num_retries: int, cache: dict[str, Any] | None = None):
+async def alitellm_text_completion(request: dict[str, Any],
+                                   num_retries: int,
+                                   cache: dict[str, Any] | None = None):
     cache = cache or {"no-cache": True, "no-store": True}
     model = request.pop("model").split("/", 1)
     provider, model = model[0] if len(model) > 1 else "openai", model[-1]
 
     # Use the API key and base from the request, or from the environment.
     api_key = request.pop("api_key", None) or os.getenv(f"{provider}_API_KEY")
-    api_base = request.pop("api_base", None) or os.getenv(f"{provider}_API_BASE")
+    api_base = request.pop("api_base",
+                           None) or os.getenv(f"{provider}_API_BASE")
 
     # Build the prompt from the messages.
-    prompt = "\n\n".join([x["content"] for x in request.pop("messages")] + ["BEGIN RESPONSE:"])
+    prompt = "\n\n".join([x["content"] for x in request.pop("messages")] +
+                         ["BEGIN RESPONSE:"])
 
     return await litellm.atext_completion(
         cache=cache,

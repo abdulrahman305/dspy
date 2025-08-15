@@ -23,7 +23,8 @@ def test_initialization_with_string_signature():
     predict = Predict(signature_string)
     expected_instruction = "Given the fields `input1`, `input2`, produce the fields `output`."
     assert predict.signature.instructions == expected_instruction
-    assert predict.signature.instructions == Signature(signature_string).instructions
+    assert predict.signature.instructions == Signature(
+        signature_string).instructions
 
 
 def test_reset_method():
@@ -77,7 +78,8 @@ def test_call_method():
 
 
 def test_instructions_after_dump_and_load_state():
-    predict_instance = Predict(Signature("input -> output", "original instructions"))
+    predict_instance = Predict(
+        Signature("input -> output", "original instructions"))
     dumped_state = predict_instance.dump_state()
     new_instance = Predict(Signature("input -> output", "new instructions"))
     new_instance.load_state(dumped_state)
@@ -85,6 +87,7 @@ def test_instructions_after_dump_and_load_state():
 
 
 def test_demos_after_dump_and_load_state():
+
     class TranslateToEnglish(dspy.Signature):
         """Translate content from a language to English."""
 
@@ -103,7 +106,8 @@ def test_demos_after_dump_and_load_state():
 
     dumped_state = original_instance.dump_state()
     assert len(dumped_state["demos"]) == len(original_instance.demos)
-    assert dumped_state["demos"][0]["content"] == original_instance.demos[0].content
+    assert dumped_state["demos"][0]["content"] == original_instance.demos[
+        0].content
 
     saved_state = ujson.dumps(dumped_state)
     loaded_state = ujson.loads(saved_state)
@@ -112,10 +116,12 @@ def test_demos_after_dump_and_load_state():
     new_instance.load_state(loaded_state)
     assert len(new_instance.demos) == len(original_instance.demos)
     # Demos don't need to keep the same types after saving and loading the state.
-    assert new_instance.demos[0]["content"] == original_instance.demos[0].content
+    assert new_instance.demos[0]["content"] == original_instance.demos[
+        0].content
 
 
 def test_typed_demos_after_dump_and_load_state():
+
     class Item(pydantic.BaseModel):
         name: str
         quantity: int
@@ -131,9 +137,15 @@ def test_typed_demos_after_dump_and_load_state():
     original_instance = Predict(InventorySignature)
     original_instance.demos = [
         dspy.Example(
-            items=[Item(name="apple", quantity=5), Item(name="banana", quantity=3)],
+            items=[
+                Item(name="apple", quantity=5),
+                Item(name="banana", quantity=3)
+            ],
             language="SPANISH",
-            translated_items=[Item(name="manzana", quantity=5), Item(name="plátano", quantity=3)],
+            translated_items=[
+                Item(name="manzana", quantity=5),
+                Item(name="plátano", quantity=3),
+            ],
             total_quantity=8,
         ).with_inputs("items", "language"),
     ]
@@ -144,7 +156,10 @@ def test_typed_demos_after_dump_and_load_state():
     # Verify the input items were properly serialized
     assert isinstance(dumped_state["demos"][0]["items"], list)
     assert len(dumped_state["demos"][0]["items"]) == 2
-    assert dumped_state["demos"][0]["items"][0] == {"name": "apple", "quantity": 5}
+    assert dumped_state["demos"][0]["items"][0] == {
+        "name": "apple",
+        "quantity": 5
+    }
 
     # Test serialization/deserialization
     saved_state = ujson.dumps(dumped_state)
@@ -213,6 +228,7 @@ def test_typed_demos_after_dump_and_load_state():
 
 
 def test_signature_fields_after_dump_and_load_state(tmp_path):
+
     class CustomSignature(dspy.Signature):
         """I am just an instruction."""
 
@@ -227,13 +243,16 @@ def test_signature_fields_after_dump_and_load_state(tmp_path):
         """I am not a pure instruction."""
 
         sentence = dspy.InputField(desc="I am a malicious input!")
-        sentiment = dspy.OutputField(desc="I am a malicious output!", prefix="I am a prefix!")
+        sentiment = dspy.OutputField(desc="I am a malicious output!",
+                                     prefix="I am a prefix!")
 
     new_instance = Predict(CustomSignature2)
-    assert new_instance.signature.dump_state() != original_instance.signature.dump_state()
+    assert new_instance.signature.dump_state(
+    ) != original_instance.signature.dump_state()
     # After loading, the fields should be the same.
     new_instance.load(file_path)
-    assert new_instance.signature.dump_state() == original_instance.signature.dump_state()
+    assert new_instance.signature.dump_state(
+    ) == original_instance.signature.dump_state()
 
 
 @pytest.mark.parametrize("filename", ["model.json", "model.pkl"])
@@ -268,7 +287,10 @@ def test_forward_method():
 
 def test_forward_method2():
     program = Predict("question -> answer1, answer2")
-    dspy.settings.configure(lm=DummyLM([{"answer1": "my first answer", "answer2": "my second answer"}]))
+    dspy.settings.configure(lm=DummyLM([{
+        "answer1": "my first answer",
+        "answer2": "my second answer"
+    }]))
     result = program(question="What is 1+1?")
     assert result.answer1 == "my first answer"
     assert result.answer2 == "my second answer"
@@ -283,7 +305,11 @@ def test_config_management():
 
 def test_multi_output():
     program = Predict("question -> answer", n=2)
-    dspy.settings.configure(lm=DummyLM([{"answer": "my first answer"}, {"answer": "my second answer"}]))
+    dspy.settings.configure(lm=DummyLM([{
+        "answer": "my first answer"
+    }, {
+        "answer": "my second answer"
+    }]))
     results = program(question="What is 1+1?")
     assert results.completions.answer[0] == "my first answer"
     assert results.completions.answer[1] == "my second answer"
@@ -291,14 +317,16 @@ def test_multi_output():
 
 def test_multi_output2():
     program = Predict("question -> answer1, answer2", n=2)
-    dspy.settings.configure(
-        lm=DummyLM(
-            [
-                {"answer1": "my 0 answer", "answer2": "my 2 answer"},
-                {"answer1": "my 1 answer", "answer2": "my 3 answer"},
-            ],
-        )
-    )
+    dspy.settings.configure(lm=DummyLM([
+        {
+            "answer1": "my 0 answer",
+            "answer2": "my 2 answer"
+        },
+        {
+            "answer1": "my 1 answer",
+            "answer2": "my 3 answer"
+        },
+    ], ))
     results = program(question="What is 1+1?")
     assert results.completions.answer1[0] == "my 0 answer"
     assert results.completions.answer1[1] == "my 1 answer"
@@ -319,28 +347,25 @@ def test_datetime_inputs_and_outputs():
 
     program = Predict(TimedSignature)
 
-    lm = DummyLM(
-        [
-            {
-                "reasoning": "Processed datetime inputs",
-                "summary": "All events are processed",
-                "next_event_time": "2024-11-27T14:00:00",
-            }
-        ]
-    )
+    lm = DummyLM([{
+        "reasoning": "Processed datetime inputs",
+        "summary": "All events are processed",
+        "next_event_time": "2024-11-27T14:00:00",
+    }])
     dspy.settings.configure(lm=lm)
 
-    output = program(
-        events=[
-            TimedEvent(event_name="Event 1", event_time=datetime(2024, 11, 25, 10, 0, 0)),
-            TimedEvent(event_name="Event 2", event_time=datetime(2024, 11, 25, 15, 30, 0)),
-        ]
-    )
+    output = program(events=[
+        TimedEvent(event_name="Event 1",
+                   event_time=datetime(2024, 11, 25, 10, 0, 0)),
+        TimedEvent(event_name="Event 2",
+                   event_time=datetime(2024, 11, 25, 15, 30, 0)),
+    ])
     assert output.summary == "All events are processed"
     assert output.next_event_time == datetime(2024, 11, 27, 14, 0, 0)
 
 
 def test_explicitly_valued_enum_inputs_and_outputs():
+
     class Status(enum.Enum):
         PENDING = "pending"
         IN_PROGRESS = "in_progress"
@@ -352,14 +377,11 @@ def test_explicitly_valued_enum_inputs_and_outputs():
 
     program = Predict(StatusSignature)
 
-    lm = DummyLM(
-        [
-            {
-                "reasoning": "The current status is 'PENDING', advancing to 'IN_PROGRESS'.",
-                "next_status": "in_progress",
-            }
-        ]
-    )
+    lm = DummyLM([{
+        "reasoning":
+        "The current status is 'PENDING', advancing to 'IN_PROGRESS'.",
+        "next_status": "in_progress",
+    }])
     dspy.settings.configure(lm=lm)
 
     output = program(current_status=Status.PENDING)
@@ -367,6 +389,7 @@ def test_explicitly_valued_enum_inputs_and_outputs():
 
 
 def test_enum_inputs_and_outputs_with_shared_names_and_values():
+
     class TicketStatus(enum.Enum):
         OPEN = "CLOSED"
         CLOSED = "RESOLVED"
@@ -379,14 +402,11 @@ def test_enum_inputs_and_outputs_with_shared_names_and_values():
     program = Predict(TicketStatusSignature)
 
     # Mock reasoning and output
-    lm = DummyLM(
-        [
-            {
-                "reasoning": "The ticket is currently 'OPEN', transitioning to 'CLOSED'.",
-                "next_status": "RESOLVED",  # Refers to TicketStatus.CLOSED by value
-            }
-        ]
-    )
+    lm = DummyLM([{
+        "reasoning":
+        "The ticket is currently 'OPEN', transitioning to 'CLOSED'.",
+        "next_status": "RESOLVED",  # Refers to TicketStatus.CLOSED by value
+    }])
     dspy.settings.configure(lm=lm)
 
     output = program(current_status=TicketStatus.OPEN)
@@ -394,7 +414,8 @@ def test_enum_inputs_and_outputs_with_shared_names_and_values():
 
 
 def test_auto_valued_enum_inputs_and_outputs():
-    Status = enum.Enum("Status", ["PENDING", "IN_PROGRESS", "COMPLETED"])  # noqa: N806
+    Status = enum.Enum("Status",
+                       ["PENDING", "IN_PROGRESS", "COMPLETED"])  # noqa: N806
 
     class StatusSignature(dspy.Signature):
         current_status: Status = dspy.InputField()
@@ -402,14 +423,12 @@ def test_auto_valued_enum_inputs_and_outputs():
 
     program = Predict(StatusSignature)
 
-    lm = DummyLM(
-        [
-            {
-                "reasoning": "The current status is 'PENDING', advancing to 'IN_PROGRESS'.",
-                "next_status": "IN_PROGRESS",  # Use the auto-assigned value for IN_PROGRESS
-            }
-        ]
-    )
+    lm = DummyLM([{
+        "reasoning":
+        "The current status is 'PENDING', advancing to 'IN_PROGRESS'.",
+        "next_status":
+        "IN_PROGRESS",  # Use the auto-assigned value for IN_PROGRESS
+    }])
     dspy.settings.configure(lm=lm)
 
     output = program(current_status=Status.PENDING)
@@ -417,7 +436,9 @@ def test_auto_valued_enum_inputs_and_outputs():
 
 
 def test_named_predictors():
+
     class MyModule(dspy.Module):
+
         def __init__(self):
             super().__init__()
             self.inner = Predict("question -> answer")
@@ -431,6 +452,7 @@ def test_named_predictors():
 
 
 def test_output_only():
+
     class OutputOnlySignature(dspy.Signature):
         output = dspy.OutputField()
 
@@ -454,14 +476,20 @@ def test_load_state_chaining():
 
 @pytest.mark.parametrize("adapter_type", ["chat", "json"])
 def test_call_predict_with_chat_history(adapter_type):
+
     class SpyLM(dspy.LM):
+
         def __init__(self, *args, return_json=False, **kwargs):
             super().__init__(*args, **kwargs)
             self.calls = []
             self.return_json = return_json
 
         def __call__(self, prompt=None, messages=None, **kwargs):
-            self.calls.append({"prompt": prompt, "messages": messages, "kwargs": kwargs})
+            self.calls.append({
+                "prompt": prompt,
+                "messages": messages,
+                "kwargs": kwargs
+            })
             if self.return_json:
                 return ["{'answer':'100%'}"]
             return ["[[ ## answer ## ]]\n100%!"]
@@ -482,7 +510,10 @@ def test_call_predict_with_chat_history(adapter_type):
 
     program(
         question="are you sure that's correct?",
-        history=dspy.History(messages=[{"question": "what's the capital of france?", "answer": "paris"}]),
+        history=dspy.History(messages=[{
+            "question": "what's the capital of france?",
+            "answer": "paris"
+        }]),
     )
 
     # Verify the LM was called with correct messages
@@ -498,17 +529,23 @@ def test_call_predict_with_chat_history(adapter_type):
 
 def test_lm_usage():
     program = Predict("question -> answer")
-    dspy.settings.configure(lm=dspy.LM("openai/gpt-4o-mini", cache=False), track_usage=True)
+    dspy.settings.configure(lm=dspy.LM("openai/gpt-4o-mini", cache=False),
+                            track_usage=True)
     with patch(
-        "dspy.clients.lm.litellm_completion",
-        return_value=ModelResponse(
-            choices=[{"message": {"content": "[[ ## answer ## ]]\nParis"}}],
-            usage={"total_tokens": 10},
-        ),
+            "dspy.clients.lm.litellm_completion",
+            return_value=ModelResponse(
+                choices=[{
+                    "message": {
+                        "content": "[[ ## answer ## ]]\nParis"
+                    }
+                }],
+                usage={"total_tokens": 10},
+            ),
     ):
         result = program(question="What is the capital of France?")
         assert result.answer == "Paris"
-        assert result.get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
+        assert result.get_lm_usage(
+        )["openai/gpt-4o-mini"]["total_tokens"] == 10
 
 
 def test_lm_usage_with_parallel():
@@ -519,24 +556,35 @@ def test_lm_usage_with_parallel():
         time.sleep(0.5)
         return program(question=question)
 
-    dspy.settings.configure(lm=dspy.LM("openai/gpt-4o-mini", cache=False), track_usage=True)
+    dspy.settings.configure(lm=dspy.LM("openai/gpt-4o-mini", cache=False),
+                            track_usage=True)
     with patch(
-        "dspy.clients.lm.litellm_completion",
-        return_value=ModelResponse(
-            choices=[{"message": {"content": "[[ ## answer ## ]]\nParis"}}],
-            usage={"total_tokens": 10},
-        ),
+            "dspy.clients.lm.litellm_completion",
+            return_value=ModelResponse(
+                choices=[{
+                    "message": {
+                        "content": "[[ ## answer ## ]]\nParis"
+                    }
+                }],
+                usage={"total_tokens": 10},
+            ),
     ):
         parallelizer = dspy.Parallel()
         input_pairs = [
-            (program_wrapper, {"question": "What is the capital of France?"}),
-            (program_wrapper, {"question": "What is the capital of France?"}),
+            (program_wrapper, {
+                "question": "What is the capital of France?"
+            }),
+            (program_wrapper, {
+                "question": "What is the capital of France?"
+            }),
         ]
         results = parallelizer(input_pairs)
         assert results[0].answer == "Paris"
         assert results[1].answer == "Paris"
-        assert results[0].get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
-        assert results[1].get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
+        assert results[0].get_lm_usage(
+        )["openai/gpt-4o-mini"]["total_tokens"] == 10
+        assert results[1].get_lm_usage(
+        )["openai/gpt-4o-mini"]["total_tokens"] == 10
 
 
 @pytest.mark.asyncio
@@ -551,13 +599,18 @@ async def test_lm_usage_with_async():
 
     program.aforward = types.MethodType(patched_aforward, program)
 
-    with dspy.context(lm=dspy.LM("openai/gpt-4o-mini", cache=False), track_usage=True):
+    with dspy.context(lm=dspy.LM("openai/gpt-4o-mini", cache=False),
+                      track_usage=True):
         with patch(
-            "litellm.acompletion",
-            return_value=ModelResponse(
-                choices=[{"message": {"content": "[[ ## answer ## ]]\nParis"}}],
-                usage={"total_tokens": 10},
-            ),
+                "litellm.acompletion",
+                return_value=ModelResponse(
+                    choices=[{
+                        "message": {
+                            "content": "[[ ## answer ## ]]\nParis"
+                        }
+                    }],
+                    usage={"total_tokens": 10},
+                ),
         ):
             coroutines = [
                 program.acall(question="What is the capital of France?"),
@@ -568,10 +621,14 @@ async def test_lm_usage_with_async():
             results = await asyncio.gather(*coroutines)
             assert results[0].answer == "Paris"
             assert results[1].answer == "Paris"
-            assert results[0].get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
-            assert results[1].get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
-            assert results[2].get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
-            assert results[3].get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
+            assert results[0].get_lm_usage(
+            )["openai/gpt-4o-mini"]["total_tokens"] == 10
+            assert results[1].get_lm_usage(
+            )["openai/gpt-4o-mini"]["total_tokens"] == 10
+            assert results[2].get_lm_usage(
+            )["openai/gpt-4o-mini"]["total_tokens"] == 10
+            assert results[3].get_lm_usage(
+            )["openai/gpt-4o-mini"]["total_tokens"] == 10
 
 
 def test_positional_arguments():
@@ -587,14 +644,17 @@ def test_positional_arguments():
 def test_error_message_on_invalid_lm_setup():
     # No LM is loaded.
     with pytest.raises(ValueError, match="No LM is loaded"):
-        Predict("question -> answer")(question="Why did a chicken cross the kitchen?")
+        Predict("question -> answer")(
+            question="Why did a chicken cross the kitchen?")
 
     # LM is a string.
     dspy.configure(lm="openai/gpt-4o-mini")
     with pytest.raises(ValueError) as e:
-        Predict("question -> answer")(question="Why did a chicken cross the kitchen?")
+        Predict("question -> answer")(
+            question="Why did a chicken cross the kitchen?")
 
-    assert "LM must be an instance of `dspy.BaseLM`, not a string." in str(e.value)
+    assert "LM must be an instance of `dspy.BaseLM`, not a string." in str(
+        e.value)
 
     def dummy_lm():
         pass
@@ -602,20 +662,28 @@ def test_error_message_on_invalid_lm_setup():
     # LM is not an instance of dspy.BaseLM.
     dspy.configure(lm=dummy_lm)
     with pytest.raises(ValueError) as e:
-        Predict("question -> answer")(question="Why did a chicken cross the kitchen?")
-    assert "LM must be an instance of `dspy.BaseLM`, not <class 'function'>." in str(e.value)
+        Predict("question -> answer")(
+            question="Why did a chicken cross the kitchen?")
+    assert "LM must be an instance of `dspy.BaseLM`, not <class 'function'>." in str(
+        e.value)
 
 
 @pytest.mark.parametrize("adapter_type", ["chat", "json"])
 def test_field_constraints(adapter_type):
+
     class SpyLM(dspy.LM):
+
         def __init__(self, *args, return_json=False, **kwargs):
             super().__init__(*args, **kwargs)
             self.calls = []
             self.return_json = return_json
 
         def __call__(self, prompt=None, messages=None, **kwargs):
-            self.calls.append({"prompt": prompt, "messages": messages, "kwargs": kwargs})
+            self.calls.append({
+                "prompt": prompt,
+                "messages": messages,
+                "kwargs": kwargs
+            })
             if self.return_json:
                 return ["{'score':'0.5', 'count':'2'}"]
             return ["[[ ## score ## ]]\n0.5\n[[ ## count ## ]]\n2"]
@@ -624,11 +692,17 @@ def test_field_constraints(adapter_type):
         """Test signature with constrained fields."""
 
         # Input with length and value constraints
-        text: str = dspy.InputField(min_length=5, max_length=100, desc="Input text")
-        number: int = dspy.InputField(gt=0, lt=10, desc="A number between 0 and 10")
+        text: str = dspy.InputField(min_length=5,
+                                    max_length=100,
+                                    desc="Input text")
+        number: int = dspy.InputField(gt=0,
+                                      lt=10,
+                                      desc="A number between 0 and 10")
 
         # Output with multiple constraints
-        score: float = dspy.OutputField(ge=0.0, le=1.0, desc="Score between 0 and 1")
+        score: float = dspy.OutputField(ge=0.0,
+                                        le=1.0,
+                                        desc="Score between 0 and 1")
         count: int = dspy.OutputField(multiple_of=2, desc="Even number count")
 
     program = Predict(ConstrainedSignature)
@@ -671,7 +745,10 @@ def test_predicted_outputs_piped_from_predict_to_lm_call():
     with patch("litellm.completion") as mock_completion:
         program(
             question="Why did a chicken cross the kitchen?",
-            prediction={"type": "content", "content": "A chicken crossing the kitchen"},
+            prediction={
+                "type": "content",
+                "content": "A chicken crossing the kitchen"
+            },
         )
 
         assert mock_completion.call_args[1]["prediction"] == {
@@ -683,12 +760,16 @@ def test_predicted_outputs_piped_from_predict_to_lm_call():
     # format, it should not be passed to the LM.
     program = Predict("question, prediction -> judgement")
     with patch("litellm.completion") as mock_completion:
-        program(question="Why did a chicken cross the kitchen?", prediction="To get to the other side!")
+        program(
+            question="Why did a chicken cross the kitchen?",
+            prediction="To get to the other side!",
+        )
 
     assert "prediction" not in mock_completion.call_args[1]
 
 
 def test_dump_state_pydantic_non_primitive_types():
+
     class WebsiteInfo(BaseModel):
         name: str
         url: HttpUrl
@@ -730,7 +811,10 @@ def test_dump_state_pydantic_non_primitive_types():
 
 def test_trace_size_limit():
     program = Predict("question -> answer")
-    dspy.settings.configure(lm=DummyLM([{"answer": "Paris"}]), max_trace_size=3)
+    dspy.settings.configure(lm=DummyLM([{
+        "answer": "Paris"
+    }]),
+        max_trace_size=3)
 
     for _ in range(10):
         program(question="What is the capital of France?")
@@ -750,7 +834,10 @@ def test_disable_trace():
 
 def test_per_module_history_size_limit():
     program = Predict("question -> answer")
-    dspy.settings.configure(lm=DummyLM([{"answer": "Paris"}]), max_history_size=5)
+    dspy.settings.configure(lm=DummyLM([{
+        "answer": "Paris"
+    }]),
+        max_history_size=5)
 
     for _ in range(10):
         program(question="What is the capital of France?")
@@ -759,7 +846,10 @@ def test_per_module_history_size_limit():
 
 def test_per_module_history_disabled():
     program = Predict("question -> answer")
-    dspy.settings.configure(lm=DummyLM([{"answer": "Paris"}]), disable_history=True)
+    dspy.settings.configure(lm=DummyLM([{
+        "answer": "Paris"
+    }]),
+        disable_history=True)
 
     for _ in range(10):
         program(question="What is the capital of France?")

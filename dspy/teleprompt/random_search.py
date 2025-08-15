@@ -25,6 +25,7 @@ from .vanilla import LabeledFewShot
 
 
 class BootstrapFewShotWithRandomSearch(Teleprompter):
+
     def __init__(
         self,
         metric,
@@ -51,10 +52,23 @@ class BootstrapFewShotWithRandomSearch(Teleprompter):
         self.num_candidate_sets = num_candidate_programs
         self.max_labeled_demos = max_labeled_demos
 
-        print(f"Going to sample between {self.min_num_samples} and {self.max_num_samples} traces per predictor.")
-        print(f"Will attempt to bootstrap {self.num_candidate_sets} candidate sets.")
+        print(
+            f"Going to sample between {self.min_num_samples} and {self.max_num_samples} traces per predictor."
+        )
+        print(
+            f"Will attempt to bootstrap {self.num_candidate_sets} candidate sets."
+        )
 
-    def compile(self, student, *, teacher=None, trainset, valset=None, restrict=None, labeled_sample=True):
+    def compile(
+        self,
+        student,
+        *,
+        teacher=None,
+        trainset,
+        valset=None,
+        restrict=None,
+        labeled_sample=True,
+    ):
         self.trainset = trainset
         self.valset = valset or trainset  # TODO: FIXME: Note this choice.
 
@@ -77,7 +91,9 @@ class BootstrapFewShotWithRandomSearch(Teleprompter):
             elif seed == -2:
                 # labels only
                 teleprompter = LabeledFewShot(k=self.max_labeled_demos)
-                program = teleprompter.compile(student, trainset=trainset_copy, sample=labeled_sample)
+                program = teleprompter.compile(student,
+                                               trainset=trainset_copy,
+                                               sample=labeled_sample)
 
             elif seed == -1:
                 # unshuffled few-shot
@@ -90,13 +106,16 @@ class BootstrapFewShotWithRandomSearch(Teleprompter):
                     max_rounds=self.max_rounds,
                     max_errors=effective_max_errors,
                 )
-                program = optimizer.compile(student, teacher=teacher, trainset=trainset_copy)
+                program = optimizer.compile(student,
+                                            teacher=teacher,
+                                            trainset=trainset_copy)
 
             else:
                 assert seed >= 0, seed
 
                 random.Random(seed).shuffle(trainset_copy)
-                size = random.Random(seed).randint(self.min_num_samples, self.max_num_samples)
+                size = random.Random(seed).randint(self.min_num_samples,
+                                                   self.max_num_samples)
 
                 optimizer = BootstrapFewShot(
                     metric=self.metric,
@@ -108,7 +127,9 @@ class BootstrapFewShotWithRandomSearch(Teleprompter):
                     max_errors=effective_max_errors,
                 )
 
-                program = optimizer.compile(student, teacher=teacher, trainset=trainset_copy)
+                program = optimizer.compile(student,
+                                            teacher=teacher,
+                                            trainset=trainset_copy)
 
             evaluate = Evaluate(
                 devset=self.valset,
@@ -121,7 +142,9 @@ class BootstrapFewShotWithRandomSearch(Teleprompter):
 
             result = evaluate(program)
 
-            score, subscores = result.score, [output[2] for output in result.results]
+            score, subscores = result.score, [
+                output[2] for output in result.results
+            ]
 
             all_subscores.append(subscores)
 
@@ -133,19 +156,29 @@ class BootstrapFewShotWithRandomSearch(Teleprompter):
             print(f"Scores so far: {scores}")
             print(f"Best score so far: {max(scores)}")
 
-            score_data.append({"score": score, "subscores": subscores, "seed": seed, "program": program})
+            score_data.append({
+                "score": score,
+                "subscores": subscores,
+                "seed": seed,
+                "program": program,
+            })
 
             if self.stop_at_score is not None and score >= self.stop_at_score:
-                print(f"Stopping early because score {score} is >= stop_at_score {self.stop_at_score}")
+                print(
+                    f"Stopping early because score {score} is >= stop_at_score {self.stop_at_score}"
+                )
                 break
 
         # To best program, attach all program candidates in decreasing average score
         best_program.candidate_programs = score_data
         best_program.candidate_programs = sorted(
-            best_program.candidate_programs, key=lambda x: x["score"], reverse=True
-        )
+            best_program.candidate_programs,
+            key=lambda x: x["score"],
+            reverse=True)
 
-        print(f"{len(best_program.candidate_programs)} candidate programs found.")
+        print(
+            f"{len(best_program.candidate_programs)} candidate programs found."
+        )
 
         return best_program
 

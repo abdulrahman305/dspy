@@ -10,17 +10,30 @@ from dspy.teleprompt.teleprompt import Teleprompter
 if TYPE_CHECKING:
     from gepa import GEPAResult
 
-    from dspy.teleprompt.gepa.gepa_utils import DspyAdapter, DSPyTrace, PredictorFeedbackFn, ScoreWithFeedback
+    from dspy.teleprompt.gepa.gepa_utils import (
+        DspyAdapter,
+        DSPyTrace,
+        PredictorFeedbackFn,
+        ScoreWithFeedback,
+    )
 
 logger = logging.getLogger(__name__)
 
 AUTO_RUN_SETTINGS = {
-    "light": {"n": 6},
-    "medium": {"n": 12},
-    "heavy": {"n": 18},
+    "light": {
+        "n": 6
+    },
+    "medium": {
+        "n": 12
+    },
+    "heavy": {
+        "n": 18
+    },
 }
 
+
 class GEPAFeedbackMetric(Protocol):
+
     def __call__(
         gold: Example,
         pred: Prediction,
@@ -33,21 +46,22 @@ class GEPAFeedbackMetric(Protocol):
         - gold: The gold example.
         - pred: The predicted output.
         - trace: Optional. The trace of the program's execution.
-        - pred_name: Optional. The name of the target predictor currently being optimized by GEPA, for which 
+        - pred_name: Optional. The name of the target predictor currently being optimized by GEPA, for which
             the feedback is being requested.
         - pred_trace: Optional. The trace of the target predictor's execution GEPA is seeking feedback for.
 
         Note the `pred_name` and `pred_trace` arguments. During optimization, GEPA will call the metric to obtain
         feedback for individual predictors being optimized. GEPA provides the name of the predictor in `pred_name`
         and the sub-trace (of the trace) corresponding to the predictor in `pred_trace`.
-        If available at the predictor level, the metric should return dspy.Prediction(score: float, feedback: str) corresponding 
+        If available at the predictor level, the metric should return dspy.Prediction(score: float, feedback: str) corresponding
         to the predictor.
         If not available at the predictor level, the metric can also return a text feedback at the program level
         (using just the gold, pred and trace).
-        If no feedback is returned, GEPA will use a simple text feedback consisting of just the score: 
+        If no feedback is returned, GEPA will use a simple text feedback consisting of just the score:
         f"This trajectory got a score of {score}."
         """
         ...
+
 
 @dataclass(frozen=True)
 class DspyGEPAResult:
@@ -70,6 +84,7 @@ class DspyGEPAResult:
     - best_idx: candidate index with the highest val_aggregate_scores
     - best_candidate: the program text mapping for best_idx
     """
+
     # Data about the proposed candidates
     candidates: list[Module]
     parents: list[list[int | None]]
@@ -99,15 +114,13 @@ class DspyGEPAResult:
     @property
     def highest_score_achieved_per_val_task(self) -> list[float]:
         return [
-            self.val_subscores[list(self.per_val_instance_best_candidates[val_idx])[0]][val_idx]
+            self.val_subscores[list(
+                self.per_val_instance_best_candidates[val_idx])[0]][val_idx]
             for val_idx in range(len(self.val_subscores[0]))
         ]
 
     def to_dict(self) -> dict[str, Any]:
-        cands = [
-            {k: v for k, v in cand.items()}
-            for cand in self.candidates
-        ]
+        cands = [{k: v for k, v in cand.items()} for cand in self.candidates]
 
         return dict(
             candidates=cands,
@@ -115,7 +128,9 @@ class DspyGEPAResult:
             val_aggregate_scores=self.val_aggregate_scores,
             best_outputs_valset=self.best_outputs_valset,
             val_subscores=self.val_subscores,
-            per_val_instance_best_candidates=[list(s) for s in self.per_val_instance_best_candidates],
+            per_val_instance_best_candidates=[
+                list(s) for s in self.per_val_instance_best_candidates
+            ],
             discovery_eval_counts=self.discovery_eval_counts,
             total_metric_calls=self.total_metric_calls,
             num_full_val_evals=self.num_full_val_evals,
@@ -125,20 +140,25 @@ class DspyGEPAResult:
         )
 
     @staticmethod
-    def from_gepa_result(gepa_result: "GEPAResult", adapter: "DspyAdapter") -> "DspyGEPAResult":
+    def from_gepa_result(gepa_result: "GEPAResult",
+                         adapter: "DspyAdapter") -> "DspyGEPAResult":
         return DspyGEPAResult(
-            candidates=[adapter.build_program(c) for c in gepa_result.candidates],
+            candidates=[
+                adapter.build_program(c) for c in gepa_result.candidates
+            ],
             parents=gepa_result.parents,
             val_aggregate_scores=gepa_result.val_aggregate_scores,
             best_outputs_valset=gepa_result.best_outputs_valset,
             val_subscores=gepa_result.val_subscores,
-            per_val_instance_best_candidates=gepa_result.per_val_instance_best_candidates,
+            per_val_instance_best_candidates=gepa_result.
+            per_val_instance_best_candidates,
             discovery_eval_counts=gepa_result.discovery_eval_counts,
             total_metric_calls=gepa_result.total_metric_calls,
             num_full_val_evals=gepa_result.num_full_val_evals,
             log_dir=gepa_result.run_dir,
             seed=gepa_result.seed,
         )
+
 
 class GEPA(Teleprompter):
     """
@@ -167,18 +187,18 @@ class GEPA(Teleprompter):
         - gold: The gold example.
         - pred: The predicted output.
         - trace: Optional. The trace of the program's execution.
-        - pred_name: Optional. The name of the target predictor currently being optimized by GEPA, for which 
+        - pred_name: Optional. The name of the target predictor currently being optimized by GEPA, for which
             the feedback is being requested.
         - pred_trace: Optional. The trace of the target predictor's execution GEPA is seeking feedback for.
 
         Note the `pred_name` and `pred_trace` arguments. During optimization, GEPA will call the metric to obtain
         feedback for individual predictors being optimized. GEPA provides the name of the predictor in `pred_name`
         and the sub-trace (of the trace) corresponding to the predictor in `pred_trace`.
-        If available at the predictor level, the metric should return {'score': float, 'feedback': str} corresponding 
+        If available at the predictor level, the metric should return {'score': float, 'feedback': str} corresponding
         to the predictor.
         If not available at the predictor level, the metric can also return a text feedback at the program level
         (using just the gold, pred and trace).
-        If no feedback is returned, GEPA will use a simple text feedback consisting of just the score: 
+        If no feedback is returned, GEPA will use a simple text feedback consisting of just the score:
         f"This trajectory got a score of {score}."
         \"""
         ...
@@ -229,6 +249,7 @@ class GEPA(Teleprompter):
         Reproducibility:
         - seed: The random seed to use for reproducibility. Default is 0.
     """
+
     def __init__(
         self,
         metric: GEPAFeedbackMetric,
@@ -239,7 +260,8 @@ class GEPA(Teleprompter):
         max_metric_calls: int | None = None,
         # Reflection based configuration
         reflection_minibatch_size: int = 3,
-        candidate_selection_strategy: Literal["pareto", "current_best"] = "pareto",
+        candidate_selection_strategy: Literal["pareto",
+                                              "current_best"] = "pareto",
         reflection_lm: LM | None = None,
         skip_perfect_score: bool = True,
         add_format_failure_as_feedback: bool = False,
@@ -263,17 +285,13 @@ class GEPA(Teleprompter):
         self.metric_fn = metric
 
         # Budget configuration
-        assert (
-            (max_metric_calls is not None) +
-            (max_full_evals is not None) +
-            (auto is not None)
-            == 1
-        ), (
+        assert (max_metric_calls is not None) + (
+            max_full_evals is not None
+        ) + (auto is not None) == 1, (
             "Exactly one of max_metric_calls, max_full_evals, auto must be set. "
             f"You set max_metric_calls={max_metric_calls}, "
             f"max_full_evals={max_full_evals}, "
-            f"auto={auto}."
-        )
+            f"auto={auto}.")
         self.auto = auto
         self.max_full_evals = max_full_evals
         self.max_metric_calls = max_metric_calls
@@ -282,7 +300,9 @@ class GEPA(Teleprompter):
         self.reflection_minibatch_size = reflection_minibatch_size
         self.candidate_selection_strategy = candidate_selection_strategy
         # self.reflection_lm = reflection_lm
-        assert reflection_lm is not None, "GEPA requires a reflection language model to be provided. Typically, you can use `dspy.LM(model='gpt-5', temperature=1.0, max_tokens=32000)` to get a good reflection model. Reflection LM is used by GEPA to reflect on the behavior of the program and propose new instructions, and will benefit from a strong model."
+        assert reflection_lm is not None, (
+            "GEPA requires a reflection language model to be provided. Typically, you can use `dspy.LM(model='gpt-5', temperature=1.0, max_tokens=32000)` to get a good reflection model. Reflection LM is used by GEPA to reflect on the behavior of the program and propose new instructions, and will benefit from a strong model."
+        )
         self.reflection_lm = lambda x: reflection_lm(x)[0]
         self.skip_perfect_score = skip_perfect_score
         self.add_format_failure_as_feedback = add_format_failure_as_feedback
@@ -310,11 +330,22 @@ class GEPA(Teleprompter):
         # Reproducibility
         self.seed = seed
 
-    def auto_budget(self, num_preds, num_candidates, valset_size: int, minibatch_size: int = 35, full_eval_steps: int = 5) -> int:
+    def auto_budget(
+        self,
+        num_preds,
+        num_candidates,
+        valset_size: int,
+        minibatch_size: int = 35,
+        full_eval_steps: int = 5,
+    ) -> int:
         import numpy as np
-        num_trials = int(max(2 * (num_preds * 2) * np.log2(num_candidates), 1.5 * num_candidates))
+
+        num_trials = int(
+            max(2 * (num_preds * 2) * np.log2(num_candidates),
+                1.5 * num_candidates))
         if num_trials < 0 or valset_size < 0 or minibatch_size < 0:
-            raise ValueError("num_trials, valset_size, and minibatch_size must be >= 0.")
+            raise ValueError(
+                "num_trials, valset_size, and minibatch_size must be >= 0.")
         if full_eval_steps < 1:
             raise ValueError("full_eval_steps must be >= 1.")
 
@@ -362,28 +393,37 @@ class GEPA(Teleprompter):
 
         from dspy.teleprompt.gepa.gepa_utils import DspyAdapter, LoggerAdapter
 
-        assert trainset is not None and len(trainset) > 0, "Trainset must be provided and non-empty"
+        assert trainset is not None and len(
+            trainset) > 0, "Trainset must be provided and non-empty"
         assert teacher is None, "Teacher is not supported in DspyGEPA yet."
 
         if self.auto is not None:
             self.max_metric_calls = self.auto_budget(
                 num_preds=len(student.predictors()),
                 num_candidates=AUTO_RUN_SETTINGS[self.auto]["n"],
-                valset_size=len(valset) if valset is not None else len(trainset),
+                valset_size=len(valset)
+                if valset is not None else len(trainset),
             )
         elif self.max_full_evals is not None:
-            self.max_metric_calls = self.max_full_evals * (len(trainset) + (len(valset) if valset is not None else 0))
+            self.max_metric_calls = self.max_full_evals * (
+                len(trainset) + (len(valset) if valset is not None else 0))
         else:
             assert self.max_metric_calls is not None, "Either auto, max_full_evals, or max_metric_calls must be set."
 
-        logger.info(f"Running GEPA for approx {self.max_metric_calls} metric calls of the program. This amounts to {self.max_metric_calls / len(trainset) if valset is None else self.max_metric_calls / (len(trainset) + len(valset)):.2f} full evals on the {'train' if valset is None else 'train+val'} set.")
+        logger.info(
+            f"Running GEPA for approx {self.max_metric_calls} metric calls of the program. This amounts to {self.max_metric_calls / len(trainset) if valset is None else self.max_metric_calls / (len(trainset) + len(valset)):.2f} full evals on the {'train' if valset is None else 'train+val'} set."
+        )
 
         valset = valset or trainset
-        logger.info(f"Using {len(valset)} examples for tracking Pareto scores. You can consider using a smaller sample of the valset to allow GEPA to explore more diverse solutions within the same budget.")
+        logger.info(
+            f"Using {len(valset)} examples for tracking Pareto scores. You can consider using a smaller sample of the valset to allow GEPA to explore more diverse solutions within the same budget."
+        )
 
         rng = random.Random(self.seed)
 
-        def feedback_fn_creator(pred_name: str, predictor) -> "PredictorFeedbackFn":
+        def feedback_fn_creator(pred_name: str,
+                                predictor) -> "PredictorFeedbackFn":
+
             def feedback_fn(
                 predictor_output: dict[str, Any],
                 predictor_inputs: dict[str, Any],
@@ -391,7 +431,8 @@ class GEPA(Teleprompter):
                 module_outputs: Prediction,
                 captured_trace: "DSPyTrace",
             ) -> "ScoreWithFeedback":
-                trace_for_pred = [(predictor, predictor_inputs, predictor_output)]
+                trace_for_pred = [(predictor, predictor_inputs,
+                                   predictor_output)]
                 o = self.metric_fn(
                     module_inputs,
                     module_outputs,
@@ -404,7 +445,10 @@ class GEPA(Teleprompter):
                         o["feedback"] = f"This trajectory got a score of {o['score']}."
                     return o
                 else:
-                    return dict(score=o, feedback=f"This trajectory got a score of {o}.")
+                    return dict(
+                        score=o,
+                        feedback=f"This trajectory got a score of {o}.")
+
             return feedback_fn
 
         feedback_map = {
@@ -426,28 +470,26 @@ class GEPA(Teleprompter):
         reflection_lm = self.reflection_lm
 
         # Instantiate GEPA with the simpler adapter-based API
-        base_program = {name: pred.signature.instructions for name, pred in student.named_predictors()}
+        base_program = {
+            name: pred.signature.instructions
+            for name, pred in student.named_predictors()
+        }
         gepa_result: GEPAResult = optimize(
             seed_candidate=base_program,
             trainset=trainset,
             valset=valset,
             adapter=adapter,
-
             # Reflection-based configuration
             reflection_lm=reflection_lm,
             candidate_selection_strategy=self.candidate_selection_strategy,
             skip_perfect_score=self.skip_perfect_score,
             reflection_minibatch_size=self.reflection_minibatch_size,
-
             perfect_score=self.perfect_score,
-
             # Merge-based configuration
             use_merge=self.use_merge,
             max_merge_invocations=self.max_merge_invocations,
-
             # Budget
             max_metric_calls=self.max_metric_calls,
-
             # Logging
             logger=LoggerAdapter(logger),
             run_dir=self.log_dir,
@@ -455,7 +497,6 @@ class GEPA(Teleprompter):
             wandb_api_key=self.wandb_api_key,
             wandb_init_kwargs=self.wandb_init_kwargs,
             track_best_outputs=self.track_best_outputs,
-
             # Reproducibility
             seed=self.seed,
         )
@@ -463,7 +504,8 @@ class GEPA(Teleprompter):
         new_prog = adapter.build_program(gepa_result.best_candidate)
 
         if self.track_stats:
-            dspy_gepa_result = DspyGEPAResult.from_gepa_result(gepa_result, adapter)
+            dspy_gepa_result = DspyGEPAResult.from_gepa_result(
+                gepa_result, adapter)
             new_prog.detailed_results = dspy_gepa_result
 
         return new_prog

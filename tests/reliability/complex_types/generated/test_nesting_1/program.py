@@ -1,12 +1,16 @@
 ### Input models ###
 
+from typing import List
 
 from pydantic import BaseModel, Field
+
+import dspy
 
 
 class Level5(BaseModel):
     field1: str = Field(..., description="A string field at the deepest level")
-    field2: float = Field(..., description="A numerical field at the deepest level")
+    field2: float = Field(...,
+                          description="A numerical field at the deepest level")
 
 
 class Level4(BaseModel):
@@ -32,14 +36,11 @@ class ProgramInputs(BaseModel):
 ### Output models ###
 
 
-from typing import List
-
-from pydantic import BaseModel, Field
-
-
 class ResultLevel5(BaseModel):
-    outputField1: bool = Field(..., description="A boolean field indicating success or failure")
-    outputField2: list[str] = Field(..., description="An array of strings representing messages")
+    outputField1: bool = Field(
+        ..., description="A boolean field indicating success or failure")
+    outputField2: list[str] = Field(
+        ..., description="An array of strings representing messages")
 
 
 class ResultLevel4(BaseModel):
@@ -63,8 +64,6 @@ class ProgramOutputs(BaseModel):
 
 
 ### Program definition ###
-
-import dspy
 
 
 class BaseSignature(dspy.Signature):

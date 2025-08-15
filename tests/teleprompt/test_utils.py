@@ -5,6 +5,7 @@ from dspy.teleprompt.utils import eval_candidate_program
 
 
 class DummyModule(dspy.Module):
+
     def __init__(self):
         super().__init__()
 
@@ -18,7 +19,8 @@ def test_eval_candidate_program_full_trainset():
     evaluate = Mock(return_value=0)
     batch_size = 10
 
-    result = eval_candidate_program(batch_size, trainset, candidate_program, evaluate)
+    result = eval_candidate_program(batch_size, trainset, candidate_program,
+                                    evaluate)
 
     evaluate.assert_called_once()
     _, called_kwargs = evaluate.call_args
@@ -33,13 +35,17 @@ def test_eval_candidate_program_minibatch():
     evaluate = Mock(return_value=0)
     batch_size = 3
 
-    result = eval_candidate_program(batch_size, trainset, candidate_program, evaluate)
+    result = eval_candidate_program(batch_size, trainset, candidate_program,
+                                    evaluate)
 
     evaluate.assert_called_once()
     _, called_kwargs = evaluate.call_args
     assert len(called_kwargs["devset"]) == batch_size
-    assert called_kwargs["callback_metadata"] == {"metric_key": "eval_minibatch"}
+    assert called_kwargs["callback_metadata"] == {
+        "metric_key": "eval_minibatch"
+    }
     assert result == 0
+
 
 def test_eval_candidate_program_failure():
     trainset = [1, 2, 3, 4, 5]
@@ -47,6 +53,7 @@ def test_eval_candidate_program_failure():
     evaluate = Mock(side_effect=ValueError("Error"))
     batch_size = 3
 
-    result = eval_candidate_program(batch_size, trainset, candidate_program, evaluate)
+    result = eval_candidate_program(batch_size, trainset, candidate_program,
+                                    evaluate)
 
     assert result.score == 0.0

@@ -12,7 +12,9 @@ from dspy.utils.syncify import syncify
 
 def download(url):
     filename = os.path.basename(url)
-    remote_size = int(requests.head(url, allow_redirects=True).headers.get("Content-Length", 0))
+    remote_size = int(
+        requests.head(url,
+                      allow_redirects=True).headers.get("Content-Length", 0))
     local_size = os.path.getsize(filename) if os.path.exists(filename) else 0
 
     if local_size != remote_size:

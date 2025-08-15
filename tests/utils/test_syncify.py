@@ -4,7 +4,9 @@ import dspy
 
 
 def test_syncify_in_place():
+
     class MyProgram(dspy.Module):
+
         async def aforward(self, x: int) -> int:
             await asyncio.sleep(0.01)
             return x + 1
@@ -15,7 +17,9 @@ def test_syncify_in_place():
 
 
 def test_syncify_with_wrapper():
+
     class MyProgram(dspy.Module):
+
         async def aforward(self, x: int) -> int:
             await asyncio.sleep(0.01)
             return x + 1
@@ -26,7 +30,9 @@ def test_syncify_with_wrapper():
 
 
 def test_syncify_works_with_optimizers():
+
     class MyProgram(dspy.Module):
+
         def __init__(self):
             self.predict = dspy.Predict("question->answer")
 
@@ -42,9 +48,15 @@ def test_syncify_works_with_optimizers():
     lm = dspy.utils.DummyLM([{"answer": "dummy"} for _ in range(100)])
     dspy.configure(lm=lm)
 
-    dataset = [dspy.Example(question="question", answer="answer").with_inputs("question") for _ in range(10)]
+    dataset = [
+        dspy.Example(question="question",
+                     answer="answer").with_inputs("question")
+        for _ in range(10)
+    ]
 
-    optimizer = dspy.BootstrapFewShot(metric=dummy_metric, max_bootstrapped_demos=2, max_labeled_demos=0)
+    optimizer = dspy.BootstrapFewShot(metric=dummy_metric,
+                                      max_bootstrapped_demos=2,
+                                      max_labeled_demos=0)
 
     # Test syncify in place
     sync_program = dspy.syncify(async_program, in_place=True)

@@ -19,6 +19,7 @@ def strip_prefix(text):
     modified_text = re.sub(pattern, "", text)
     return modified_text.strip('"')
 
+
 def create_instruction_set_history_string(base_program, trial_logs, top_n):
     program_history = []
     for trial_num in trial_logs:
@@ -42,7 +43,9 @@ def create_instruction_set_history_string(base_program, trial_logs, top_n):
             unique_program_history.append(entry)
 
     # Get the top n programs from program history
-    top_n_program_history = sorted(unique_program_history, key=lambda x: x["score"], reverse=True)[:top_n]
+    top_n_program_history = sorted(unique_program_history,
+                                   key=lambda x: x["score"],
+                                   reverse=True)[:top_n]
     top_n_program_history.reverse()
 
     # Create formatted string
@@ -51,9 +54,11 @@ def create_instruction_set_history_string(base_program, trial_logs, top_n):
         program = entry["program"]
         score = entry["score"]
         instruction_set = get_program_instruction_set_string(program)
-        instruction_set_history_string += instruction_set + f" | Score: {score}\n\n"
+        instruction_set_history_string += instruction_set + \
+            f" | Score: {score}\n\n"
 
     return instruction_set_history_string
+
 
 def parse_list_of_instructions(instruction_string):
     # Try to convert the string representation of a list to an actual list using JSON
@@ -67,6 +72,7 @@ def parse_list_of_instructions(instruction_string):
     instructions = re.findall(r'"([^"]*)"', instruction_string)
     return instructions
 
+
 def get_program_instruction_set_string(program):
     instruction_list = []
     for _, pred in enumerate(program.predictors()):
@@ -75,7 +81,9 @@ def get_program_instruction_set_string(program):
     # Joining the list into a single string that looks like a list
     return f"[{', '.join(instruction_list)}]"
 
-def create_predictor_level_history_string(base_program, predictor_i, trial_logs, top_n):
+
+def create_predictor_level_history_string(base_program, predictor_i,
+                                          trial_logs, top_n):
     instruction_aggregate = {}
     instruction_history = []
 
@@ -100,7 +108,10 @@ def create_predictor_level_history_string(base_program, predictor_i, trial_logs,
             instruction_aggregate[instruction]["total_score"] += score
             instruction_aggregate[instruction]["count"] += 1
         else:
-            instruction_aggregate[instruction] = {"total_score": score, "count": 1}
+            instruction_aggregate[instruction] = {
+                "total_score": score,
+                "count": 1
+            }
 
     # Calculate average score for each instruction and prepare for sorting
     predictor_history = []
@@ -116,7 +127,9 @@ def create_predictor_level_history_string(base_program, predictor_i, trial_logs,
             seen_instructions.add(instruction)
             unique_predictor_history.append((instruction, score))
 
-    top_instructions = sorted(unique_predictor_history, key=lambda x: x[1], reverse=True)[:top_n]
+    top_instructions = sorted(unique_predictor_history,
+                              key=lambda x: x[1],
+                              reverse=True)[:top_n]
     top_instructions.reverse()
 
     # Create formatted history string
@@ -126,8 +139,8 @@ def create_predictor_level_history_string(base_program, predictor_i, trial_logs,
 
     return predictor_history_string
 
-def create_example_string(fields, example):
 
+def create_example_string(fields, example):
     # Building the output string
     output = []
     for field_name, field_values in fields.items():
@@ -143,13 +156,15 @@ def create_example_string(fields, example):
     # Joining all the field strings
     return "\n".join(output)
 
+
 def get_dspy_source_code(module):
     header = []
     base_code = ""
 
     # Don't get source code for Predict or ChainOfThought modules (NOTE we will need to extend this list as more DSPy.modules are added)
     # TODO: if type(module).__name__ not in ["Predict", "ChainOfThought", "ReAct"]:
-    if not type(module).__name__ == "Predict" and not type(module).__name__ == "ChainOfThought":
+    if not type(module).__name__ == "Predict" and not type(
+            module).__name__ == "ChainOfThought":
         try:
             base_code = inspect.getsource(type(module))
         except TypeError:
@@ -172,13 +187,19 @@ def get_dspy_source_code(module):
             except TypeError:
                 continue
             if isinstance(item, Parameter):
-                if hasattr(item, "signature") and item.signature is not None and item.signature.__pydantic_parent_namespace__["signature_name"] + "_sig" not in completed_set:
+                if (hasattr(item, "signature") and item.signature is not None
+                        and item.signature.
+                        __pydantic_parent_namespace__["signature_name"] +
+                        "_sig" not in completed_set):
                     try:
                         header.append(inspect.getsource(item.signature))
                         print(inspect.getsource(item.signature))
                     except (TypeError, OSError):
                         header.append(str(item.signature))
-                    completed_set.add(item.signature.__pydantic_parent_namespace__["signature_name"] + "_sig")
+                    completed_set.add(
+                        item.signature.
+                        __pydantic_parent_namespace__["signature_name"] +
+                        "_sig")
             if isinstance(item, dspy.Module):
                 code = get_dspy_source_code(item).strip()
                 if code not in completed_set:

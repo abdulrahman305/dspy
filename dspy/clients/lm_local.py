@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class LocalProvider(Provider):
+
     def __init__(self):
         super().__init__()
         self.finetunable = True
@@ -49,10 +50,14 @@ class LocalProvider(Provider):
         if model.startswith("local:"):
             model = model[6:]
         if model.startswith("huggingface/"):
-            model = model[len("huggingface/") :]
+            model = model[len("huggingface/"):]
 
-        logger.info(f"Grabbing a free port to launch an SGLang server for model {model}")
-        logger.info(f"We see that CUDA_VISIBLE_DEVICES is {os.environ.get('CUDA_VISIBLE_DEVICES', 'unset')}")
+        logger.info(
+            f"Grabbing a free port to launch an SGLang server for model {model}"
+        )
+        logger.info(
+            f"We see that CUDA_VISIBLE_DEVICES is {os.environ.get('CUDA_VISIBLE_DEVICES', 'unset')}"
+        )
         port = get_free_port()
         timeout = launch_kwargs.get("timeout", 1800)
         command = f"python -m sglang.launch_server --model-path {model} --port {port} --host 0.0.0.0"
@@ -109,7 +114,9 @@ class LocalProvider(Provider):
             return "".join(logs_buffer)
 
         # Let the user know server is up
-        logger.info(f"Server ready on random port {port}! Logs are available via lm.get_logs() method on returned lm.")
+        logger.info(
+            f"Server ready on random port {port}! Logs are available via lm.get_logs() method on returned lm."
+        )
 
         lm.kwargs["api_base"] = f"http://localhost:{port}/v1"
         lm.kwargs["api_key"] = "local"
@@ -146,7 +153,8 @@ class LocalProvider(Provider):
             model = model[6:]
 
         if train_data_format != TrainDataFormat.CHAT:
-            raise ValueError("Only chat models are supported for local finetuning.")
+            raise ValueError(
+                "Only chat models are supported for local finetuning.")
 
         data_path = save_data(train_data)
         logger.info(f"Train data saved to {data_path}")
@@ -165,7 +173,8 @@ class LocalProvider(Provider):
             "output_dir": output_dir,
         }
         train_kwargs = {**default_train_kwargs, **(train_kwargs or {})}
-        output_dir = train_kwargs["output_dir"]  # user might have changed the output_dir
+        output_dir = train_kwargs[
+            "output_dir"]  # user might have changed the output_dir
 
         logger.info(f"Starting local training, will save to {output_dir}")
         train_sft_locally(
@@ -181,7 +190,8 @@ class LocalProvider(Provider):
 def create_output_dir(model_name, data_path):
     model_str = model_name.replace("/", "-")
     time_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    rnd_str = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
+    rnd_str = "".join(
+        random.choices(string.ascii_lowercase + string.digits, k=6))
     model_identifier = f"{rnd_str}_{model_str}_{time_str}"
     output_dir = data_path.replace(".jsonl", "_" + model_identifier)
     return output_dir
@@ -200,11 +210,14 @@ def train_sft_locally(model_name, train_data, train_kwargs):
 
     device = train_kwargs.get("device", None)
     if device is None:
-        device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+        device = "cuda" if torch.cuda.is_available(
+        ) else "mps" if torch.backends.mps.is_available() else "cpu"
     logger.info(f"Using device: {device}")
 
-    model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=model_name).to(device)
-    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=model_name)
+    model = AutoModelForCausalLM.from_pretrained(
+        pretrained_model_name_or_path=model_name).to(device)
+    tokenizer = AutoTokenizer.from_pretrained(
+        pretrained_model_name_or_path=model_name)
 
     # Set up the chat format; generally only for non-chat model variants, hence the try-except.
     try:
@@ -228,11 +241,13 @@ def train_sft_locally(model_name, train_data, train_kwargs):
     hf_dataset = Dataset.from_list(train_data)
 
     def tokenize_function(example):
-        return encode_sft_example(example, tokenizer, train_kwargs["max_seq_length"])  # noqa: F821
+        return encode_sft_example(example, tokenizer,
+                                  train_kwargs["max_seq_length"])  # noqa: F821
 
     tokenized_dataset = hf_dataset.map(tokenize_function, batched=False)
     tokenized_dataset.set_format(type="torch")
-    tokenized_dataset = tokenized_dataset.filter(lambda example: (example["labels"] != -100).any())
+    tokenized_dataset = tokenized_dataset.filter(
+        lambda example: (example["labels"] != -100).any())
 
     use_peft = train_kwargs.get("use_peft", False)
     peft_config = None
@@ -256,8 +271,10 @@ def train_sft_locally(model_name, train_data, train_kwargs):
     sft_config = SFTConfig(
         output_dir=train_kwargs["output_dir"],
         num_train_epochs=train_kwargs["num_train_epochs"],
-        per_device_train_batch_size=train_kwargs["per_device_train_batch_size"],
-        gradient_accumulation_steps=train_kwargs["gradient_accumulation_steps"],
+        per_device_train_batch_size=train_kwargs[
+            "per_device_train_batch_size"],
+        gradient_accumulation_steps=train_kwargs[
+            "gradient_accumulation_steps"],
         learning_rate=train_kwargs["learning_rate"],
         max_grad_norm=2.0,  # note that the current SFTConfig default is 1.0
         logging_steps=20,
@@ -299,7 +316,9 @@ def train_sft_locally(model_name, train_data, train_kwargs):
         )
 
         merged_model = model_.merge_and_unload()
-        merged_model.save_pretrained(sft_config.output_dir, safe_serialization=True, max_shard_size="5GB")
+        merged_model.save_pretrained(sft_config.output_dir,
+                                     safe_serialization=True,
+                                     max_shard_size="5GB")
 
     # Clean up!
     import gc
@@ -343,7 +362,8 @@ def wait_for_server(base_url: str, timeout: int | None = None) -> None:
                 break
 
             if timeout and (time.time() - start_time) > timeout:
-                raise TimeoutError("Server did not become ready within timeout period")
+                raise TimeoutError(
+                    "Server did not become ready within timeout period")
         except requests.exceptions.RequestException:
             # Server not up yet, wait and retry
             time.sleep(1)
@@ -380,7 +400,8 @@ def encode_sft_example(example, tokenizer, max_seq_length):
                 message_start_idx = 0
             else:
                 message_start_idx = tokenizer.apply_chat_template(
-                    conversation=messages[:message_idx],  # here marks the end of the previous messages
+                    conversation=messages[:
+                                          message_idx],  # here marks the end of the previous messages
                     tokenize=True,
                     return_tensors="pt",
                     padding=False,
@@ -389,12 +410,13 @@ def encode_sft_example(example, tokenizer, max_seq_length):
                     add_generation_prompt=False,
                 ).shape[1]
             # next, we calculate the end index of this non-assistant message
-            if message_idx < len(messages) - 1 and messages[message_idx + 1]["role"] == "assistant":
+            if message_idx < len(messages) - 1 and messages[
+                    message_idx + 1]["role"] == "assistant":
                 # for intermediate messages that follow with an assistant message, we need to
                 # set `add_generation_prompt=True` to avoid the assistant generation prefix being included in the loss
                 # (e.g., `<|assistant|>`)
                 message_end_idx = tokenizer.apply_chat_template(
-                    conversation=messages[: message_idx + 1],
+                    conversation=messages[:message_idx + 1],
                     tokenize=True,
                     return_tensors="pt",
                     padding=False,
@@ -406,7 +428,7 @@ def encode_sft_example(example, tokenizer, max_seq_length):
                 # for the last message or the message that doesn't follow with an assistant message,
                 # we don't need to add the assistant generation prefix
                 message_end_idx = tokenizer.apply_chat_template(
-                    conversation=messages[: message_idx + 1],
+                    conversation=messages[:message_idx + 1],
                     tokenize=True,
                     return_tensors="pt",
                     padding=False,

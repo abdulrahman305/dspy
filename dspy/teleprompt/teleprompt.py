@@ -4,10 +4,19 @@ from dspy.primitives import Example, Module
 
 
 class Teleprompter:
+
     def __init__(self):
         pass
 
-    def compile(self, student: Module, *, trainset: list[Example], teacher: Module | None = None, valset: list[Example] | None = None, **kwargs) -> Module:
+    def compile(
+        self,
+        student: Module,
+        *,
+        trainset: list[Example],
+        teacher: Module | None = None,
+        valset: list[Example] | None = None,
+        **kwargs,
+    ) -> Module:
         """
         Optimize the student program.
 

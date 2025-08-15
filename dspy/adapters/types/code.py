@@ -80,8 +80,7 @@ class Code(Type):
         return (
             "Code represented in a string, specified in the `code` field. If this is an output field, the code "
             "field should follow the markdown code block format, e.g. \n```python\n{code}\n``` or \n```cpp\n{code}\n```"
-            f"\nProgramming language: {cls.language}"
-        )
+            f"\nProgramming language: {cls.language}")
 
     @pydantic.model_validator(mode="before")
     @classmethod
@@ -96,7 +95,9 @@ class Code(Type):
             if "code" not in data:
                 raise ValueError("`code` field is required for `dspy.Code`")
             if not isinstance(data["code"], str):
-                raise ValueError(f"`code` field must be a string, but received type: {type(data['code'])}")
+                raise ValueError(
+                    f"`code` field must be a string, but received type: {type(data['code'])}"
+                )
             return {"code": _filter_code(data["code"])}
 
         raise ValueError(f"Received invalid value for `dspy.Code`: {data}")
@@ -123,7 +124,8 @@ def _filter_code(code: str) -> str:
 
 # Patch __class_getitem__ directly on the class to support dspy.Code["python"] syntax
 def _code_class_getitem(cls, language):
-    code_with_language_cls = create_model(f"{cls.__name__}_{language}", __base__=cls)
+    code_with_language_cls = create_model(f"{cls.__name__}_{language}",
+                                          __base__=cls)
     code_with_language_cls.language = language
     return code_with_language_cls
 

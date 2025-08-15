@@ -8,6 +8,7 @@ from dspy.utils.unbatchify import Unbatchify
 
 
 class Embeddings:
+
     def __init__(
         self,
         corpus: list[str],
@@ -26,9 +27,12 @@ class Embeddings:
         self.normalize = normalize
 
         self.corpus_embeddings = self.embedder(self.corpus)
-        self.corpus_embeddings = self._normalize(self.corpus_embeddings) if self.normalize else self.corpus_embeddings
+        self.corpus_embeddings = self._normalize(
+            self.corpus_embeddings
+        ) if self.normalize else self.corpus_embeddings
 
-        self.index = self._build_faiss() if len(corpus) >= brute_force_threshold else None
+        self.index = self._build_faiss() if len(
+            corpus) >= brute_force_threshold else None
         self.search_fn = Unbatchify(self._batch_forward)
 
     def __call__(self, query: str):
@@ -44,8 +48,10 @@ class Embeddings:
         q_embeds = self.embedder(queries)
         q_embeds = self._normalize(q_embeds) if self.normalize else q_embeds
 
-        pids = self._faiss_search(q_embeds, self.k * 10) if self.index else None
-        pids = np.tile(np.arange(len(self.corpus)), (len(queries), 1)) if pids is None else pids
+        pids = self._faiss_search(q_embeds, self.k *
+                                  10) if self.index else None
+        pids = np.tile(np.arange(len(self.corpus)),
+                       (len(queries), 1)) if pids is None else pids
 
         return self._rerank_and_predict(q_embeds, pids)
 
@@ -57,15 +63,16 @@ class Embeddings:
         try:
             import faiss
         except ImportError:
-            raise ImportError("Please `pip install faiss-cpu` or increase `brute_force_threshold` to avoid FAISS.")
+            raise ImportError(
+                "Please `pip install faiss-cpu` or increase `brute_force_threshold` to avoid FAISS."
+            )
 
         quantizer = faiss.IndexFlatL2(dim)
         index = faiss.IndexIVFPQ(quantizer, dim, partitions, nbytes, 8)
 
         print(
             f"Training a {nbytes}-byte FAISS index with {partitions} partitions, based on "
-            f"{len(self.corpus)} x {dim}-dim embeddings"
-        )
+            f"{len(self.corpus)} x {dim}-dim embeddings")
         index.train(self.corpus_embeddings)
         index.add(self.corpus_embeddings)
         index.nprobe = min(16, partitions)
@@ -75,14 +82,18 @@ class Embeddings:
     def _faiss_search(self, query_embeddings: np.ndarray, num_candidates: int):
         return self.index.search(query_embeddings, num_candidates)[1]
 
-    def _rerank_and_predict(self, q_embeds: np.ndarray, candidate_indices: np.ndarray):
+    def _rerank_and_predict(self, q_embeds: np.ndarray,
+                            candidate_indices: np.ndarray):
         candidate_embeddings = self.corpus_embeddings[candidate_indices]
         scores = np.einsum("qd,qkd->qk", q_embeds, candidate_embeddings)
 
-        top_k_indices = np.argsort(-scores, axis=1)[:, : self.k]
-        top_indices = candidate_indices[np.arange(len(q_embeds))[:, None], top_k_indices]
+        top_k_indices = np.argsort(-scores, axis=1)[:, :self.k]
+        top_indices = candidate_indices[np.arange(len(q_embeds))[:, None],
+                                        top_k_indices]
 
-        return [([self.corpus[idx] for idx in indices], [idx for idx in indices]) for indices in top_indices]  # noqa: C416
+        return [([self.corpus[idx]
+                  for idx in indices], [idx for idx in indices])
+                for indices in top_indices]  # noqa: C416
 
     def _normalize(self, embeddings: np.ndarray):
         norms = np.linalg.norm(embeddings, axis=1, keepdims=True)

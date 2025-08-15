@@ -6,14 +6,18 @@ def default_normalize(s):
     return normalize_text(s) or None
 
 
-def majority(prediction_or_completions, normalize=default_normalize, field=None):
+def majority(prediction_or_completions,
+             normalize=default_normalize,
+             field=None):
     """
     Returns the most common completion for the target field (or the last field) in the signature.
     When normalize returns None, that completion is ignored.
     In case of a tie, earlier completion are prioritized.
     """
 
-    assert any(isinstance(prediction_or_completions, t) for t in [Prediction, Completions, list])
+    assert any(
+        isinstance(prediction_or_completions, t)
+        for t in [Prediction, Completions, list])
     type(prediction_or_completions)
 
     # Get the completions
@@ -35,7 +39,9 @@ def majority(prediction_or_completions, normalize=default_normalize, field=None)
 
     # Normalize
     normalize = normalize if normalize else lambda x: x
-    normalized_values = [normalize(completion[field]) for completion in completions]
+    normalized_values = [
+        normalize(completion[field]) for completion in completions
+    ]
     normalized_values_ = [x for x in normalized_values if x is not None]
 
     # Count

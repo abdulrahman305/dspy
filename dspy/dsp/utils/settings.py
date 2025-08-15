@@ -21,7 +21,8 @@ DEFAULT_CONFIG = dotdict(
     caller_predict=None,
     caller_modules=None,
     stream_listeners=[],
-    provide_traceback=False,  # Whether to include traceback information in error logs.
+    # Whether to include traceback information in error logs.
+    provide_traceback=False,
     num_threads=8,  # Number of threads to use for parallel processing.
     max_errors=10,  # Maximum errors before halting operations.
     # If true, async tools can be called in sync mode by getting converted to sync.
@@ -38,7 +39,8 @@ config_owner_async_task = None
 # Global lock for settings configuration
 global_lock = threading.Lock()
 
-thread_local_overrides = contextvars.ContextVar("context_overrides", default=dotdict())
+thread_local_overrides = contextvars.ContextVar("context_overrides",
+                                                default=dotdict())
 
 
 class Settings:
@@ -75,10 +77,11 @@ class Settings:
         elif name in main_thread_config:
             return main_thread_config[name]
         else:
-            raise AttributeError(f"'Settings' object has no attribute '{name}'")
+            raise AttributeError(
+                f"'Settings' object has no attribute '{name}'")
 
     def __setattr__(self, name, value):
-        if name in ("_instance",):
+        if name in ("_instance", ):
             super().__setattr__(name, value)
         else:
             self.configure(**{name: value})
@@ -117,7 +120,9 @@ class Settings:
 
         if config_owner_thread_id != current_thread_id:
             # Disallow a second `configure` calls from other threads.
-            raise RuntimeError("dspy.settings can only be changed by the thread that initially configured it.")
+            raise RuntimeError(
+                "dspy.settings can only be changed by the thread that initially configured it."
+            )
 
         # Async task doesn't allow a second `configure` call, must use dspy.context(...) instead.
         is_async_task = False
@@ -149,11 +154,11 @@ class Settings:
             # If `IPython` is not installed or `get_ipython` failed, we are not in an IPython environment.
             in_ipython = False
 
-        if not in_ipython and config_owner_async_task != asyncio.current_task():
+        if not in_ipython and config_owner_async_task != asyncio.current_task(
+        ):
             raise RuntimeError(
                 "dspy.settings.configure(...) can only be called from the same async task that called it first. Please "
-                "use `dspy.context(...)` in other async tasks instead."
-            )
+                "use `dspy.context(...)` in other async tasks instead.")
 
     def configure(self, **kwargs):
         # If no exception is raised, the `configure` call is allowed.
@@ -172,7 +177,11 @@ class Settings:
         """
 
         original_overrides = thread_local_overrides.get().copy()
-        new_overrides = dotdict({**main_thread_config, **original_overrides, **kwargs})
+        new_overrides = dotdict({
+            **main_thread_config,
+            **original_overrides,
+            **kwargs
+        })
         token = thread_local_overrides.set(new_overrides)
 
         try:

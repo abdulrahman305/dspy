@@ -62,7 +62,11 @@ class Cache:
         """Check if a key is in the cache."""
         return key in self.memory_cache or key in self.disk_cache
 
-    def cache_key(self, request: dict[str, Any], ignored_args_for_cache_key: list[str] | None = None) -> str:
+    def cache_key(
+        self,
+        request: dict[str, Any],
+        ignored_args_for_cache_key: list[str] | None = None,
+    ) -> str:
         """
         Obtain a unique cache key for the given request dictionary by hashing its JSON
         representation. For request fields having types that are known to be JSON-incompatible,
@@ -72,7 +76,8 @@ class Cache:
         ignored_args_for_cache_key = ignored_args_for_cache_key or []
 
         def transform_value(value):
-            if isinstance(value, type) and issubclass(value, pydantic.BaseModel):
+            if isinstance(value, type) and issubclass(value,
+                                                      pydantic.BaseModel):
                 return value.model_json_schema()
             elif isinstance(value, pydantic.BaseModel):
                 return value.model_dump(mode="json")
@@ -92,14 +97,22 @@ class Cache:
             else:
                 return value
 
-        params = {k: transform_value(v) for k, v in request.items() if k not in ignored_args_for_cache_key}
+        params = {
+            k: transform_value(v)
+            for k, v in request.items() if k not in ignored_args_for_cache_key
+        }
         return sha256(ujson.dumps(params, sort_keys=True).encode()).hexdigest()
 
-    def get(self, request: dict[str, Any], ignored_args_for_cache_key: list[str] | None = None) -> Any:
+    def get(
+        self,
+        request: dict[str, Any],
+        ignored_args_for_cache_key: list[str] | None = None,
+    ) -> Any:
         try:
             key = self.cache_key(request, ignored_args_for_cache_key)
         except Exception:
-            logger.debug(f"Failed to generate cache key for request: {request}")
+            logger.debug(
+                f"Failed to generate cache key for request: {request}")
             return None
 
         if self.enable_memory_cache and key in self.memory_cache:
@@ -130,7 +143,8 @@ class Cache:
         try:
             key = self.cache_key(request, ignored_args_for_cache_key)
         except Exception:
-            logger.debug(f"Failed to generate cache key for request: {request}")
+            logger.debug(
+                f"Failed to generate cache key for request: {request}")
             return
 
         if self.enable_memory_cache and enable_memory_cache:
@@ -142,7 +156,8 @@ class Cache:
                 self.disk_cache[key] = value
             except Exception as e:
                 # Disk cache writing can fail for different reasons, e.g. disk full or the `value` is not picklable.
-                logger.debug(f"Failed to put value in disk cache: {value}, {e}")
+                logger.debug(
+                    f"Failed to put value in disk cache: {value}, {e}")
 
     def reset_memory_cache(self) -> None:
         if not self.enable_memory_cache:
@@ -169,11 +184,11 @@ class Cache:
 
 
 def request_cache(
-    cache_arg_name: str | None = None,
-    ignored_args_for_cache_key: list[str] | None = None,
-    enable_memory_cache: bool = True,
-    *,  # everything after this is keyword-only
-    maxsize: int | None = None,  # legacy / no-op
+        cache_arg_name: str | None = None,
+        ignored_args_for_cache_key: list[str] | None = None,
+        enable_memory_cache: bool = True,
+        *,  # everything after this is keyword-only
+        maxsize: int | None = None,  # legacy / no-op
 ):
     """
     Decorator for applying caching to a function based on the request argument.
@@ -185,16 +200,20 @@ def request_cache(
         enable_memory_cache: Whether to enable in-memory cache at call time. If False, the memory cache will not be
             written to on new data.
     """
-    ignored_args_for_cache_key = ignored_args_for_cache_key or ["api_key", "api_base", "base_url"]
+    ignored_args_for_cache_key = ignored_args_for_cache_key or [
+        "api_key",
+        "api_base",
+        "base_url",
+    ]
     # Deprecation notice
     if maxsize is not None:
         logger.warning(
             "[DEPRECATION] `maxsize` is deprecated and no longer does anything; "
             "the cache is now handled internally by `dspy.cache`. "
-            "This parameter will be removed in a future release.",
-        )
+            "This parameter will be removed in a future release.", )
 
     def decorator(fn):
+
         @wraps(fn)
         def process_request(args, kwargs):
             # Use fully qualified function name for uniqueness
@@ -223,7 +242,8 @@ def request_cache(
             modified_request = process_request(args, kwargs)
 
             # Retrieve from cache if available
-            cached_result = cache.get(modified_request, ignored_args_for_cache_key)
+            cached_result = cache.get(modified_request,
+                                      ignored_args_for_cache_key)
 
             if cached_result is not None:
                 return cached_result
@@ -233,7 +253,12 @@ def request_cache(
             original_request = copy.deepcopy(modified_request)
             result = fn(*args, **kwargs)
             # `enable_memory_cache` can be provided at call time to avoid indefinite growth.
-            cache.put(original_request, result, ignored_args_for_cache_key, enable_memory_cache)
+            cache.put(
+                original_request,
+                result,
+                ignored_args_for_cache_key,
+                enable_memory_cache,
+            )
 
             return result
 
@@ -245,7 +270,8 @@ def request_cache(
             modified_request = process_request(args, kwargs)
 
             # Retrieve from cache if available
-            cached_result = cache.get(modified_request, ignored_args_for_cache_key)
+            cached_result = cache.get(modified_request,
+                                      ignored_args_for_cache_key)
             if cached_result is not None:
                 return cached_result
 
@@ -253,7 +279,12 @@ def request_cache(
             # Make a copy of the original request in case it's modified in place, e.g., deleting some fields
             original_request = copy.deepcopy(modified_request)
             result = await fn(*args, **kwargs)
-            cache.put(original_request, result, ignored_args_for_cache_key, enable_memory_cache)
+            cache.put(
+                original_request,
+                result,
+                ignored_args_for_cache_key,
+                enable_memory_cache,
+            )
 
             return result
 

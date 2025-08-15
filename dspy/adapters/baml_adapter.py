@@ -39,7 +39,9 @@ def _render_type_str(annotation: Any, _depth: int = 0, indent: int = 0) -> str:
     if origin in (types.UnionType, Union):
         non_none_args = [arg for arg in args if arg is not type(None)]
         # Render the non-None part of the union
-        type_render = " or ".join([_render_type_str(arg, _depth + 1, indent) for arg in non_none_args])
+        type_render = " or ".join([
+            _render_type_str(arg, _depth + 1, indent) for arg in non_none_args
+        ])
         # Add 'or null' if None was part of the union
         if len(non_none_args) < len(args):
             return f"{type_render} or null"
@@ -85,7 +87,9 @@ def _render_type_str(annotation: Any, _depth: int = 0, indent: int = 0) -> str:
     return str(annotation)
 
 
-def _build_simplified_schema(model: type[BaseModel], indent: int = 0, _seen: set[type] | None = None) -> str:
+def _build_simplified_schema(model: type[BaseModel],
+                             indent: int = 0,
+                             _seen: set[type] | None = None) -> str:
     """Builds a simplified, human-readable schema from a Pydantic model.
 
     Args:
@@ -113,10 +117,12 @@ def _build_simplified_schema(model: type[BaseModel], indent: int = 0, _seen: set
             lines.append(f"{next_indent}{COMMENT_SYMBOL} No fields defined")
         for name, field in fields.items():
             if field.description:
-                lines.append(f"{next_indent}{COMMENT_SYMBOL} {field.description}")
+                lines.append(
+                    f"{next_indent}{COMMENT_SYMBOL} {field.description}")
             elif field.alias and field.alias != name:
                 # If there's an alias but no description, show the alias as a comment
-                lines.append(f"{next_indent}{COMMENT_SYMBOL} alias: {field.alias}")
+                lines.append(
+                    f"{next_indent}{COMMENT_SYMBOL} alias: {field.alias}")
 
             # Check for a nested Pydantic model
             field_type_to_render = field.annotation
@@ -124,7 +130,10 @@ def _build_simplified_schema(model: type[BaseModel], indent: int = 0, _seen: set
             # Unpack Optional[T] to get T
             origin = get_origin(field_type_to_render)
             if origin in (types.UnionType, Union):
-                non_none_args = [arg for arg in get_args(field_type_to_render) if arg is not type(None)]
+                non_none_args = [
+                    arg for arg in get_args(field_type_to_render)
+                    if arg is not type(None)
+                ]
                 if len(non_none_args) == 1:
                     field_type_to_render = non_none_args[0]
 
@@ -133,14 +142,18 @@ def _build_simplified_schema(model: type[BaseModel], indent: int = 0, _seen: set
             if origin is list:
                 field_type_to_render = get_args(field_type_to_render)[0]
 
-            if inspect.isclass(field_type_to_render) and issubclass(field_type_to_render, BaseModel):
+            if inspect.isclass(field_type_to_render) and issubclass(
+                    field_type_to_render, BaseModel):
                 # Recursively build schema for nested models with circular reference protection
-                nested_schema = _build_simplified_schema(field_type_to_render, indent + 1, _seen)
-                rendered_type = _render_type_str(field.annotation, indent=indent + 1).replace(
-                    field_type_to_render.__name__, nested_schema
-                )
+                nested_schema = _build_simplified_schema(
+                    field_type_to_render, indent + 1, _seen)
+                rendered_type = _render_type_str(
+                    field.annotation,
+                    indent=indent + 1).replace(field_type_to_render.__name__,
+                                               nested_schema)
             else:
-                rendered_type = _render_type_str(field.annotation, indent=indent + 1)
+                rendered_type = _render_type_str(field.annotation,
+                                                 indent=indent + 1)
 
             line = f"{next_indent}{name}: {rendered_type},"
 
@@ -209,16 +222,20 @@ class BAMLAdapter(JSONAdapter):
         # Add input field descriptions
         if signature.input_fields:
             sections.append("Your input fields are:")
-            for i, (name, field) in enumerate(signature.input_fields.items(), 1):
-                type_name = getattr(field.annotation, "__name__", str(field.annotation))
+            for i, (name, field) in enumerate(signature.input_fields.items(),
+                                              1):
+                type_name = getattr(field.annotation, "__name__",
+                                    str(field.annotation))
                 description = f": {field.description}" if field.description else ":"
                 sections.append(f"{i}. `{name}` ({type_name}){description}")
 
         # Add output field descriptions
         if signature.output_fields:
             sections.append("Your output fields are:")
-            for i, (name, field) in enumerate(signature.output_fields.items(), 1):
-                type_name = getattr(field.annotation, "__name__", str(field.annotation))
+            for i, (name, field) in enumerate(signature.output_fields.items(),
+                                              1):
+                type_name = getattr(field.annotation, "__name__",
+                                    str(field.annotation))
                 description = f": {field.description}" if field.description else ":"
                 sections.append(f"{i}. `{name}` ({type_name}){description}")
 
@@ -250,20 +267,25 @@ class BAMLAdapter(JSONAdapter):
                 # Find the core type if it's wrapped in Optional or Union
                 origin = get_origin(field_type)
                 if origin in (types.UnionType, Union):
-                    non_none_args = [arg for arg in get_args(field_type) if arg is not type(None)]
+                    non_none_args = [
+                        arg for arg in get_args(field_type)
+                        if arg is not type(None)
+                    ]
                     if len(non_none_args) == 1:
                         main_type = non_none_args[0]
 
                 sections.append(f"[[ ## {name} ## ]]")
 
-                if inspect.isclass(main_type) and issubclass(main_type, BaseModel):
+                if inspect.isclass(main_type) and issubclass(
+                        main_type, BaseModel):
                     # We have a pydantic model, so build the simplified schema for it.
                     schema_str = _build_simplified_schema(main_type)
                     sections.append(schema_str)
                 else:
                     # Handle non-pydantic or primitive types simply
                     type_str = _render_type_str(field_type, indent=0)
-                    sections.append(f"Output field `{name}` should be of type: {type_str}")
+                    sections.append(
+                        f"Output field `{name}` should be of type: {type_str}")
 
                 sections.append("")  # Empty line after each output
 
@@ -296,15 +318,18 @@ class BAMLAdapter(JSONAdapter):
                 formatted_value = ""
                 if isinstance(value, BaseModel):
                     # Use clean, indented JSON for Pydantic instances
-                    formatted_value = value.model_dump_json(indent=2, by_alias=True)
+                    formatted_value = value.model_dump_json(indent=2,
+                                                            by_alias=True)
                 else:
                     # Fallback to the original dspy formatter for other types
-                    formatted_value = original_format_field_value(field_info=field_info, value=value)
+                    formatted_value = original_format_field_value(
+                        field_info=field_info, value=value)
 
                 messages.append(f"[[ ## {key} ## ]]\n{formatted_value}")
 
         if main_request:
-            output_requirements = self.user_message_output_requirements(signature)
+            output_requirements = self.user_message_output_requirements(
+                signature)
             if output_requirements is not None:
                 messages.append(output_requirements)
 

@@ -41,11 +41,21 @@ class BaseLM:
     ```
     """
 
-    def __init__(self, model, model_type="chat", temperature=0.0, max_tokens=1000, cache=True, **kwargs):
+    def __init__(
+        self,
+        model,
+        model_type="chat",
+        temperature=0.0,
+        max_tokens=1000,
+        cache=True,
+        **kwargs,
+    ):
         self.model = model
         self.model_type = model_type
         self.cache = cache
-        self.kwargs = dict(temperature=temperature, max_tokens=max_tokens, **kwargs)
+        self.kwargs = dict(temperature=temperature,
+                           max_tokens=max_tokens,
+                           **kwargs)
         self.history = []
 
     def _process_lm_response(self, response, prompt, messages, **kwargs):
@@ -54,10 +64,13 @@ class BaseLM:
         outputs = []
         for c in response.choices:
             output = {}
-            output["text"] = c.message.content if hasattr(c, "message") else c["text"]
+            output["text"] = c.message.content if hasattr(
+                c, "message") else c["text"]
             if merged_kwargs.get("logprobs"):
-                output["logprobs"] = c.logprobs if hasattr(c, "logprobs") else c["logprobs"]
-            if hasattr(c, "message") and getattr(c.message, "tool_calls", None):
+                output["logprobs"] = c.logprobs if hasattr(
+                    c, "logprobs") else c["logprobs"]
+            if hasattr(c, "message") and getattr(c.message, "tool_calls",
+                                                 None):
                 output["tool_calls"] = c.message.tool_calls
             outputs.append(output)
 
@@ -77,7 +90,8 @@ class BaseLM:
             "response": response,
             "outputs": outputs,
             "usage": dict(response.usage),
-            "cost": getattr(response, "_hidden_params", {}).get("response_cost"),
+            "cost": getattr(response, "_hidden_params",
+                            {}).get("response_cost"),
             "timestamp": datetime.datetime.now().isoformat(),
             "uuid": str(uuid.uuid4()),
             "model": self.model,
@@ -92,14 +106,18 @@ class BaseLM:
     @with_callbacks
     def __call__(self, prompt=None, messages=None, **kwargs):
         response = self.forward(prompt=prompt, messages=messages, **kwargs)
-        outputs = self._process_lm_response(response, prompt, messages, **kwargs)
+        outputs = self._process_lm_response(response, prompt, messages,
+                                            **kwargs)
 
         return outputs
 
     @with_callbacks
     async def acall(self, prompt=None, messages=None, **kwargs):
-        response = await self.aforward(prompt=prompt, messages=messages, **kwargs)
-        outputs = self._process_lm_response(response, prompt, messages, **kwargs)
+        response = await self.aforward(prompt=prompt,
+                                       messages=messages,
+                                       **kwargs)
+        outputs = self._process_lm_response(response, prompt, messages,
+                                            **kwargs)
         return outputs
 
     def forward(self, prompt=None, messages=None, **kwargs):

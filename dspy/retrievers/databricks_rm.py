@@ -129,19 +129,20 @@ class DatabricksRM(dspy.Retrieve):
                 compatible with the Databricks Mosaic Agent Framework.
         """
         super().__init__(k=k)
-        self.databricks_token = databricks_token if databricks_token is not None else os.environ.get("DATABRICKS_TOKEN")
-        self.databricks_endpoint = (
-            databricks_endpoint if databricks_endpoint is not None else os.environ.get("DATABRICKS_HOST")
-        )
-        self.databricks_client_id = (
-            databricks_client_id if databricks_client_id is not None else os.environ.get("DATABRICKS_CLIENT_ID")
-        )
+        self.databricks_token = databricks_token if databricks_token is not None else os.environ.get(
+            "DATABRICKS_TOKEN")
+        self.databricks_endpoint = (databricks_endpoint
+                                    if databricks_endpoint is not None else
+                                    os.environ.get("DATABRICKS_HOST"))
+        self.databricks_client_id = (databricks_client_id
+                                     if databricks_client_id is not None else
+                                     os.environ.get("DATABRICKS_CLIENT_ID"))
         self.databricks_client_secret = (
-            databricks_client_secret
-            if databricks_client_secret is not None
-            else os.environ.get("DATABRICKS_CLIENT_SECRET")
-        )
-        if not _databricks_sdk_installed and (self.databricks_token, self.databricks_endpoint).count(None) > 0:
+            databricks_client_secret if databricks_client_secret is not None
+            else os.environ.get("DATABRICKS_CLIENT_SECRET"))
+        if not _databricks_sdk_installed and (
+                self.databricks_token,
+                self.databricks_endpoint).count(None) > 0:
             raise ValueError(
                 "To retrieve documents with Databricks Vector Search, you must install the"
                 " databricks-sdk Python library, supply the databricks_token and"
@@ -150,7 +151,8 @@ class DatabricksRM(dspy.Retrieve):
                 " databricks_client_secret parameters, or set the DATABRICKS_CLIENT_ID and DATABRICKS_CLIENT_SECRET"
             )
         self.databricks_index_name = databricks_index_name
-        self.columns = list({docs_id_column_name, text_column_name, *(columns or [])})
+        self.columns = list(
+            {docs_id_column_name, text_column_name, *(columns or [])})
         self.filters_json = filters_json
         self.k = k
         self.docs_id_column_name = docs_id_column_name
@@ -195,13 +197,21 @@ class DatabricksRM(dspy.Retrieve):
         """
         extra_columns = {
             k: v
-            for k, v in item.items()
-            if k not in [self.docs_id_column_name, self.text_column_name, self.docs_uri_column_name]
+            for k, v in item.items() if k not in [
+                self.docs_id_column_name,
+                self.text_column_name,
+                self.docs_uri_column_name,
+            ]
         }
         if self.docs_id_column_name == "metadata":
             extra_columns = {
                 **extra_columns,
-                **{"metadata": {k: v for k, v in json.loads(item["metadata"]).items() if k != "document_id"}},
+                **{
+                    "metadata": {
+                        k: v
+                        for k, v in json.loads(item["metadata"]).items() if k != "document_id"
+                    }
+                },
             }
         return extra_columns
 
@@ -278,7 +288,9 @@ class DatabricksRM(dspy.Retrieve):
             )
 
         # Checking if defined columns are present in the index columns
-        col_names = [column["name"] for column in results["manifest"]["columns"]]
+        col_names = [
+            column["name"] for column in results["manifest"]["columns"]
+        ]
 
         if self.docs_id_column_name not in col_names:
             raise Exception(
@@ -286,7 +298,9 @@ class DatabricksRM(dspy.Retrieve):
             )
 
         if self.text_column_name not in col_names:
-            raise Exception(f"text_column_name: '{self.text_column_name}' is not in the index columns: \n {col_names}")
+            raise Exception(
+                f"text_column_name: '{self.text_column_name}' is not in the index columns: \n {col_names}"
+            )
 
         # Extracting the results
         items = []
@@ -298,28 +312,34 @@ class DatabricksRM(dspy.Retrieve):
                 items += [item]
 
         # Sorting results by score in descending order
-        sorted_docs = sorted(items, key=lambda x: x["score"], reverse=True)[: self.k]
+        sorted_docs = sorted(items, key=lambda x: x["score"],
+                             reverse=True)[:self.k]
 
         if self.use_with_databricks_agent_framework:
             return [
                 Document(
                     page_content=doc[self.text_column_name],
                     metadata={
-                        "doc_id": self._extract_doc_ids(doc),
-                        "doc_uri": doc[self.docs_uri_column_name] if self.docs_uri_column_name else None,
+                        "doc_id":
+                        self._extract_doc_ids(doc),
+                        "doc_uri": (doc[self.docs_uri_column_name]
+                                    if self.docs_uri_column_name else None),
                     }
                     | self._get_extra_columns(doc),
                     type="Document",
-                ).to_dict()
-                for doc in sorted_docs
+                ).to_dict() for doc in sorted_docs
             ]
         else:
             # Returning the prediction
             return Prediction(
                 docs=[doc[self.text_column_name] for doc in sorted_docs],
                 doc_ids=[self._extract_doc_ids(doc) for doc in sorted_docs],
-                doc_uris=[doc[self.docs_uri_column_name] for doc in sorted_docs] if self.docs_uri_column_name else None,
-                extra_columns=[self._get_extra_columns(item) for item in sorted_docs],
+                doc_uris=([
+                    doc[self.docs_uri_column_name] for doc in sorted_docs
+                ] if self.docs_uri_column_name else None),
+                extra_columns=[
+                    self._get_extra_columns(item) for item in sorted_docs
+                ],
             )
 
     @staticmethod
@@ -365,7 +385,8 @@ class DatabricksRM(dspy.Retrieve):
         from databricks.sdk import WorkspaceClient
 
         if (query_text, query_vector).count(None) != 1:
-            raise ValueError("Exactly one of query_text or query_vector must be specified.")
+            raise ValueError(
+                "Exactly one of query_text or query_vector must be specified.")
 
         if databricks_client_secret and databricks_client_id:
             # Use client ID and secret for authentication if they are provided
@@ -373,7 +394,9 @@ class DatabricksRM(dspy.Retrieve):
                 client_id=databricks_client_id,
                 client_secret=databricks_client_secret,
             )
-            print("Creating Databricks workspace client using service principal authentication.")
+            print(
+                "Creating Databricks workspace client using service principal authentication."
+            )
 
         else:
             # Fallback for token-based authentication
@@ -381,7 +404,9 @@ class DatabricksRM(dspy.Retrieve):
                 host=databricks_endpoint,
                 token=databricks_token,
             )
-            print("Creating Databricks workspace client using token authentication.")
+            print(
+                "Creating Databricks workspace client using token authentication."
+            )
 
         return databricks_client.vector_search_indexes.query_index(
             index_name=index_name,
@@ -424,7 +449,8 @@ class DatabricksRM(dspy.Retrieve):
             dict[str, Any]: Parsed JSON response from the Databricks Vector Search Index query.
         """
         if (query_text, query_vector).count(None) != 1:
-            raise ValueError("Exactly one of query_text or query_vector must be specified.")
+            raise ValueError(
+                "Exactly one of query_text or query_vector must be specified.")
 
         headers = {
             "Authorization": f"Bearer {databricks_token}",
@@ -448,5 +474,6 @@ class DatabricksRM(dspy.Retrieve):
         )
         results = response.json()
         if "error_code" in results:
-            raise Exception(f"ERROR: {results['error_code']} -- {results['message']}")
+            raise Exception(
+                f"ERROR: {results['error_code']} -- {results['message']}")
         return results

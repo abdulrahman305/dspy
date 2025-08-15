@@ -73,7 +73,11 @@ def test_initialization(tmp_path):
 def test_cache_key_generation(cache):
     """Test cache key generation with different types of inputs."""
     # Test with simple dictionary
-    request = {"prompt": "Hello", "model": "openai/gpt-4o-mini", "temperature": 0.7}
+    request = {
+        "prompt": "Hello",
+        "model": "openai/gpt-4o-mini",
+        "temperature": 0.7
+    }
     key = cache.cache_key(request)
     assert isinstance(key, str)
     assert len(key) == 64  # SHA-256 hash is 64 characters
@@ -97,9 +101,19 @@ def test_cache_key_generation(cache):
 def test_put_and_get(cache):
     """Test putting and getting from cache."""
     # Test putting and getting from memory cache
-    request = {"prompt": "Hello", "model": "openai/gpt-4o-mini", "temperature": 0.7}
+    request = {
+        "prompt": "Hello",
+        "model": "openai/gpt-4o-mini",
+        "temperature": 0.7
+    }
 
-    value = DummyResponse(message="This is a test response", usage={"prompt_tokens": 10, "completion_tokens": 20})
+    value = DummyResponse(
+        message="This is a test response",
+        usage={
+            "prompt_tokens": 10,
+            "completion_tokens": 20
+        },
+    )
 
     cache.put(request, value)
     result = cache.get(request)
@@ -147,7 +161,10 @@ def test_cache_key_error_handling(cache):
 def test_reset_memory_cache(cache):
     """Test resetting memory cache."""
     # Add some items to the memory cache
-    requests = [{"prompt": f"Hello {i}", "model": "openai/gpt-4o-mini"} for i in range(5)]
+    requests = [{
+        "prompt": f"Hello {i}",
+        "model": "openai/gpt-4o-mini"
+    } for i in range(5)]
     for i, req in enumerate(requests):
         cache.put(req, f"Response {i}")
 
@@ -171,7 +188,10 @@ def test_reset_memory_cache(cache):
 def test_save_and_load_memory_cache(cache, tmp_path):
     """Test saving and loading memory cache."""
     # Add some items to the memory cache
-    requests = [{"prompt": f"Hello {i}", "model": "openai/gpt-4o-mini"} for i in range(5)]
+    requests = [{
+        "prompt": f"Hello {i}",
+        "model": "openai/gpt-4o-mini"
+    } for i in range(5)]
     for i, req in enumerate(requests):
         cache.put(req, f"Response {i}")
 
@@ -267,18 +287,21 @@ async def test_request_cache_decorator_async(cache):
             return f"Response for {prompt} with {model}"
 
         # First call should compute the result
-        result1 = await test_function(prompt="Hello", model="openai/gpt-4o-mini")
+        result1 = await test_function(prompt="Hello",
+                                      model="openai/gpt-4o-mini")
         assert result1 == "Response for Hello with openai/gpt-4o-mini"
 
         # Second call with same arguments should use cache
         with patch.object(cache, "get") as mock_get:
             mock_get.return_value = "Cached response"
-            result2 = await test_function(prompt="Hello", model="openai/gpt-4o-mini")
+            result2 = await test_function(prompt="Hello",
+                                          model="openai/gpt-4o-mini")
             assert result2 == "Cached response"
             mock_get.assert_called_once()
 
         # Call with different arguments should compute again
-        result3 = await test_function(prompt="Different", model="openai/gpt-4o-mini")
+        result3 = await test_function(prompt="Different",
+                                      model="openai/gpt-4o-mini")
         assert result3 == "Response for Different with openai/gpt-4o-mini"
 
 
@@ -298,22 +321,17 @@ def test_cache_consistency_with_lm_call_modifies_the_request(cache):
         test_function(field_to_delete="delete", field_to_keep="keep")
 
         # The cache key should use the original request, not the modified one
-        assert (
-            cache.get(
-                {
-                    "field_to_keep": "keep",
-                    "_fn_identifier": f"{test_function.__module__}.{test_function.__qualname__}",
-                }
-            )
-            is None
-        )
-        assert (
-            cache.get(
-                {
-                    "field_to_keep": "keep",
-                    "field_to_delete": "delete",
-                    "_fn_identifier": f"{test_function.__module__}.{test_function.__qualname__}",
-                }
-            )
-            is not None
-        )
+        assert (cache.get({
+            "field_to_keep":
+            "keep",
+            "_fn_identifier":
+            f"{test_function.__module__}.{test_function.__qualname__}",
+        }) is None)
+        assert (cache.get({
+            "field_to_keep":
+            "keep",
+            "field_to_delete":
+            "delete",
+            "_fn_identifier":
+            f"{test_function.__module__}.{test_function.__qualname__}",
+        }) is not None)

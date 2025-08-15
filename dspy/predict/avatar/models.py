@@ -18,7 +18,8 @@ class Tool(BaseModel):
 
 class Action(BaseModel):
     tool_name: Any = Field(..., description="Name of the tool to use.")
-    tool_input_query: Any = Field(..., description="Query to pass as input to the tool.")
+    tool_input_query: Any = Field(
+        ..., description="Query to pass as input to the tool.")
 
 
 class ActionOutput(BaseModel):

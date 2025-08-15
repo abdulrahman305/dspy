@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 
 class TrainingJob(Future):
+
     def __init__(
         self,
         thread: Thread | None = None,
@@ -36,6 +37,7 @@ class TrainingJob(Future):
 
 
 class ReinforceJob:
+
     def __init__(self, lm: "LM", train_kwargs: dict[str, Any] | None = None):
         self.lm = lm
         self.train_kwargs = train_kwargs or {}
@@ -47,7 +49,11 @@ class ReinforceJob:
         raise NotImplementedError
 
     @abstractmethod
-    def step(self, train_data: list[dict[str, Any]], train_data_format: TrainDataFormat | str | None = None):
+    def step(
+        self,
+        train_data: list[dict[str, Any]],
+        train_data_format: TrainDataFormat | str | None = None,
+    ):
         raise NotImplementedError
 
     @abstractmethod
@@ -70,6 +76,7 @@ class ReinforceJob:
 
 
 class Provider:
+
     def __init__(self):
         self.finetunable = False
         self.reinforceable = False

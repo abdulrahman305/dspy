@@ -16,7 +16,6 @@ except ImportError:
 
 import dspy
 from dspy.teleprompt.bootstrap import BootstrapFewShot, LabeledFewShot
-
 """
 This file consists of helper functions for our variety of optimizers.
 """
@@ -44,19 +43,27 @@ def create_minibatch(trainset, batch_size=50, rng=None):
     return minibatch
 
 
-def eval_candidate_program(batch_size, trainset, candidate_program, evaluate, rng=None):
+def eval_candidate_program(batch_size,
+                           trainset,
+                           candidate_program,
+                           evaluate,
+                           rng=None):
     """Evaluate a candidate program on the trainset, using the specified batch size."""
 
     try:
         # Evaluate on the full trainset
         if batch_size >= len(trainset):
-            return evaluate(candidate_program, devset=trainset, callback_metadata={"metric_key": "eval_full"})
+            return evaluate(
+                candidate_program,
+                devset=trainset,
+                callback_metadata={"metric_key": "eval_full"},
+            )
         # Or evaluate on a minibatch
         else:
             return evaluate(
                 candidate_program,
                 devset=create_minibatch(trainset, batch_size, rng),
-                callback_metadata={"metric_key": "eval_minibatch"}
+                callback_metadata={"metric_key": "eval_minibatch"},
             )
     except Exception:
         logger.error("An exception occurred during evaluation", exc_info=True)
@@ -93,7 +100,8 @@ def eval_candidate_program_with_pruning(
         total_eval_size += len(split_trainset)
 
         total_score += split_score * len(split_trainset)
-        curr_weighted_avg_score = total_score / min((i + 1) * batch_size, len(trainset))
+        curr_weighted_avg_score = total_score / min(
+            (i + 1) * batch_size, len(trainset))
         print(f"curr average score: {curr_weighted_avg_score}")
 
         trial.report(curr_weighted_avg_score, i)
@@ -115,7 +123,8 @@ def eval_candidate_program_with_pruning(
     return score, trial_logs, total_eval_size, False
 
 
-def get_program_with_highest_avg_score(param_score_dict, fully_evaled_param_combos):
+def get_program_with_highest_avg_score(param_score_dict,
+                                       fully_evaled_param_combos):
     """Used as a helper function for bayesian + minibatching optimizers. Returns the program with the highest average score from the batches evaluated so far."""
 
     # Calculate the mean for each combination of categorical parameters, based on past trials
@@ -222,9 +231,11 @@ def save_candidate_program(program, log_dir, trial_num, note=None):
 
     # Define the save path for the program
     if note:
-        save_path = os.path.join(eval_programs_dir, f"program_{trial_num}_{note}.json")
+        save_path = os.path.join(eval_programs_dir,
+                                 f"program_{trial_num}_{note}.json")
     else:
-        save_path = os.path.join(eval_programs_dir, f"program_{trial_num}.json")
+        save_path = os.path.join(eval_programs_dir,
+                                 f"program_{trial_num}.json")
 
     # Save the program
     program.save(save_path)
@@ -238,7 +249,8 @@ def save_file_to_log_dir(source_file_path, log_dir):
     """Save a file to our log directory"""
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-    destination_file_path = os.path.join(log_dir, os.path.basename(source_file_path))
+    destination_file_path = os.path.join(log_dir,
+                                         os.path.basename(source_file_path))
 
     # Copy the file
     shutil.copy(source_file_path, destination_file_path)
@@ -299,7 +311,10 @@ def log_token_usage(trial_logs, trial_num, model_dict):
 
     for model_name, model in model_dict.items():
         in_tokens, out_tokens = get_token_usage(model)
-        token_usage_dict[model_name] = {"total_input_tokens": in_tokens, "total_output_tokens": out_tokens}
+        token_usage_dict[model_name] = {
+            "total_input_tokens": in_tokens,
+            "total_output_tokens": out_tokens,
+        }
 
     # Store token usage info in trial logs
     trial_logs[trial_num]["token_usage"] = token_usage_dict
@@ -388,7 +403,9 @@ def create_n_fewshot_demo_sets(
                 teacher_settings=teacher_settings,
                 max_rounds=max_rounds,
             )
-            program2 = program.compile(student, teacher=teacher, trainset=trainset_copy)
+            program2 = program.compile(student,
+                                       teacher=teacher,
+                                       trainset=trainset_copy)
 
         else:
             # shuffled few-shot
@@ -458,7 +475,9 @@ def new_getfile(object):
 
     # If parent module is __main__, lookup by methods (NEW)
     for _, member in inspect.getmembers(object):
-        if inspect.isfunction(member) and object.__qualname__ + "." + member.__name__ == member.__qualname__:
+        if inspect.isfunction(
+                member
+        ) and object.__qualname__ + "." + member.__name__ == member.__qualname__:
             return inspect.getfile(member)
     raise TypeError(f"Source for {object!r} not found")
 
