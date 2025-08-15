@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import pydantic
 import requests
 
-from dspy.adapters.types.base_type import BaseType
+from dspy.adapters.types.base_type import Type
 
 try:
     from PIL import Image as PILImage
@@ -18,17 +18,17 @@ except ImportError:
     PIL_AVAILABLE = False
 
 
-class Image(BaseType):
+class Image(Type):
     url: str
 
-    model_config = {
-        "frozen": True,
-        "str_strip_whitespace": True,
-        "validate_assignment": True,
-        "extra": "forbid",
-    }
+    model_config = pydantic.ConfigDict(
+        frozen=True,
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra="forbid",
+    )
 
-    def format(self) -> Union[list[dict[str, Any]], str]:
+    def format(self) -> list[dict[str, Any]] | str:
         try:
             image_url = encode_image(self.url)
         except Exception as e:

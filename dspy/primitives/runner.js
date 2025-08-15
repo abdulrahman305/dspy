@@ -147,7 +147,11 @@ sys.stderr = old_stderr
       // output += capturedStderr;
     } else {
       // If the code returned a real value, just return that
-      output = result;
+      try {
+        output = result.toJs();
+      } catch (e) {
+        output = result;
+      }
     }
 
     console.log(JSON.stringify({ output }));
@@ -165,7 +169,7 @@ sys.stderr = old_stderr
       // Only python exceptions have args.
       const last_exception_args = pyodide.globals.get("last_exception_args");
       // Regarding https://pyodide.org/en/stable/usage/type-conversions.html#type-translations-errors,
-      // we do a addtional `json.dumps` and `JSON.parse` on the values, to avoid the possible memory leak.
+      // we do a additional `json.dumps` and `JSON.parse` on the values, to avoid the possible memory leak.
       errorArgs = JSON.parse(last_exception_args()) || [];
     }
 

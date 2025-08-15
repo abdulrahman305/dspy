@@ -1,7 +1,6 @@
 import logging
 import random
 import threading
-from typing import Dict, Optional
 
 import tqdm
 
@@ -39,7 +38,7 @@ class BootstrapFewShot(Teleprompter):
         self,
         metric=None,
         metric_threshold=None,
-        teacher_settings: Optional[Dict] = None,
+        teacher_settings: dict | None = None,
         max_bootstrapped_demos=4,
         max_labeled_demos=16,
         max_rounds=1,
@@ -86,10 +85,6 @@ class BootstrapFewShot(Teleprompter):
         self.student = self._train()
         self.student._compiled = True
 
-        # set assert_failures and suggest_failures as attributes of student w/ value 0
-        self.student._assert_failures = 0
-        self.student._suggest_failures = 0
-
         return self.student
 
     def _prepare_student_and_teacher(self, student, teacher):
@@ -112,7 +107,9 @@ class BootstrapFewShot(Teleprompter):
             teacher.predictors(),
         ), "Student and teacher must have the same number of predictors."
 
-        for (name1, predictor1), (name2, predictor2) in zip(student.named_predictors(), teacher.named_predictors()):
+        for (name1, predictor1), (name2, predictor2) in zip(
+            student.named_predictors(), teacher.named_predictors(), strict=False
+        ):
             assert name1 == name2, "Student and teacher must have the same program structure."
             if hasattr(predictor1.signature, "equals"):
                 assert predictor1.signature.equals(
@@ -211,11 +208,7 @@ class BootstrapFewShot(Teleprompter):
             with self.error_lock:
                 self.error_count += 1
                 current_error_count = self.error_count
-            effective_max_errors = (
-                self.max_errors
-                if self.max_errors is not None
-                else dspy.settings.max_errors
-            )
+            effective_max_errors = self.max_errors if self.max_errors is not None else dspy.settings.max_errors
             if current_error_count >= effective_max_errors:
                 raise e
             logger.error(f"Failed to run or to evaluate example {example} with {self.metric} due to {e}.")
@@ -245,11 +238,11 @@ class BootstrapFewShot(Teleprompter):
 
             # Update the traces
             for name, demos in name2traces.items():
-                from datasets.fingerprint import Hasher
-
                 # If there are multiple traces for the same predictor in the sample example,
                 # sample 50/50 from the first N-1 traces or the last trace.
                 if len(demos) > 1:
+                    from dspy.utils.hasher import Hasher
+
                     rng = random.Random(Hasher.hash(tuple(demos)))
                     demos = [rng.choice(demos[:-1]) if rng.random() < 0.5 else demos[-1]]
                 self.name2traces[name].extend(demos)

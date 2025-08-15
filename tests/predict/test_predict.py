@@ -1,5 +1,8 @@
+import asyncio
 import copy
 import enum
+import time
+import types
 from datetime import datetime
 from unittest.mock import patch
 
@@ -7,9 +10,11 @@ import pydantic
 import pytest
 import ujson
 from litellm import ModelResponse
+from pydantic import BaseModel, HttpUrl
 
 import dspy
 from dspy import Predict, Signature
+from dspy.predict.predict import serialize_object
 from dspy.utils.dummies import DummyLM
 
 
@@ -506,6 +511,69 @@ def test_lm_usage():
         assert result.get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
 
 
+def test_lm_usage_with_parallel():
+    program = Predict("question -> answer")
+
+    def program_wrapper(question):
+        # Sleep to make it possible to cause a race condition
+        time.sleep(0.5)
+        return program(question=question)
+
+    dspy.settings.configure(lm=dspy.LM("openai/gpt-4o-mini", cache=False), track_usage=True)
+    with patch(
+        "dspy.clients.lm.litellm_completion",
+        return_value=ModelResponse(
+            choices=[{"message": {"content": "[[ ## answer ## ]]\nParis"}}],
+            usage={"total_tokens": 10},
+        ),
+    ):
+        parallelizer = dspy.Parallel()
+        input_pairs = [
+            (program_wrapper, {"question": "What is the capital of France?"}),
+            (program_wrapper, {"question": "What is the capital of France?"}),
+        ]
+        results = parallelizer(input_pairs)
+        assert results[0].answer == "Paris"
+        assert results[1].answer == "Paris"
+        assert results[0].get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
+        assert results[1].get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
+
+
+@pytest.mark.asyncio
+async def test_lm_usage_with_async():
+    program = Predict("question -> answer")
+
+    original_aforward = program.aforward
+
+    async def patched_aforward(self, **kwargs):
+        await asyncio.sleep(1)
+        return await original_aforward(**kwargs)
+
+    program.aforward = types.MethodType(patched_aforward, program)
+
+    with dspy.context(lm=dspy.LM("openai/gpt-4o-mini", cache=False), track_usage=True):
+        with patch(
+            "litellm.acompletion",
+            return_value=ModelResponse(
+                choices=[{"message": {"content": "[[ ## answer ## ]]\nParis"}}],
+                usage={"total_tokens": 10},
+            ),
+        ):
+            coroutines = [
+                program.acall(question="What is the capital of France?"),
+                program.acall(question="What is the capital of France?"),
+                program.acall(question="What is the capital of France?"),
+                program.acall(question="What is the capital of France?"),
+            ]
+            results = await asyncio.gather(*coroutines)
+            assert results[0].answer == "Paris"
+            assert results[1].answer == "Paris"
+            assert results[0].get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
+            assert results[1].get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
+            assert results[2].get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
+            assert results[3].get_lm_usage()["openai/gpt-4o-mini"]["total_tokens"] == 10
+
+
 def test_positional_arguments():
     program = Predict("question -> answer")
     with pytest.raises(ValueError) as e:
@@ -514,6 +582,28 @@ def test_positional_arguments():
         "Positional arguments are not allowed when calling `dspy.Predict`, must use keyword arguments that match "
         "your signature input fields: 'question'. For example: `predict(question=input_value, ...)`."
     )
+
+
+def test_error_message_on_invalid_lm_setup():
+    # No LM is loaded.
+    with pytest.raises(ValueError, match="No LM is loaded"):
+        Predict("question -> answer")(question="Why did a chicken cross the kitchen?")
+
+    # LM is a string.
+    dspy.configure(lm="openai/gpt-4o-mini")
+    with pytest.raises(ValueError) as e:
+        Predict("question -> answer")(question="Why did a chicken cross the kitchen?")
+
+    assert "LM must be an instance of `dspy.BaseLM`, not a string." in str(e.value)
+
+    def dummy_lm():
+        pass
+
+    # LM is not an instance of dspy.BaseLM.
+    dspy.configure(lm=dummy_lm)
+    with pytest.raises(ValueError) as e:
+        Predict("question -> answer")(question="Why did a chicken cross the kitchen?")
+    assert "LM must be an instance of `dspy.BaseLM`, not <class 'function'>." in str(e.value)
 
 
 @pytest.mark.parametrize("adapter_type", ["chat", "json"])
@@ -569,9 +659,9 @@ def test_field_constraints(adapter_type):
 @pytest.mark.asyncio
 async def test_async_predict():
     program = Predict("question -> answer")
-    dspy.settings.configure(lm=DummyLM([{"answer": "Paris"}]))
-    result = await program.acall(question="What is the capital of France?")
-    assert result.answer == "Paris"
+    with dspy.context(lm=DummyLM([{"answer": "Paris"}])):
+        result = await program.acall(question="What is the capital of France?")
+        assert result.answer == "Paris"
 
 
 def test_predicted_outputs_piped_from_predict_to_lm_call():
@@ -596,3 +686,81 @@ def test_predicted_outputs_piped_from_predict_to_lm_call():
         program(question="Why did a chicken cross the kitchen?", prediction="To get to the other side!")
 
     assert "prediction" not in mock_completion.call_args[1]
+
+
+def test_dump_state_pydantic_non_primitive_types():
+    class WebsiteInfo(BaseModel):
+        name: str
+        url: HttpUrl
+        description: str | None = None
+        created_at: datetime
+
+    class TestSignature(dspy.Signature):
+        website_info: WebsiteInfo = dspy.InputField()
+        summary: str = dspy.OutputField()
+
+    website_info = WebsiteInfo(
+        name="Example",
+        url="https://www.example.com",
+        description="Test website",
+        created_at=datetime(2021, 1, 1, 12, 0, 0),
+    )
+
+    serialized = serialize_object(website_info)
+
+    assert serialized["url"] == "https://www.example.com/"
+    assert serialized["created_at"] == "2021-01-01T12:00:00"
+
+    json_str = ujson.dumps(serialized)
+    reloaded = ujson.loads(json_str)
+    assert reloaded == serialized
+
+    predictor = Predict(TestSignature)
+    demo = {"website_info": website_info, "summary": "This is a test website."}
+    predictor.demos = [demo]
+
+    state = predictor.dump_state()
+    json_str = ujson.dumps(state)
+    reloaded_state = ujson.loads(json_str)
+
+    demo_data = reloaded_state["demos"][0]
+    assert demo_data["website_info"]["url"] == "https://www.example.com/"
+    assert demo_data["website_info"]["created_at"] == "2021-01-01T12:00:00"
+
+
+def test_trace_size_limit():
+    program = Predict("question -> answer")
+    dspy.settings.configure(lm=DummyLM([{"answer": "Paris"}]), max_trace_size=3)
+
+    for _ in range(10):
+        program(question="What is the capital of France?")
+
+    assert len(dspy.settings.trace) == 3
+
+
+def test_disable_trace():
+    program = Predict("question -> answer")
+    dspy.settings.configure(lm=DummyLM([{"answer": "Paris"}]), trace=None)
+
+    for _ in range(10):
+        program(question="What is the capital of France?")
+
+    assert dspy.settings.trace is None
+
+
+def test_per_module_history_size_limit():
+    program = Predict("question -> answer")
+    dspy.settings.configure(lm=DummyLM([{"answer": "Paris"}]), max_history_size=5)
+
+    for _ in range(10):
+        program(question="What is the capital of France?")
+    assert len(program.history) == 5
+
+
+def test_per_module_history_disabled():
+    program = Predict("question -> answer")
+    dspy.settings.configure(lm=DummyLM([{"answer": "Paris"}]), disable_history=True)
+
+    for _ in range(10):
+        program(question="What is the capital of France?")
+    assert len(program.history) == 0

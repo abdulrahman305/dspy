@@ -1,9 +1,9 @@
 import json
 import os
 import subprocess
-from types import TracebackType
-from typing import Any, Dict, List, Optional, Union
 from os import PathLike
+from types import TracebackType
+from typing import Any
 
 
 class InterpreterError(RuntimeError):
@@ -27,11 +27,11 @@ class PythonInterpreter:
 
     def __init__(
         self,
-        deno_command: Optional[List[str]] = None,
-        enable_read_paths: Optional[List[Union[PathLike, str]]] = None,
-        enable_write_paths: Optional[List[Union[PathLike, str]]] = None,
-        enable_env_vars: Optional[List[str]] = None,
-        enable_network_access: Optional[List[str]] = None,
+        deno_command: list[str] | None = None,
+        enable_read_paths: list[PathLike | str] | None = None,
+        enable_write_paths: list[PathLike | str] | None = None,
+        enable_env_vars: list[str] | None = None,
+        enable_network_access: list[str] | None = None,
         sync_files: bool = True,
     ) -> None:
         """
@@ -56,7 +56,7 @@ class PythonInterpreter:
         if deno_command:
             self.deno_command = list(deno_command)
         else:
-            args = ['deno', 'run', '--allow-read']
+            args = ["deno", "run", "--allow-read"]
             self._env_arg  = ""
             if self.enable_env_vars:
                 user_vars = [str(v).strip() for v in self.enable_env_vars]
@@ -66,7 +66,7 @@ class PythonInterpreter:
                 args.append(f"--allow-net={','.join(str(x) for x in self.enable_network_access)}")
             if self.enable_write_paths:
                 args.append(f"--allow-write={','.join(str(x) for x in self.enable_write_paths)}")
-                
+
             args.append(self._get_runner_path())
 
             # For runner.js to load in env vars
@@ -127,6 +127,7 @@ class PythonInterpreter:
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
+                    encoding="UTF-8",
                     env=os.environ.copy()
                 )
             except FileNotFoundError as e:
@@ -140,7 +141,7 @@ class PythonInterpreter:
                 )
                 raise InterpreterError(install_instructions) from e
 
-    def _inject_variables(self, code: str, variables: Dict[str, Any]) -> str:
+    def _inject_variables(self, code: str, variables: dict[str, Any]) -> str:
         # Insert Python assignments for each variable at the top of the code
         injected_lines = []
         for key, value in variables.items():
@@ -167,7 +168,7 @@ class PythonInterpreter:
     def execute(
         self,
         code: str,
-        variables: Optional[Dict[str, Any]] = None,
+        variables: dict[str, Any] | None = None,
     ) -> Any:
         variables = variables or {}
         code = self._inject_variables(code, variables)
@@ -222,16 +223,16 @@ class PythonInterpreter:
     # All exception fields are ignored and the runtime will automatically re-raise the exception
     def __exit__(
         self,
-        _exc_type: Optional[type[BaseException]],
-        _exc_val: Optional[BaseException],
-        _exc_tb: Optional[TracebackType],
+        _exc_type: type[BaseException] | None,
+        _exc_val: BaseException | None,
+        _exc_tb: TracebackType | None,
     ):
         self.shutdown()
 
     def __call__(
         self,
         code: str,
-        variables: Optional[Dict[str, Any]] = None,
+        variables: dict[str, Any] | None = None,
     ) -> Any:
         return self.execute(code, variables)
 

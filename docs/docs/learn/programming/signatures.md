@@ -172,7 +172,7 @@ Prediction(
 DSPy signatures support various annotation types:
 
 1. **Basic types** like `str`, `int`, `bool`
-2. **Typing module types** like `List[str]`, `Dict[str, int]`, `Optional[float]`. `Union[str, int]`
+2. **Typing module types** like `list[str]`, `dict[str, int]`, `Optional[float]`. `Union[str, int]`
 3. **Custom types** defined in your code
 4. **Dot notation** for nested types with proper configuration
 5. **Special data types** like `dspy.Image, dspy.History`
@@ -187,13 +187,13 @@ class QueryResult(pydantic.BaseModel):
 
 signature = dspy.Signature("query: str -> result: QueryResult")
 
-class Container:
+class MyContainer:
     class Query(pydantic.BaseModel):
         text: str
     class Score(pydantic.BaseModel):
         score: float
 
-signature = dspy.Signature("query: Container.Query -> score: Container.Score")
+signature = dspy.Signature("query: MyContainer.Query -> score: MyContainer.Score")
 ```
 
 ## Using signatures to build modules & compiling them

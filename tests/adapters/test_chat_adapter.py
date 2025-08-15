@@ -3,6 +3,7 @@ from unittest import mock
 
 import pydantic
 import pytest
+from litellm.utils import ChatCompletionMessageToolCall, Choices, Function, Message, ModelResponse
 
 import dspy
 
@@ -244,6 +245,9 @@ def test_chat_adapter_formats_image_with_few_shot_examples():
     # 1 system message, 2 few shot examples (1 user and assistant message for each example), 1 user message
     assert len(messages) == 6
 
+    assert "[[ ## completed ## ]]\n" in messages[2]["content"]
+    assert "[[ ## completed ## ]]\n" in messages[4]["content"]
+
     assert {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}} in messages[1]["content"]
     assert {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}} in messages[3]["content"]
     assert {"type": "image_url", "image_url": {"url": "https://example.com/image3.jpg"}} in messages[5]["content"]
@@ -350,3 +354,240 @@ def test_chat_adapter_with_tool():
     # Tool arguments format should be included in the user message
     assert "{'city': {'type': 'string'}}" in messages[1]["content"]
     assert "{'country': {'type': 'string'}, 'year': {'type': 'integer'}}" in messages[1]["content"]
+
+
+def test_chat_adapter_with_code():
+    # Test with code as input field
+    class CodeAnalysis(dspy.Signature):
+        """Analyze the time complexity of the code"""
+
+        code: dspy.Code = dspy.InputField()
+        result: str = dspy.OutputField()
+
+    adapter = dspy.ChatAdapter()
+    messages = adapter.format(CodeAnalysis, [], {"code": "print('Hello, world!')"})
+
+    assert len(messages) == 2
+
+    # The output field type description should be included in the system message even if the output field is nested
+    assert dspy.Code.description() in messages[0]["content"]
+
+    # The user message should include the question and the tools
+    assert "print('Hello, world!')" in messages[1]["content"]
+
+    # Test with code as output field
+    class CodeGeneration(dspy.Signature):
+        """Generate code to answer the question"""
+
+        question: str = dspy.InputField()
+        code: dspy.Code = dspy.OutputField()
+
+    adapter = dspy.ChatAdapter()
+    with mock.patch("litellm.completion") as mock_completion:
+        mock_completion.return_value = ModelResponse(
+            choices=[Choices(message=Message(content='[[ ## code ## ]]\nprint("Hello, world!")'))],
+            model="openai/gpt-4o-mini",
+        )
+        result = adapter(
+            dspy.LM(model="openai/gpt-4o-mini", cache=False),
+            {},
+            CodeGeneration,
+            [],
+            {"question": "Write a python program to print 'Hello, world!'"},
+        )
+        assert result[0]["code"].code == 'print("Hello, world!")'
+
+
+def test_chat_adapter_formats_conversation_history():
+    class MySignature(dspy.Signature):
+        question: str = dspy.InputField()
+        history: dspy.History = dspy.InputField()
+        answer: str = dspy.OutputField()
+
+    history = dspy.History(
+        messages=[
+            {"question": "What is the capital of France?", "answer": "Paris"},
+            {"question": "What is the capital of Germany?", "answer": "Berlin"},
+        ]
+    )
+
+    adapter = dspy.ChatAdapter()
+    messages = adapter.format(MySignature, [], {"question": "What is the capital of France?", "history": history})
+
+    assert len(messages) == 6
+    assert messages[1]["content"] == "[[ ## question ## ]]\nWhat is the capital of France?"
+    assert messages[2]["content"] == "[[ ## answer ## ]]\nParis\n\n[[ ## completed ## ]]\n"
+    assert messages[3]["content"] == "[[ ## question ## ]]\nWhat is the capital of Germany?"
+    assert messages[4]["content"] == "[[ ## answer ## ]]\nBerlin\n\n[[ ## completed ## ]]\n"
+
+
+def test_chat_adapter_fallback_to_json_adapter_on_exception():
+    signature = dspy.make_signature("question->answer")
+    adapter = dspy.ChatAdapter()
+
+    with mock.patch("litellm.completion") as mock_completion:
+        # Mock returning a response compatible with JSONAdapter but not ChatAdapter
+        mock_completion.return_value = ModelResponse(
+            choices=[Choices(message=Message(content="{'answer': 'Paris'}"))],
+            model="openai/gpt-4o-mini",
+        )
+
+        lm = dspy.LM("openai/gpt-4o-mini", cache=False)
+
+        with mock.patch("dspy.adapters.json_adapter.JSONAdapter.__call__") as mock_json_adapter_call:
+            adapter(lm, {}, signature, [], {"question": "What is the capital of France?"})
+            mock_json_adapter_call.assert_called_once()
+
+        # The parse should succeed
+        result = adapter(lm, {}, signature, [], {"question": "What is the capital of France?"})
+        assert result == [{"answer": "Paris"}]
+
+
+@pytest.mark.asyncio
+async def test_chat_adapter_fallback_to_json_adapter_on_exception_async():
+    signature = dspy.make_signature("question->answer")
+    adapter = dspy.ChatAdapter()
+
+    with mock.patch("litellm.acompletion") as mock_completion:
+        # Mock returning a response compatible with JSONAdapter but not ChatAdapter
+        mock_completion.return_value = ModelResponse(
+            choices=[Choices(message=Message(content="{'answer': 'Paris'}"))],
+            model="openai/gpt-4o-mini",
+        )
+
+        lm = dspy.LM("openai/gpt-4o-mini", cache=False)
+
+        with mock.patch("dspy.adapters.json_adapter.JSONAdapter.acall") as mock_json_adapter_acall:
+            await adapter.acall(lm, {}, signature, [], {"question": "What is the capital of France?"})
+            mock_json_adapter_acall.assert_called_once()
+
+        # The parse should succeed
+        result = await adapter.acall(lm, {}, signature, [], {"question": "What is the capital of France?"})
+        assert result == [{"answer": "Paris"}]
+
+
+def test_chat_adapter_toolcalls_native_function_calling():
+    class MySignature(dspy.Signature):
+        question: str = dspy.InputField()
+        tools: list[dspy.Tool] = dspy.InputField()
+        answer: str = dspy.OutputField()
+        tool_calls: dspy.ToolCalls = dspy.OutputField()
+
+    def get_weather(city: str) -> str:
+        return f"The weather in {city} is sunny"
+
+    tools = [dspy.Tool(get_weather)]
+
+    adapter = dspy.JSONAdapter(use_native_function_calling=True)
+
+    # Case 1: Tool calls are present in the response, while content is None.
+    with mock.patch("litellm.completion") as mock_completion:
+        mock_completion.return_value = ModelResponse(
+            choices=[
+                Choices(
+                    finish_reason="tool_calls",
+                    index=0,
+                    message=Message(
+                        content=None,
+                        role="assistant",
+                        tool_calls=[
+                            ChatCompletionMessageToolCall(
+                                function=Function(arguments='{"city":"Paris"}', name="get_weather"),
+                                id="call_pQm8ajtSMxgA0nrzK2ivFmxG",
+                                type="function",
+                            )
+                        ],
+                    ),
+                ),
+            ],
+            model="openai/gpt-4o-mini",
+        )
+        result = adapter(
+            dspy.LM(model="openai/gpt-4o-mini", cache=False),
+            {},
+            MySignature,
+            [],
+            {"question": "What is the weather in Paris?", "tools": tools},
+        )
+
+        assert result[0]["tool_calls"] == dspy.ToolCalls(
+            tool_calls=[dspy.ToolCalls.ToolCall(name="get_weather", args={"city": "Paris"})]
+        )
+        # `answer` is not present, so we set it to None
+        assert result[0]["answer"] is None
+
+    # Case 2: Tool calls are not present in the response, while content is present.
+    with mock.patch("litellm.completion") as mock_completion:
+        mock_completion.return_value = ModelResponse(
+            choices=[Choices(message=Message(content="{'answer': 'Paris'}"))],
+            model="openai/gpt-4o-mini",
+        )
+        result = adapter(
+            dspy.LM(model="openai/gpt-4o-mini", cache=False),
+            {},
+            MySignature,
+            [],
+            {"question": "What is the weather in Paris?", "tools": tools},
+        )
+        assert result[0]["answer"] == "Paris"
+        assert result[0]["tool_calls"] is None
+
+
+def test_chat_adapter_toolcalls_vague_match():
+    class MySignature(dspy.Signature):
+        question: str = dspy.InputField()
+        tools: list[dspy.Tool] = dspy.InputField()
+        tool_calls: dspy.ToolCalls = dspy.OutputField()
+
+    def get_weather(city: str) -> str:
+        return f"The weather in {city} is sunny"
+
+    tools = [dspy.Tool(get_weather)]
+
+    adapter = dspy.ChatAdapter()
+
+    with mock.patch("litellm.completion") as mock_completion:
+        # Case 1: tool_calls field is a list of dicts
+        mock_completion.return_value = ModelResponse(
+            choices=[
+                Choices(
+                    message=Message(
+                        content="[[ ## tool_calls ## ]]\n[{'name': 'get_weather', 'args': {'city': 'Paris'}]"
+                    )
+                )
+            ],
+            model="openai/gpt-4o-mini",
+        )
+        result = adapter(
+            dspy.LM(model="openai/gpt-4o-mini", cache=False),
+            {},
+            MySignature,
+            [],
+            {"question": "What is the weather in Paris?", "tools": tools},
+        )
+        assert result[0]["tool_calls"] == dspy.ToolCalls(
+            tool_calls=[dspy.ToolCalls.ToolCall(name="get_weather", args={"city": "Paris"})]
+        )
+
+    with mock.patch("litellm.completion") as mock_completion:
+        # Case 2: tool_calls field is a single dict with "name" and "args" keys
+        mock_completion.return_value = ModelResponse(
+            choices=[
+                Choices(
+                    message=Message(
+                        content="[[ ## tool_calls ## ]]\n{'name': 'get_weather', 'args': {'city': 'Paris'}}"
+                    )
+                )
+            ],
+            model="openai/gpt-4o-mini",
+        )
+        result = adapter(
+            dspy.LM(model="openai/gpt-4o-mini", cache=False),
+            {},
+            MySignature,
+            [],
+            {"question": "What is the weather in Paris?", "tools": tools},
+        )
+        assert result[0]["tool_calls"] == dspy.ToolCalls(
+            tool_calls=[dspy.ToolCalls.ToolCall(name="get_weather", args={"city": "Paris"})]
+        )
