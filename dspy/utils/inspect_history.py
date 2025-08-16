@@ -14,7 +14,10 @@ def pretty_print_history(history, n: int = 1):
     """Prints the last n prompts and their completions."""
 
     for item in history[-n:]:
-        messages = item["messages"] or [{"role": "user", "content": item["prompt"]}]
+        messages = item["messages"] or [{
+            "role": "user",
+            "content": item["prompt"]
+        }]
         outputs = item["outputs"]
         timestamp = item.get("timestamp", "Unknown time")
 
@@ -33,11 +36,11 @@ def pretty_print_history(history, n: int = 1):
                         elif c["type"] == "image_url":
                             image_str = ""
                             if "base64" in c["image_url"].get("url", ""):
-                                len_base64 = len(c["image_url"]["url"].split("base64,")[1])
+                                len_base64 = len(
+                                    c["image_url"]["url"].split("base64,")[1])
                                 image_str = (
                                     f"<{c['image_url']['url'].split('base64,')[0]}base64,"
-                                    f"<IMAGE BASE 64 ENCODED({len_base64!s})>"
-                                )
+                                    f"<IMAGE BASE 64 ENCODED({len_base64!s})>")
                             else:
                                 image_str = f"<image_url: {c['image_url']['url']}>"
                             print(_blue(image_str.strip()))
@@ -56,7 +59,10 @@ def pretty_print_history(history, n: int = 1):
             if outputs[0].get("tool_calls"):
                 print(_red("Tool calls:"))
                 for tool_call in outputs[0]["tool_calls"]:
-                    print(_green(f"{tool_call['function']['name']}: {tool_call['function']['arguments']}"))
+                    print(
+                        _green(
+                            f"{tool_call['function']['name']}: {tool_call['function']['arguments']}"
+                        ))
         else:
             print(_red("Response:"))
             print(_green(outputs[0].strip()))

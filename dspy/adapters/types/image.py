@@ -48,7 +48,8 @@ class Image(Type):
         elif isinstance(values, cls):
             return values.model_dump()
         else:
-            raise TypeError("Expected a string URL or a dictionary with a key 'url'.")
+            raise TypeError(
+                "Expected a string URL or a dictionary with a key 'url'.")
 
     # If all my inits just call encode_image, should that be in this class
     @classmethod
@@ -83,7 +84,8 @@ def is_url(string: str) -> bool:
         return False
 
 
-def encode_image(image: Union[str, bytes, "PILImage.Image", dict], download_images: bool = False) -> str:
+def encode_image(image: Union[str, bytes, "PILImage.Image", dict],
+                 download_images: bool = False) -> str:
     """
     Encode an image or file to a base64 data URI.
 
@@ -142,7 +144,8 @@ def _encode_image_from_file(file_path: str) -> str:
     # Use mimetypes to guess directly from the file path
     mime_type, _ = mimetypes.guess_type(file_path)
     if mime_type is None:
-        raise ValueError(f"Could not determine MIME type for file: {file_path}")
+        raise ValueError(
+            f"Could not determine MIME type for file: {file_path}")
 
     encoded_data = base64.b64encode(file_data).decode("utf-8")
     return f"data:{mime_type};base64,{encoded_data}"
@@ -161,7 +164,8 @@ def _encode_image_from_url(image_url: str) -> str:
         # Try to guess MIME type from URL
         mime_type, _ = mimetypes.guess_type(image_url)
         if mime_type is None:
-            raise ValueError(f"Could not determine MIME type for URL: {image_url}")
+            raise ValueError(
+                f"Could not determine MIME type for URL: {image_url}")
 
     encoded_data = base64.b64encode(response.content).decode("utf-8")
     return f"data:{mime_type};base64,{encoded_data}"
@@ -177,7 +181,8 @@ def _encode_pil_image(image: "PILImage") -> str:
     file_extension = file_format.lower()
     mime_type, _ = mimetypes.guess_type(f"file.{file_extension}")
     if mime_type is None:
-        raise ValueError(f"Could not determine MIME type for image format: {file_format}")
+        raise ValueError(
+            f"Could not determine MIME type for image format: {file_format}")
 
     encoded_data = base64.b64encode(buffered.getvalue()).decode("utf-8")
     return f"data:{mime_type};base64,{encoded_data}"
@@ -185,7 +190,8 @@ def _encode_pil_image(image: "PILImage") -> str:
 
 def _get_file_extension(path_or_url: str) -> str:
     """Extract the file extension from a file path or URL."""
-    extension = os.path.splitext(urlparse(path_or_url).path)[1].lstrip(".").lower()
+    extension = os.path.splitext(
+        urlparse(path_or_url).path)[1].lstrip(".").lower()
     return extension or "png"  # Default to 'png' if no extension found
 
 

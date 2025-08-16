@@ -13,8 +13,10 @@ def simple_metric(example, prediction, trace=None):
 
 
 examples = [
-    Example(input="What is the color of the sky?", output="blue").with_inputs("input"),
-    Example(input="What does the fox say?", output="Ring-ding-ding-ding-dingeringeding!").with_inputs("input"),
+    Example(input="What is the color of the sky?",
+            output="blue").with_inputs("input"),
+    Example(input="What does the fox say?",
+            output="Ring-ding-ding-ding-dingeringeding!").with_inputs("input"),
 ]
 trainset = [examples[0]]
 
@@ -27,6 +29,7 @@ def test_bootstrap_finetune_initialization():
 
 
 class SimpleModule(dspy.Module):
+
     def __init__(self, signature):
         super().__init__()
         self.predictor = Predict(signature)
@@ -41,7 +44,11 @@ def test_compile_with_predict_instances():
     student = SimpleModule("input -> output")
     teacher = SimpleModule("input -> output")
 
-    lm = DummyLM([{"output": "blue"}, {"output": "Ring-ding-ding-ding-dingeringeding!"}])
+    lm = DummyLM([{
+        "output": "blue"
+    }, {
+        "output": "Ring-ding-ding-ding-dingeringeding!"
+    }])
     dspy.settings.configure(lm=lm)
 
     # Set LM for both student and teacher
@@ -53,10 +60,14 @@ def test_compile_with_predict_instances():
     # Mock the fine-tuning process since DummyLM doesn't support it
     with patch.object(bootstrap, "finetune_lms") as mock_finetune:
         mock_finetune.return_value = {(lm, None): lm}
-        compiled_student = bootstrap.compile(student, teacher=teacher, trainset=trainset)
+        compiled_student = bootstrap.compile(student,
+                                             teacher=teacher,
+                                             trainset=trainset)
 
         assert compiled_student is not None, "Failed to compile student"
-        assert hasattr(compiled_student, "_compiled") and compiled_student._compiled, "Student compilation flag not set"
+        assert hasattr(
+            compiled_student, "_compiled"
+        ) and compiled_student._compiled, "Student compilation flag not set"
 
         mock_finetune.assert_called_once()
 

@@ -13,17 +13,21 @@ dummy_data = """content,question,answer
 
 
 class CSVDataset(Dataset):
+
     def __init__(self, file_path, input_keys=None, **kwargs) -> None:
         import pandas as pd
+
         super().__init__(input_keys=input_keys, **kwargs)
         df = pd.read_csv(file_path)
         data = df.to_dict(orient="records")
         self._train = [
-            Example(**record, dspy_uuid=str(uuid.uuid4()), dspy_split="train").with_inputs(*input_keys)
+            Example(**record, dspy_uuid=str(uuid.uuid4()),
+                    dspy_split="train").with_inputs(*input_keys)
             for record in data[:1]
         ]
         self._dev = [
-            Example(**record, dspy_uuid=str(uuid.uuid4()), dspy_split="dev").with_inputs(*input_keys)
+            Example(**record, dspy_uuid=str(uuid.uuid4()),
+                    dspy_split="dev").with_inputs(*input_keys)
             for record in data[1:2]
         ]
 

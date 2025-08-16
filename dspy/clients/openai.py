@@ -9,6 +9,7 @@ from dspy.clients.utils_finetune import TrainDataFormat, TrainingStatus, save_da
 
 
 class TrainingJobOpenAI(TrainingJob):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.provider_file_id = None
@@ -40,6 +41,7 @@ class TrainingJobOpenAI(TrainingJob):
 
 
 class OpenAIProvider(Provider):
+
     def __init__(self):
         super().__init__()
         self.finetunable = True
@@ -87,7 +89,9 @@ class OpenAIProvider(Provider):
             train_kwargs=train_kwargs,
         )
         job.provider_job_id = provider_job_id
-        print(f"[OpenAI Provider] Job started with the OpenAI Job ID {provider_job_id}")
+        print(
+            f"[OpenAI Provider] Job started with the OpenAI Job ID {provider_job_id}"
+        )
 
         print("[OpenAI Provider] Waiting for training to complete")
         # TODO(feature): Could we stream OAI logs?
@@ -173,7 +177,10 @@ class OpenAIProvider(Provider):
         return provider_file.id
 
     @staticmethod
-    def _start_remote_training(train_file_id: str, model: str, train_kwargs: dict[str, Any] | None = None) -> str:
+    def _start_remote_training(
+            train_file_id: str,
+            model: str,
+            train_kwargs: dict[str, Any] | None = None) -> str:
         train_kwargs = train_kwargs or {}
         provider_job = openai.fine_tuning.jobs.create(
             model=model,
@@ -194,16 +201,20 @@ class OpenAIProvider(Provider):
         while not done:
             # Report estimated time if not already reported
             if not reported_estimated_time:
-                remote_job = openai.fine_tuning.jobs.retrieve(job.provider_job_id)
+                remote_job = openai.fine_tuning.jobs.retrieve(
+                    job.provider_job_id)
                 timestamp = remote_job.estimated_finish
                 if timestamp:
                     estimated_finish_dt = datetime.fromtimestamp(timestamp)
                     delta_dt = estimated_finish_dt - datetime.now()
-                    print(f"[OpenAI Provider] The OpenAI estimated time remaining is: {delta_dt}")
+                    print(
+                        f"[OpenAI Provider] The OpenAI estimated time remaining is: {delta_dt}"
+                    )
                     reported_estimated_time = True
 
             # Get new events
-            page = openai.fine_tuning.jobs.list_events(fine_tuning_job_id=job.provider_job_id, limit=1)
+            page = openai.fine_tuning.jobs.list_events(
+                fine_tuning_job_id=job.provider_job_id, limit=1)
             new_event = page.data[0] if page.data else None
             if new_event and new_event.id != cur_event_id:
                 dt = datetime.fromtimestamp(new_event.created_at)

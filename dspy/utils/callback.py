@@ -258,7 +258,8 @@ class BaseCallback:
 def with_callbacks(fn):
     """Decorator to add callback functionality to instance methods."""
 
-    def _execute_start_callbacks(instance, fn, call_id, callbacks, args, kwargs):
+    def _execute_start_callbacks(instance, fn, call_id, callbacks, args,
+                                 kwargs):
         """Execute all start callbacks for a function call."""
         inputs = inspect.getcallargs(fn, instance, *args, **kwargs)
         if "self" in inputs:
@@ -267,11 +268,15 @@ def with_callbacks(fn):
             inputs.pop("instance")
         for callback in callbacks:
             try:
-                _get_on_start_handler(callback, instance, fn)(call_id=call_id, instance=instance, inputs=inputs)
+                _get_on_start_handler(callback, instance,
+                                      fn)(call_id=call_id,
+                                          instance=instance,
+                                          inputs=inputs)
             except Exception as e:
                 logger.warning(f"Error when calling callback {callback}: {e}")
 
-    def _execute_end_callbacks(instance, fn, call_id, results, exception, callbacks):
+    def _execute_end_callbacks(instance, fn, call_id, results, exception,
+                               callbacks):
         """Execute all end callbacks for a function call."""
         for callback in callbacks:
             try:
@@ -281,11 +286,14 @@ def with_callbacks(fn):
                     exception=exception,
                 )
             except Exception as e:
-                logger.warning(f"Error when applying callback {callback}'s end handler on function {fn.__name__}: {e}.")
+                logger.warning(
+                    f"Error when applying callback {callback}'s end handler on function {fn.__name__}: {e}."
+                )
 
     def _get_active_callbacks(instance):
         """Get combined global and instance-level callbacks."""
-        return dspy.settings.get("callbacks", []) + getattr(instance, "callbacks", [])
+        return dspy.settings.get("callbacks", []) + getattr(
+            instance, "callbacks", [])
 
     if inspect.iscoroutinefunction(fn):
 
@@ -297,7 +305,8 @@ def with_callbacks(fn):
 
             call_id = uuid.uuid4().hex
 
-            _execute_start_callbacks(instance, fn, call_id, callbacks, args, kwargs)
+            _execute_start_callbacks(instance, fn, call_id, callbacks, args,
+                                     kwargs)
 
             # Active ID must be set right before the function is called, not before calling the callbacks.
             parent_call_id = ACTIVE_CALL_ID.get()
@@ -313,7 +322,8 @@ def with_callbacks(fn):
                 raise exception
             finally:
                 ACTIVE_CALL_ID.set(parent_call_id)
-                _execute_end_callbacks(instance, fn, call_id, results, exception, callbacks)
+                _execute_end_callbacks(instance, fn, call_id, results,
+                                       exception, callbacks)
 
         return async_wrapper
 
@@ -327,7 +337,8 @@ def with_callbacks(fn):
 
             call_id = uuid.uuid4().hex
 
-            _execute_start_callbacks(instance, fn, call_id, callbacks, args, kwargs)
+            _execute_start_callbacks(instance, fn, call_id, callbacks, args,
+                                     kwargs)
 
             # Active ID must be set right before the function is called, not before calling the callbacks.
             parent_call_id = ACTIVE_CALL_ID.get()
@@ -343,12 +354,14 @@ def with_callbacks(fn):
                 raise exception
             finally:
                 ACTIVE_CALL_ID.set(parent_call_id)
-                _execute_end_callbacks(instance, fn, call_id, results, exception, callbacks)
+                _execute_end_callbacks(instance, fn, call_id, results,
+                                       exception, callbacks)
 
         return sync_wrapper
 
 
-def _get_on_start_handler(callback: BaseCallback, instance: Any, fn: Callable) -> Callable:
+def _get_on_start_handler(callback: BaseCallback, instance: Any,
+                          fn: Callable) -> Callable:
     """Selects the appropriate on_start handler of the callback based on the instance and function name."""
     if isinstance(instance, dspy.LM):
         return callback.on_lm_start
@@ -361,7 +374,9 @@ def _get_on_start_handler(callback: BaseCallback, instance: Any, fn: Callable) -
         elif fn.__name__ == "parse":
             return callback.on_adapter_parse_start
         else:
-            raise ValueError(f"Unsupported adapter method for using callback: {fn.__name__}.")
+            raise ValueError(
+                f"Unsupported adapter method for using callback: {fn.__name__}."
+            )
 
     if isinstance(instance, dspy.Tool):
         return callback.on_tool_start
@@ -370,7 +385,8 @@ def _get_on_start_handler(callback: BaseCallback, instance: Any, fn: Callable) -
     return callback.on_module_start
 
 
-def _get_on_end_handler(callback: BaseCallback, instance: Any, fn: Callable) -> Callable:
+def _get_on_end_handler(callback: BaseCallback, instance: Any,
+                        fn: Callable) -> Callable:
     """Selects the appropriate on_end handler of the callback based on the instance and function name."""
     if isinstance(instance, (dspy.LM)):
         return callback.on_lm_end
@@ -383,7 +399,9 @@ def _get_on_end_handler(callback: BaseCallback, instance: Any, fn: Callable) -> 
         elif fn.__name__ == "parse":
             return callback.on_adapter_parse_end
         else:
-            raise ValueError(f"Unsupported adapter method for using callback: {fn.__name__}.")
+            raise ValueError(
+                f"Unsupported adapter method for using callback: {fn.__name__}."
+            )
 
     if isinstance(instance, dspy.Tool):
         return callback.on_tool_end

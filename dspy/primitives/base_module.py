@@ -12,11 +12,11 @@ from dspy.utils.saving import get_dependency_versions
 # NOTE: Note: It's important (temporary decision) to maintain named_parameters that's different in behavior from
 # named_sub_modules for the time being.
 
-
 logger = logging.getLogger(__name__)
 
 
 class BaseModule:
+
     def __init__(self):
         pass
 
@@ -66,7 +66,11 @@ class BaseModule:
 
         return named_parameters
 
-    def named_sub_modules(self, type_=None, skip_compiled=False) -> Generator[tuple[str, "BaseModule"], None, None]:
+    def named_sub_modules(
+        self,
+        type_=None,
+        skip_compiled=False
+    ) -> Generator[tuple[str, "BaseModule"], None, None]:
         """Find all sub-modules in the module, as well as their names.
 
         Say `self.children[4]['key'].sub_module` is a sub-module. Then the name will be
@@ -133,8 +137,7 @@ class BaseModule:
                 except Exception:
                     logging.warning(
                         f"Failed to deep copy attribute '{attr}' of {self.__class__.__name__}, "
-                        "falling back to shallow copy or reference copy."
-                    )
+                        "falling back to shallow copy or reference copy.")
                     try:
                         # Fallback to shallow copy if deep copy fails
                         setattr(new_instance, attr, copy.copy(value))
@@ -154,7 +157,10 @@ class BaseModule:
         return new_instance
 
     def dump_state(self):
-        return {name: param.dump_state() for name, param in self.named_parameters()}
+        return {
+            name: param.dump_state()
+            for name, param in self.named_parameters()
+        }
 
     def load_state(self, state):
         for name, param in self.named_parameters():
@@ -169,10 +175,10 @@ class BaseModule:
         - `save_program=True`: Save the whole module to a directory via cloudpickle, which contains both the state and
             architecture of the model.
 
-        If `save_program=True` and `modules_to_serialize` are provided, it will register those modules for serialization 
-        with cloudpickle's `register_pickle_by_value`. This causes cloudpickle to serialize the module by value rather 
-        than by reference, ensuring the module is fully preserved along with the saved program. This is useful 
-        when you have custom modules that need to be serialized alongside your program. If None, then no modules 
+        If `save_program=True` and `modules_to_serialize` are provided, it will register those modules for serialization
+        with cloudpickle's `register_pickle_by_value`. This causes cloudpickle to serialize the module by value rather
+        than by reference, ensuring the module is fully preserved along with the saved program. This is useful
+        when you have custom modules that need to be serialized alongside your program. If None, then no modules
         will be registered for serialization.
 
         We also save the dependency versions, so that the loaded model can check if there is a version mismatch on
@@ -197,7 +203,8 @@ class BaseModule:
                     f"`path` must point to a directory without a suffix when `save_program=True`, but received: {path}"
                 )
             if path.exists() and not path.is_dir():
-                raise NotADirectoryError(f"The path '{path}' exists but is not a directory.")
+                raise NotADirectoryError(
+                    f"The path '{path}' exists but is not a directory.")
 
             if not path.exists():
                 # Create the directory (and any parent directories)
@@ -225,7 +232,7 @@ class BaseModule:
         if path.suffix == ".json":
             try:
                 with open(path, "w", encoding="utf-8") as f:
-                    f.write(ujson.dumps(state, indent=2 , ensure_ascii=False))
+                    f.write(ujson.dumps(state, indent=2, ensure_ascii=False))
             except Exception as e:
                 raise RuntimeError(
                     f"Failed to save state to {path} with error: {e}. Your DSPy program may contain non "
@@ -236,7 +243,9 @@ class BaseModule:
             with open(path, "wb") as f:
                 cloudpickle.dump(state, f)
         else:
-            raise ValueError(f"`path` must end with `.json` or `.pkl` when `save_program=False`, but received: {path}")
+            raise ValueError(
+                f"`path` must end with `.json` or `.pkl` when `save_program=False`, but received: {path}"
+            )
 
     def load(self, path):
         """Load the saved module. You may also want to check out dspy.load, if you want to
@@ -254,7 +263,9 @@ class BaseModule:
             with open(path, "rb") as f:
                 state = cloudpickle.load(f)
         else:
-            raise ValueError(f"`path` must end with `.json` or `.pkl`, but received: {path}")
+            raise ValueError(
+                f"`path` must end with `.json` or `.pkl`, but received: {path}"
+            )
 
         dependency_versions = get_dependency_versions()
         saved_dependency_versions = state["metadata"]["dependency_versions"]
@@ -265,6 +276,5 @@ class BaseModule:
                     f"You saved with `{key}=={saved_version}`, but now you have "
                     f"`{key}=={dependency_versions[key]}`. This might cause errors or performance downgrade "
                     "on the loaded model, please consider loading the model in the same environment as the "
-                    "saving environment."
-                )
+                    "saving environment.")
         self.load_state(state)

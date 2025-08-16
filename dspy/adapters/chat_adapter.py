@@ -26,6 +26,7 @@ class FieldInfoWithName(NamedTuple):
 
 
 class ChatAdapter(Adapter):
+
     def __call__(
         self,
         lm: LM,
@@ -40,7 +41,8 @@ class ChatAdapter(Adapter):
             # fallback to JSONAdapter
             from dspy.adapters.json_adapter import JSONAdapter
 
-            if isinstance(e, ContextWindowExceededError) or isinstance(self, JSONAdapter):
+            if isinstance(e, ContextWindowExceededError) or isinstance(
+                    self, JSONAdapter):
                 # On context window exceeded error or already using JSONAdapter, we don't want to retry with a different
                 # adapter.
                 raise e
@@ -60,11 +62,13 @@ class ChatAdapter(Adapter):
             # fallback to JSONAdapter
             from dspy.adapters.json_adapter import JSONAdapter
 
-            if isinstance(e, ContextWindowExceededError) or isinstance(self, JSONAdapter):
+            if isinstance(e, ContextWindowExceededError) or isinstance(
+                    self, JSONAdapter):
                 # On context window exceeded error or already using JSONAdapter, we don't want to retry with a different
                 # adapter.
                 raise e
-            return await JSONAdapter().acall(lm, lm_kwargs, signature, demos, inputs)
+            return await JSONAdapter().acall(lm, lm_kwargs, signature, demos,
+                                             inputs)
 
     def format_field_description(self, signature: type[Signature]) -> str:
         return (
@@ -79,18 +83,22 @@ class ChatAdapter(Adapter):
         output fields section to indicate the end of the output fields.
         """
         parts = []
-        parts.append("All interactions will be structured in the following way, with the appropriate values filled in.")
+        parts.append(
+            "All interactions will be structured in the following way, with the appropriate values filled in."
+        )
 
-        def format_signature_fields_for_instructions(fields: dict[str, FieldInfo]):
-            return self.format_field_with_value(
-                fields_with_values={
-                    FieldInfoWithName(name=field_name, info=field_info): translate_field_type(field_name, field_info)
-                    for field_name, field_info in fields.items()
-                },
-            )
+        def format_signature_fields_for_instructions(fields: dict[str,
+                                                                  FieldInfo]):
+            return self.format_field_with_value(fields_with_values={
+                FieldInfoWithName(name=field_name, info=field_info):
+                translate_field_type(field_name, field_info)
+                for field_name, field_info in fields.items()
+            }, )
 
-        parts.append(format_signature_fields_for_instructions(signature.input_fields))
-        parts.append(format_signature_fields_for_instructions(signature.output_fields))
+        parts.append(
+            format_signature_fields_for_instructions(signature.input_fields))
+        parts.append(
+            format_signature_fields_for_instructions(signature.output_fields))
         parts.append("[[ ## completed ## ]]\n")
         return "\n\n".join(parts).strip()
 
@@ -111,18 +119,21 @@ class ChatAdapter(Adapter):
         for k, v in signature.input_fields.items():
             if k in inputs:
                 value = inputs.get(k)
-                formatted_field_value = format_field_value(field_info=v, value=value)
+                formatted_field_value = format_field_value(field_info=v,
+                                                           value=value)
                 messages.append(f"[[ ## {k} ## ]]\n{formatted_field_value}")
 
         if main_request:
-            output_requirements = self.user_message_output_requirements(signature)
+            output_requirements = self.user_message_output_requirements(
+                signature)
             if output_requirements is not None:
                 messages.append(output_requirements)
 
         messages.append(suffix)
         return "\n\n".join(messages).strip()
 
-    def user_message_output_requirements(self, signature: type[Signature]) -> str:
+    def user_message_output_requirements(self,
+                                         signature: type[Signature]) -> str:
         """Returns a simplified format reminder for the language model.
 
         In chat-based interactions, language models may lose track of the required output format
@@ -147,7 +158,8 @@ class ChatAdapter(Adapter):
                 return ""
 
         message = "Respond with the corresponding output fields, starting with the field "
-        message += ", then ".join(f"`[[ ## {f} ## ]]`{type_info(v)}" for f, v in signature.output_fields.items())
+        message += ", then ".join(f"`[[ ## {f} ## ]]`{type_info(v)}"
+                                  for f, v in signature.output_fields.items())
         message += ", and then ending with the marker for `[[ ## completed ## ]]`."
         return message
 
@@ -159,14 +171,15 @@ class ChatAdapter(Adapter):
     ) -> str:
         assistant_message_content = self.format_field_with_value(
             {
-                FieldInfoWithName(name=k, info=v): outputs.get(k, missing_field_message)
+                FieldInfoWithName(name=k, info=v):
+                outputs.get(k, missing_field_message)
                 for k, v in signature.output_fields.items()
-            },
-        )
+            }, )
         assistant_message_content += "\n\n[[ ## completed ## ]]\n"
         return assistant_message_content
 
-    def parse(self, signature: type[Signature], completion: str) -> dict[str, Any]:
+    def parse(self, signature: type[Signature],
+              completion: str) -> dict[str, Any]:
         sections = [(None, [])]
 
         for line in completion.splitlines():
@@ -174,8 +187,9 @@ class ChatAdapter(Adapter):
             if match:
                 # If the header pattern is found, split the rest of the line as content
                 header = match.group(1)
-                remaining_content = line[match.end() :].strip()
-                sections.append((header, [remaining_content] if remaining_content else []))
+                remaining_content = line[match.end():].strip()
+                sections.append(
+                    (header, [remaining_content] if remaining_content else []))
             else:
                 sections[-1][1].append(line)
 
@@ -185,7 +199,8 @@ class ChatAdapter(Adapter):
         for k, v in sections:
             if (k not in fields) and (k in signature.output_fields):
                 try:
-                    fields[k] = parse_value(v, signature.output_fields[k].annotation)
+                    fields[k] = parse_value(
+                        v, signature.output_fields[k].annotation)
                 except Exception as e:
                     raise AdapterParseError(
                         adapter_name="ChatAdapter",
@@ -203,7 +218,8 @@ class ChatAdapter(Adapter):
 
         return fields
 
-    def format_field_with_value(self, fields_with_values: dict[FieldInfoWithName, Any]) -> str:
+    def format_field_with_value(
+            self, fields_with_values: dict[FieldInfoWithName, Any]) -> str:
         """
         Formats the values of the specified fields according to the field's DSPy type (input or output),
         annotation (e.g. str, int, etc.), and the type of the value itself. Joins the formatted values
@@ -218,7 +234,8 @@ class ChatAdapter(Adapter):
         """
         output = []
         for field, field_value in fields_with_values.items():
-            formatted_field_value = format_field_value(field_info=field.info, value=field_value)
+            formatted_field_value = format_field_value(field_info=field.info,
+                                                       value=field_value)
             output.append(f"[[ ## {field.name} ## ]]\n{formatted_field_value}")
 
         return "\n\n".join(output).strip()
@@ -238,11 +255,15 @@ class ChatAdapter(Adapter):
         wrapped in a dictionary with a "messages" key.
         """
         system_user_messages = self.format(  # returns a list of dicts with the keys "role" and "content"
-            signature=signature, demos=demos, inputs=inputs
-        )
+            signature=signature,
+            demos=demos,
+            inputs=inputs)
         assistant_message_content = self.format_assistant_message_content(  # returns a string, without the role
-            signature=signature, outputs=outputs
-        )
-        assistant_message = {"role": "assistant", "content": assistant_message_content}
+            signature=signature,
+            outputs=outputs)
+        assistant_message = {
+            "role": "assistant",
+            "content": assistant_message_content
+        }
         messages = system_user_messages + [assistant_message]
         return {"messages": messages}

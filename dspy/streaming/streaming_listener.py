@@ -61,14 +61,17 @@ class StreamListener:
             },
             "XMLAdapter": {
                 "start_identifier": f"<{self.signature_field_name}>",
-                "end_identifier": re.compile(rf"</{self.signature_field_name}>"),
+                "end_identifier":
+                re.compile(rf"</{self.signature_field_name}>"),
                 "start_indicator": "<",
             },
         }
 
-    def _buffered_message_end_with_start_identifier(self, concat_message: str, start_identifier: str) -> str:
+    def _buffered_message_end_with_start_identifier(
+            self, concat_message: str, start_identifier: str) -> str:
         for i in range(len(concat_message)):
-            if start_identifier.startswith(concat_message[len(concat_message) - i - 1 :]):
+            if start_identifier.startswith(concat_message[len(concat_message) -
+                                                          i - 1:]):
                 return True
         return False
 
@@ -79,9 +82,12 @@ class StreamListener:
                 f"Unsupported adapter for streaming: {adapter_name}, please use one of the following adapters: "
                 f"{', '.join([a.__name__ for a in ADAPTER_SUPPORT_STREAMING])}"
             )
-        start_identifier = self.adapter_identifiers[adapter_name]["start_identifier"]
-        end_identifier = self.adapter_identifiers[adapter_name]["end_identifier"]
-        start_indicator = self.adapter_identifiers[adapter_name]["start_indicator"]
+        start_identifier = self.adapter_identifiers[adapter_name][
+            "start_identifier"]
+        end_identifier = self.adapter_identifiers[adapter_name][
+            "end_identifier"]
+        start_indicator = self.adapter_identifiers[adapter_name][
+            "start_indicator"]
 
         if self.stream_end:
             if self.allow_reuse:
@@ -106,15 +112,16 @@ class StreamListener:
             # directly end the stream listening. In some models like gemini, each stream chunk can be multiple
             # tokens, so it's possible that response only has one chunk, we also fall back to this logic.
             message_after_start_identifier = chunk_message[
-                chunk_message.find(start_identifier) + len(start_identifier) :
-            ]
+                chunk_message.find(start_identifier) + len(start_identifier):]
             if re.search(end_identifier, message_after_start_identifier):
                 self.cache_hit = True
                 self.stream_start = True
                 self.stream_end = True
                 return
 
-        if len(self.field_start_queue) == 0 and not self.stream_start and start_indicator in chunk_message:
+        if len(
+                self.field_start_queue
+        ) == 0 and not self.stream_start and start_indicator in chunk_message:
             # We look for the pattern of start_identifier, i.e., "[[ ## {self.signature_field_name} ## ]]" for
             # ChatAdapter to identify the start of the stream of our target field. Once the start_indicator, i.e., "[["
             # for ChatAdapter, is found, we start checking the next tokens
@@ -132,14 +139,17 @@ class StreamListener:
                 self.stream_start = True
                 self.field_start_queue = []
                 # Keep the part after the start_identifier from the concat_message, we need to write it to the buffer.
-                value_start_index = concat_message.find(start_identifier) + len(start_identifier)
+                value_start_index = concat_message.find(
+                    start_identifier) + len(start_identifier)
                 chunk_message = concat_message[value_start_index:].lstrip()
-                if isinstance(settings.adapter, JSONAdapter) and chunk_message.startswith('"'):
+                if isinstance(settings.adapter,
+                              JSONAdapter) and chunk_message.startswith('"'):
                     # For JSONAdapter, we need to remove the leading ". We cannot do this with the start_identifier
                     # because there could be a few splitters between ':' and '"', e.g., '"name": "value"'.
                     chunk_message = chunk_message[1:]
 
-            elif self._buffered_message_end_with_start_identifier(concat_message.strip(), start_identifier):
+            elif self._buffered_message_end_with_start_identifier(
+                    concat_message.strip(), start_identifier):
                 # If the buffered message ends with part of the start_identifier, we keep looking for the
                 # start_identifier from the token stream.
                 return
@@ -190,11 +200,13 @@ class StreamListener:
                 boundary_index = len(last_tokens)
             return last_tokens[:boundary_index]
         elif isinstance(settings.adapter, XMLAdapter):
-            boundary_index = last_tokens.find(f"</{self.signature_field_name}>")
+            boundary_index = last_tokens.find(
+                f"</{self.signature_field_name}>")
             if boundary_index == -1:
                 boundary_index = len(last_tokens)
             return last_tokens[:boundary_index]
-        elif isinstance(settings.adapter, ChatAdapter) or settings.adapter is None:
+        elif isinstance(settings.adapter,
+                        ChatAdapter) or settings.adapter is None:
             boundary_index = last_tokens.find("[[")
             return last_tokens[:boundary_index]
         else:
@@ -204,7 +216,8 @@ class StreamListener:
             )
 
 
-def find_predictor_for_stream_listeners(program: "Module", stream_listeners: list[StreamListener]):
+def find_predictor_for_stream_listeners(
+        program: "Module", stream_listeners: list[StreamListener]):
     """Find the predictor for each stream listener.
 
     This is a utility function to automatically find the predictor for each stream listener. It is used when some
@@ -220,7 +233,8 @@ def find_predictor_for_stream_listeners(program: "Module", stream_listeners: lis
         field_name_to_named_predictor[listener.signature_field_name] = None
 
     for name, predictor in predictors:
-        for field_name, field_info in predictor.signature.output_fields.items():
+        for field_name, field_info in predictor.signature.output_fields.items(
+        ):
             if field_name not in field_name_to_named_predictor:
                 continue
 
@@ -233,8 +247,7 @@ def find_predictor_for_stream_listeners(program: "Module", stream_listeners: lis
             if field_info.annotation is not str:
                 raise ValueError(
                     f"Stream listener can only be applied to string output field, but your field {field_name} is of "
-                    f"type {field_info.annotation}."
-                )
+                    f"type {field_info.annotation}.")
 
             field_name_to_named_predictor[field_name] = (name, predictor)
 
@@ -247,8 +260,8 @@ def find_predictor_for_stream_listeners(program: "Module", stream_listeners: lis
             raise ValueError(
                 f"Signature field {listener.signature_field_name} is not a field of any predictor in the program, "
                 "cannot automatically determine which predictor to use for streaming. Please verify your field name or "
-                "specify the predictor to listen to."
-            )
-        listener.predict_name, listener.predict = field_name_to_named_predictor[listener.signature_field_name]
+                "specify the predictor to listen to.")
+        listener.predict_name, listener.predict = field_name_to_named_predictor[
+            listener.signature_field_name]
         predict_id_to_listener[id(listener.predict)].append(listener)
     return predict_id_to_listener

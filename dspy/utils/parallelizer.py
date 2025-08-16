@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class ParallelExecutor:
+
     def __init__(
         self,
         num_threads=None,
@@ -48,6 +49,7 @@ class ParallelExecutor:
         return self._execute_parallel(wrapped, data)
 
     def _wrap_function(self, user_function):
+
         def safe_func(item):
             if self.cancel_jobs.is_set():
                 return None
@@ -59,9 +61,12 @@ class ParallelExecutor:
                     if self.error_count >= self.max_errors:
                         self.cancel_jobs.set()
                 if self.provide_traceback:
-                    logger.error(f"Error for {item}: {e}\n{traceback.format_exc()}")
+                    logger.error(
+                        f"Error for {item}: {e}\n{traceback.format_exc()}")
                 else:
-                    logger.error(f"Error for {item}: {e}. Set `provide_traceback=True` for traceback.")
+                    logger.error(
+                        f"Error for {item}: {e}. Set `provide_traceback=True` for traceback."
+                    )
                 return None
 
         return safe_func
@@ -87,10 +92,15 @@ class ParallelExecutor:
             from dspy.dsp.utils.settings import thread_local_overrides
 
             original = thread_local_overrides.get()
-            token = thread_local_overrides.set({**original, **parent_overrides.copy()})
+            token = thread_local_overrides.set({
+                **original,
+                **parent_overrides.copy()
+            })
             if parent_overrides.get("usage_tracker"):
                 # Usage tracker needs to be deep copied across threads so that each thread tracks its own usage
-                thread_local_overrides.overrides["usage_tracker"] = copy.deepcopy(parent_overrides["usage_tracker"])
+                thread_local_overrides.overrides[
+                    "usage_tracker"] = copy.deepcopy(
+                        parent_overrides["usage_tracker"])
 
             try:
                 return index, function(item)
@@ -128,7 +138,8 @@ class ParallelExecutor:
                 submission_counter = 0
 
                 for idx, item in enumerate(data):
-                    f = executor.submit(worker, parent_overrides, submission_counter, idx, item)
+                    f = executor.submit(worker, parent_overrides,
+                                        submission_counter, idx, item)
                     futures_map[f] = (submission_counter, idx, item)
                     futures_set.add(f)
                     submission_counter += 1
@@ -146,7 +157,9 @@ class ParallelExecutor:
                 while futures_set and not self.cancel_jobs.is_set():
                     if all_done():
                         break
-                    done, not_done = wait(futures_set, timeout=1, return_when=FIRST_COMPLETED)
+                    done, not_done = wait(futures_set,
+                                          timeout=1,
+                                          return_when=FIRST_COMPLETED)
                     for f in done:
                         futures_set.remove(f)
                         try:
@@ -154,13 +167,17 @@ class ParallelExecutor:
                         except Exception:
                             pass
                         else:
-                            if outcome != job_cancelled and results[index] is None:
+                            if outcome != job_cancelled and results[
+                                    index] is None:
                                 results[index] = outcome
 
                             # Update progress
                             if self.compare_results:
-                                vals = [r[-1] for r in results if r is not None]
-                                self._update_progress(pbar, sum(vals), len(vals))
+                                vals = [
+                                    r[-1] for r in results if r is not None
+                                ]
+                                self._update_progress(pbar, sum(vals),
+                                                      len(vals))
                             else:
                                 self._update_progress(
                                     pbar,
@@ -172,7 +189,8 @@ class ParallelExecutor:
                         break
 
                     # Check stragglers if few remain
-                    if 0 < self.timeout and len(not_done) <= self.straggler_limit:
+                    if 0 < self.timeout and len(
+                            not_done) <= self.straggler_limit:
                         now = time.time()
                         for f in list(not_done):
                             if f not in resubmitted:
@@ -188,7 +206,8 @@ class ParallelExecutor:
                                         idx,
                                         item,
                                     )
-                                    futures_map[nf] = (submission_counter, idx, item)
+                                    futures_map[nf] = (submission_counter, idx,
+                                                       item)
                                     futures_set.add(nf)
                                     submission_counter += 1
 
@@ -199,15 +218,18 @@ class ParallelExecutor:
             executor.shutdown(wait=False)
 
         if self.cancel_jobs.is_set():
-            logger.warning("Execution cancelled due to errors or interruption.")
-            raise Exception("Execution cancelled due to errors or interruption.")
+            logger.warning(
+                "Execution cancelled due to errors or interruption.")
+            raise Exception(
+                "Execution cancelled due to errors or interruption.")
 
         return results
 
     def _update_progress(self, pbar, nresults, ntotal):
         if self.compare_results:
             pct = round(100 * nresults / ntotal, 1) if ntotal else 0
-            pbar.set_description(f"Average Metric: {nresults:.2f} / {ntotal} ({pct}%)")
+            pbar.set_description(
+                f"Average Metric: {nresults:.2f} / {ntotal} ({pct}%)")
         else:
             pbar.set_description(f"Processed {nresults} / {ntotal} examples")
         pbar.update()

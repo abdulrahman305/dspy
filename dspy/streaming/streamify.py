@@ -14,8 +14,15 @@ from litellm import ModelResponseStream
 
 from dspy.dsp.utils.settings import settings
 from dspy.primitives.prediction import Prediction
-from dspy.streaming.messages import StatusMessage, StatusMessageProvider, StatusStreamingCallback
-from dspy.streaming.streaming_listener import StreamListener, find_predictor_for_stream_listeners
+from dspy.streaming.messages import (
+    StatusMessage,
+    StatusMessageProvider,
+    StatusStreamingCallback,
+)
+from dspy.streaming.streaming_listener import (
+    StreamListener,
+    find_predictor_for_stream_listeners,
+)
 from dspy.utils.asyncify import asyncify
 
 logger = logging.getLogger(__name__)
@@ -152,7 +159,8 @@ def streamify(
     """
     stream_listeners = stream_listeners or []
     if len(stream_listeners) > 0:
-        predict_id_to_listener = find_predictor_for_stream_listeners(program, stream_listeners)
+        predict_id_to_listener = find_predictor_for_stream_listeners(
+            program, stream_listeners)
     else:
         predict_id_to_listener = {}
 
@@ -162,12 +170,15 @@ def streamify(
         program = asyncify(program)
 
     callbacks = settings.callbacks
-    status_streaming_callback = StatusStreamingCallback(status_message_provider)
+    status_streaming_callback = StatusStreamingCallback(
+        status_message_provider)
     if not any(isinstance(c, StatusStreamingCallback) for c in callbacks):
         callbacks.append(status_streaming_callback)
 
     async def generator(args, kwargs, stream: MemoryObjectSendStream):
-        with settings.context(send_stream=stream, callbacks=callbacks, stream_listeners=stream_listeners):
+        with settings.context(send_stream=stream,
+                              callbacks=callbacks,
+                              stream_listeners=stream_listeners):
             prediction = await program(*args, **kwargs)
 
         await stream.send(prediction)
@@ -186,7 +197,8 @@ def streamify(
                         # We are receiving a chunk from the LM's response stream, delegate it to the listeners to
                         # determine if we should yield a value to the user.
                         output = None
-                        for listener in predict_id_to_listener[value.predict_id]:
+                        for listener in predict_id_to_listener[
+                                value.predict_id]:
                             # There should be at most one listener provides a return value.
                             output = listener.receive(value) or output
                         if output:
@@ -196,11 +208,11 @@ def streamify(
                 elif isinstance(value, Prediction):
                     if include_final_prediction_in_output_stream:
                         yield value
-                    elif (
-                        len(stream_listeners) == 0
-                        or any(listener.cache_hit for listener in stream_listeners)
-                        or not any(listener.stream_start for listener in stream_listeners)
-                    ):
+                    elif (len(stream_listeners) == 0
+                          or any(listener.cache_hit
+                                 for listener in stream_listeners)
+                          or not any(listener.stream_start
+                                     for listener in stream_listeners)):
                         yield value
                     return
 

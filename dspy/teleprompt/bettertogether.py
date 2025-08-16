@@ -19,17 +19,19 @@ logger = logging.getLogger(__name__)
 
 
 class BetterTogether(Teleprompter):
-
     STRAT_SEP = " -> "
 
-    def __init__(self,
+    def __init__(
+        self,
         metric: Callable,
         prompt_optimizer: Teleprompter | None = None,
         weight_optimizer: Teleprompter | None = None,
         seed: int | None = None,
-      ):
+    ):
         if not dspy.settings.experimental:
-            raise ValueError("This is an experimental optimizer. Set `dspy.settings.experimental` to `True` to use it.")
+            raise ValueError(
+                "This is an experimental optimizer. Set `dspy.settings.experimental` to `True` to use it."
+            )
 
         # TODO: Note that the BetterTogether optimizer is meaningful when
         # BootstrapFinetune uses a metric to filter the training data before
@@ -37,16 +39,20 @@ class BetterTogether(Teleprompter):
         # a BootstrapFinetune without a metric, say, if there aren't labels
         # available for the training data. Should this be noted somewhere?
         # TODO: We should re-consider if the metric should be required.
-        self.prompt_optimizer = prompt_optimizer if prompt_optimizer else BootstrapFewShotWithRandomSearch(metric=metric)
-        self.weight_optimizer = weight_optimizer if weight_optimizer else BootstrapFinetune(metric=metric)
+        self.prompt_optimizer = (prompt_optimizer if prompt_optimizer else
+                                 BootstrapFewShotWithRandomSearch(
+                                     metric=metric))
+        self.weight_optimizer = weight_optimizer if weight_optimizer else BootstrapFinetune(
+            metric=metric)
 
-        is_supported_prompt = isinstance(self.prompt_optimizer, BootstrapFewShotWithRandomSearch)
-        is_supported_weight = isinstance(self.weight_optimizer, BootstrapFinetune)
+        is_supported_prompt = isinstance(self.prompt_optimizer,
+                                         BootstrapFewShotWithRandomSearch)
+        is_supported_weight = isinstance(self.weight_optimizer,
+                                         BootstrapFinetune)
         if not is_supported_prompt or not is_supported_weight:
             raise ValueError(
                 "The BetterTogether optimizer only supports the following optimizers for now: BootstrapFinetune, "
-                "BootstrapFewShotWithRandomSearch."
-            )
+                "BootstrapFewShotWithRandomSearch.")
 
         self.rng = random.Random(seed)
 
@@ -55,7 +61,7 @@ class BetterTogether(Teleprompter):
         student: Module,
         trainset: list[Example],
         strategy: str = "p -> w -> p",
-        valset_ratio = 0.1,
+        valset_ratio=0.1,
     ) -> Module:
         # TODO: We could record acc on a different valset to pick the best
         # strategy within the provided strategy
@@ -65,8 +71,7 @@ class BetterTogether(Teleprompter):
         if not all(s in ["p", "w"] for s in parsed_strategy):
             raise ValueError(
                 f"The strategy should be a sequence of 'p' and 'w' separated by '{self.STRAT_SEP}', but "
-                f"found: {strategy}"
-            )
+                f"found: {strategy}")
 
         logger.info("Preparing the student program...")
         # TODO: Prepare student returns student.reset_copy(), which is what gets
@@ -78,12 +83,15 @@ class BetterTogether(Teleprompter):
         # of the examples in the original trainset
         trainset = trainset[:]
         logger.info("Compiling the student program...")
-        student = self._run_strategies(parsed_strategy, student, trainset, valset_ratio)
+        student = self._run_strategies(parsed_strategy, student, trainset,
+                                       valset_ratio)
 
-        logger.info("BetterTogether has finished compiling the student program")
+        logger.info(
+            "BetterTogether has finished compiling the student program")
         return student
 
-    def _run_strategies(self, parsed_strategy, student, trainset, valset_ratio) -> Module:
+    def _run_strategies(self, parsed_strategy, student, trainset,
+                        valset_ratio) -> Module:
         # Keep track of all the partial strategies/programs in parsed_strategy
         # "" corresponds to the initial student program
         candidate_programs = []
@@ -93,8 +101,7 @@ class BetterTogether(Teleprompter):
         for ind, step_code in enumerate(parsed_strategy):
             current_strategy = self.STRAT_SEP.join(parsed_strategy[:ind + 1])
             logger.info(
-                f"\n########## Step {ind + 1} of {len(parsed_strategy)} - Strategy "
-                f"'{current_strategy}' ##########"
+                f"\n########## Step {ind + 1} of {len(parsed_strategy)} - Strategy '{current_strategy}' ##########"
             )
 
             logger.info("Shuffling the trainset...")
@@ -108,7 +115,8 @@ class BetterTogether(Teleprompter):
             student = student.deepcopy()
             student._compiled = False
             if step_code == "p":
-                student = self._compile_prompt_optimizer(student, trainset, valset_ratio)
+                student = self._compile_prompt_optimizer(
+                    student, trainset, valset_ratio)
             elif step_code == "w":
                 student = self._compile_weight_optimizer(student, trainset)
                 launched_flag = False
@@ -122,12 +130,16 @@ class BetterTogether(Teleprompter):
         student.candidate_programs = candidate_programs
         return student
 
-    def _compile_prompt_optimizer(self, student, trainset, valset_ratio) -> Module:
+    def _compile_prompt_optimizer(self, student, trainset,
+                                  valset_ratio) -> Module:
         logger.info("Preparing for prompt optimization...")
 
         # Sampling a validation set from the trainset for the prompt optimizer
         # We drop the hints for prompt optimization
-        trainset = [x.with_inputs(*list(set(x.inputs().keys()) - {"hint"})) for x in trainset]
+        trainset = [
+            x.with_inputs(*list(set(x.inputs().keys()) - {"hint"}))
+            for x in trainset
+        ]
         num_val = int(valset_ratio * len(trainset))
         prompt_valset = trainset[:num_val]
         prompt_trainset = trainset[num_val:]
@@ -142,7 +154,9 @@ class BetterTogether(Teleprompter):
         # should consider addressing it in BFRS.
         logger.info("Compiling the prompt optimizer...")
         pred_lms = [pred.lm for pred in student.predictors()]
-        student = self.prompt_optimizer.compile(student, trainset=prompt_trainset, valset=prompt_valset)
+        student = self.prompt_optimizer.compile(student,
+                                                trainset=prompt_trainset,
+                                                valset=prompt_valset)
         for pred, lm in zip(student.predictors(), pred_lms, strict=False):
             pred.lm = lm
 

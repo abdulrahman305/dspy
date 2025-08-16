@@ -25,6 +25,7 @@ def test_code_validate_input():
 
 
 def test_code_in_nested_type():
+
     class Wrapper(pydantic.BaseModel):
         code: dspy.Code
 
@@ -39,7 +40,8 @@ def test_code_with_language():
     assert java_code.language == "java"
     assert "Programming language: java" in java_code.description()
 
-    cpp_code = dspy.Code["cpp"](code="std::cout << 'Hello, world!' << std::endl;")
+    cpp_code = dspy.Code["cpp"](
+        code="std::cout << 'Hello, world!' << std::endl;")
     assert cpp_code.code == "std::cout << 'Hello, world!' << std::endl;"
     assert cpp_code.language == "cpp"
     assert "Programming language: cpp" in cpp_code.description()

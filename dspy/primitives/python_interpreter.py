@@ -57,15 +57,19 @@ class PythonInterpreter:
             self.deno_command = list(deno_command)
         else:
             args = ["deno", "run", "--allow-read"]
-            self._env_arg  = ""
+            self._env_arg = ""
             if self.enable_env_vars:
                 user_vars = [str(v).strip() for v in self.enable_env_vars]
                 args.append("--allow-env=" + ",".join(user_vars))
                 self._env_arg = ",".join(user_vars)
             if self.enable_network_access:
-                args.append(f"--allow-net={','.join(str(x) for x in self.enable_network_access)}")
+                args.append(
+                    f"--allow-net={','.join(str(x) for x in self.enable_network_access)}"
+                )
             if self.enable_write_paths:
-                args.append(f"--allow-write={','.join(str(x) for x in self.enable_write_paths)}")
+                args.append(
+                    f"--allow-write={','.join(str(x) for x in self.enable_write_paths)}"
+                )
 
             args.append(self._get_runner_path())
 
@@ -98,9 +102,13 @@ class PythonInterpreter:
                 if self.enable_write_paths and path in self.enable_write_paths:
                     open(path, "a").close()
                 else:
-                    raise FileNotFoundError(f"Cannot mount non-existent file: {path}")
+                    raise FileNotFoundError(
+                        f"Cannot mount non-existent file: {path}")
             virtual_path = f"/sandbox/{os.path.basename(path)}"
-            mount_msg = json.dumps({"mount_file": str(path), "virtual_path": virtual_path})
+            mount_msg = json.dumps({
+                "mount_file": str(path),
+                "virtual_path": virtual_path
+            })
             self.deno_process.stdin.write(mount_msg + "\n")
             self.deno_process.stdin.flush()
         self._mounted_files = True
@@ -117,7 +125,6 @@ class PythonInterpreter:
             self.deno_process.stdin.write(sync_msg + "\n")
             self.deno_process.stdin.flush()
 
-
     def _ensure_deno_process(self) -> None:
         if self.deno_process is None or self.deno_process.poll() is not None:
             try:
@@ -128,7 +135,7 @@ class PythonInterpreter:
                     stderr=subprocess.PIPE,
                     text=True,
                     encoding="UTF-8",
-                    env=os.environ.copy()
+                    env=os.environ.copy(),
                 )
             except FileNotFoundError as e:
                 install_instructions = (
@@ -163,7 +170,8 @@ class PythonInterpreter:
         elif isinstance(value, list) or isinstance(value, dict):
             return json.dumps(value)
         else:
-            raise InterpreterError(f"Unsupported value type: {type(value).__name__}")
+            raise InterpreterError(
+                f"Unsupported value type: {type(value).__name__}")
 
     def execute(
         self,
@@ -191,7 +199,8 @@ class PythonInterpreter:
         if not output_line:
             # Possibly the subprocess died or gave no output
             err_output = self.deno_process.stderr.read()
-            raise InterpreterError(f"No output from Deno subprocess. Stderr: {err_output}")
+            raise InterpreterError(
+                f"No output from Deno subprocess. Stderr: {err_output}")
 
         # Parse that line as JSON
         try:
@@ -209,9 +218,11 @@ class PythonInterpreter:
                 # just simply replace the output with the arguments.
                 result["output"] = result.get("errorArgs", None)
             elif error_type == "SyntaxError":
-                raise SyntaxError(f"Invalid Python syntax. message: {error_msg}")
+                raise SyntaxError(
+                    f"Invalid Python syntax. message: {error_msg}")
             else:
-                raise InterpreterError(f"{error_type}: {result.get('errorArgs') or error_msg}")
+                raise InterpreterError(
+                    f"{error_type}: {result.get('errorArgs') or error_msg}")
 
         # If there's no error or got `FinalAnswer`, return the "output" field
         self._sync_files()

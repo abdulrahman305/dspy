@@ -7,6 +7,7 @@ from dspy.utils.parallelizer import ParallelExecutor
 
 
 class Parallel:
+
     def __init__(
         self,
         num_threads: int | None = None,
@@ -30,7 +31,9 @@ class Parallel:
         self.failed_examples = []
         self.exceptions = []
 
-    def forward(self, exec_pairs: list[tuple[Any, Example]], num_threads: int | None = None) -> list[Any]:
+    def forward(self,
+                exec_pairs: list[tuple[Any, Example]],
+                num_threads: int | None = None) -> list[Any]:
         num_threads = num_threads if num_threads is not None else self.num_threads
 
         executor = ParallelExecutor(
@@ -51,7 +54,8 @@ class Parallel:
                     result = module(example)
             elif isinstance(example, dict):
                 result = module(**example)
-            elif isinstance(example, list) and module.__class__.__name__ == "Parallel":
+            elif isinstance(example,
+                            list) and module.__class__.__name__ == "Parallel":
                 result = module(example)
             elif isinstance(example, tuple):
                 result = module(*example)

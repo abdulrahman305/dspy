@@ -63,9 +63,7 @@ def write_lines(file_path, data):
             f.write(ujson.dumps(item) + "\n")
 
 
-def save_data(
-    data: list[dict[str, Any]],
-) -> str:
+def save_data(data: list[dict[str, Any]], ) -> str:
     from dspy.utils.hasher import Hasher
 
     # Assign a unique name to the file based on the data hash

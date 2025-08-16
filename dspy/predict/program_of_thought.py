@@ -26,7 +26,12 @@ class ProgramOfThought(Module):
     ```
     """
 
-    def __init__(self, signature: str | type[Signature], max_iters: int = 3, interpreter: PythonInterpreter | None = None):
+    def __init__(
+        self,
+        signature: str | type[Signature],
+        max_iters: int = 3,
+        interpreter: PythonInterpreter | None = None,
+    ):
         """
         Args:
             signature: The signature of the module.
@@ -44,20 +49,17 @@ class ProgramOfThought(Module):
             dspy.Signature(
                 self._generate_signature("generate").fields,
                 self._generate_instruction("generate"),
-            ),
-        )
+            ), )
         self.code_regenerate = dspy.ChainOfThought(
             dspy.Signature(
                 self._generate_signature("regenerate").fields,
                 self._generate_instruction("regenerate"),
-            ),
-        )
+            ), )
         self.generate_answer = dspy.ChainOfThought(
             dspy.Signature(
                 self._generate_signature("answer").fields,
                 self._generate_instruction("answer"),
-            ),
-        )
+            ), )
         # It will raises exception when dspy cannot find available deno instance by now.
         self.interpreter = interpreter or PythonInterpreter()
 
@@ -65,35 +67,41 @@ class ProgramOfThought(Module):
         signature_dict = dict(self.input_fields)
         fields_for_mode = {
             "generate": {
-                "generated_code": dspy.OutputField(
+                "generated_code":
+                dspy.OutputField(
                     prefix="Code:",
                     desc="python code that answers the question",
                     format=str,
                 ),
             },
             "regenerate": {
-                "previous_code": dspy.InputField(
+                "previous_code":
+                dspy.InputField(
                     prefix="Previous Code:",
                     desc="previously-generated python code that errored",
                     format=str,
                 ),
-                "error": dspy.InputField(
+                "error":
+                dspy.InputField(
                     prefix="Error:",
                     desc="error message from previously-generated python code",
                 ),
-                "generated_code": dspy.OutputField(
+                "generated_code":
+                dspy.OutputField(
                     prefix="Code:",
                     desc="python code that answers the question",
                     format=str,
                 ),
             },
             "answer": {
-                "final_generated_code": dspy.InputField(
+                "final_generated_code":
+                dspy.InputField(
                     prefix="Code:",
                     desc="python code that answers the question",
                     format=str,
                 ),
-                "code_output": dspy.InputField(
+                "code_output":
+                dspy.InputField(
                     prefix="Code Output:",
                     desc="output of previously-generated python code",
                 ),
@@ -104,15 +112,16 @@ class ProgramOfThought(Module):
         return dspy.Signature(signature_dict)
 
     def _generate_instruction(self, mode):
-        mode_inputs = ", ".join(
-            [f"`{field_name}`" for field_name in self._generate_signature(mode).input_fields],
-        )
-        mode_outputs = ", ".join(
-            [f"`{field_name}`" for field_name in self._generate_signature(mode).output_fields],
-        )
+        mode_inputs = ", ".join([
+            f"`{field_name}`"
+            for field_name in self._generate_signature(mode).input_fields
+        ], )
+        mode_outputs = ", ".join([
+            f"`{field_name}`"
+            for field_name in self._generate_signature(mode).output_fields
+        ], )
         final_outputs = ", ".join(
-            [f"`{field_name}`" for field_name in self.output_fields],
-        )
+            [f"`{field_name}`" for field_name in self.output_fields], )
         if mode == "generate":
             instr = [
                 f"You will be given {mode_inputs} and you will respond with {mode_outputs}.",
@@ -133,9 +142,12 @@ class ProgramOfThought(Module):
         return "\n".join(instr)
 
     def _parse_code(self, code_data):
-        code = code_data.get("generated_code", "").split("---", 1)[0].split("\n\n\n", 1)[0]
-        code_match = re.search(r"```python[ \n](.*?)[ \n]```?", code, re.DOTALL)
-        code_block = (code_match.group(1) if code_match else code).replace("\\n", "\n")
+        code = code_data.get("generated_code",
+                             "").split("---", 1)[0].split("\n\n\n", 1)[0]
+        code_match = re.search(r"```python[ \n](.*?)[ \n]```?", code,
+                               re.DOTALL)
+        code_block = (code_match.group(1) if code_match else code).replace(
+            "\\n", "\n")
         if not code_block:
             return code, "Error: Empty code after parsing."
         if "\n" not in code_block and code_block.count("=") > 1:
@@ -172,7 +184,10 @@ class ProgramOfThought(Module):
             return None, str(e)
 
     def forward(self, **kwargs):
-        input_kwargs = {field_name: kwargs[field_name] for field_name in self.input_fields}
+        input_kwargs = {
+            field_name: kwargs[field_name]
+            for field_name in self.input_fields
+        }
         code_data = self.code_generate(**input_kwargs)
         output = None
         code, error = self._parse_code(code_data)
@@ -184,14 +199,19 @@ class ProgramOfThought(Module):
             logger.error(f"Error in code execution: {error}")
             if hop == self.max_iters:
                 self.interpreter.shutdown()
-                raise RuntimeError(f"Max hops reached. Failed to run ProgramOfThought: {error}")
+                raise RuntimeError(
+                    f"Max hops reached. Failed to run ProgramOfThought: {error}"
+                )
             input_kwargs.update({"previous_code": code, "error": error})
             code_data = self.code_regenerate(**input_kwargs)
             code, error = self._parse_code(code_data)
             if not error:
                 output, error = self._execute_code(code)
             hop += 1
-        input_kwargs.update({"final_generated_code": code, "code_output": output})
+        input_kwargs.update({
+            "final_generated_code": code,
+            "code_output": output
+        })
         answer_gen_result = self.generate_answer(**input_kwargs)
         self.interpreter.shutdown()
         return answer_gen_result

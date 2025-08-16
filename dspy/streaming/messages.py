@@ -78,7 +78,8 @@ class StatusMessageProvider:
         """Status message after a `dspy.Tool` is called."""
         return "Tool calling finished! Querying the LLM with tool calling results..."
 
-    def module_start_status_message(self, instance: Any, inputs: dict[str, Any]):
+    def module_start_status_message(self, instance: Any, inputs: dict[str,
+                                                                      Any]):
         """Status message before a `dspy.Module` or `dspy.Predict` is called."""
         pass
 
@@ -96,8 +97,11 @@ class StatusMessageProvider:
 
 
 class StatusStreamingCallback(BaseCallback):
-    def __init__(self, status_message_provider: StatusMessageProvider | None = None):
-        self.status_message_provider = status_message_provider or StatusMessageProvider()
+
+    def __init__(self,
+                 status_message_provider: StatusMessageProvider | None = None):
+        self.status_message_provider = status_message_provider or StatusMessageProvider(
+        )
 
     def on_tool_start(
         self,
@@ -109,7 +113,8 @@ class StatusStreamingCallback(BaseCallback):
         if stream is None or instance.name == "finish":
             return
 
-        status_message = self.status_message_provider.tool_start_status_message(instance, inputs)
+        status_message = self.status_message_provider.tool_start_status_message(
+            instance, inputs)
         if status_message:
             sync_send_to_stream(stream, StatusMessage(status_message))
 
@@ -123,7 +128,8 @@ class StatusStreamingCallback(BaseCallback):
         if stream is None or outputs == "Completed.":
             return
 
-        status_message = self.status_message_provider.tool_end_status_message(outputs)
+        status_message = self.status_message_provider.tool_end_status_message(
+            outputs)
         if status_message:
             sync_send_to_stream(stream, StatusMessage(status_message))
 
@@ -137,7 +143,8 @@ class StatusStreamingCallback(BaseCallback):
         if stream is None:
             return
 
-        status_message = self.status_message_provider.lm_start_status_message(instance, inputs)
+        status_message = self.status_message_provider.lm_start_status_message(
+            instance, inputs)
         if status_message:
             sync_send_to_stream(stream, StatusMessage(status_message))
 
@@ -151,7 +158,8 @@ class StatusStreamingCallback(BaseCallback):
         if stream is None:
             return
 
-        status_message = self.status_message_provider.lm_end_status_message(outputs)
+        status_message = self.status_message_provider.lm_end_status_message(
+            outputs)
         if status_message:
             sync_send_to_stream(stream, StatusMessage(status_message))
 
@@ -165,7 +173,8 @@ class StatusStreamingCallback(BaseCallback):
         if stream is None:
             return
 
-        status_message = self.status_message_provider.module_start_status_message(instance, inputs)
+        status_message = self.status_message_provider.module_start_status_message(
+            instance, inputs)
         if status_message:
             sync_send_to_stream(stream, StatusMessage(status_message))
 
@@ -179,6 +188,7 @@ class StatusStreamingCallback(BaseCallback):
         if stream is None:
             return
 
-        status_message = self.status_message_provider.module_end_status_message(outputs)
+        status_message = self.status_message_provider.module_end_status_message(
+            outputs)
         if status_message:
             sync_send_to_stream(stream, StatusMessage(status_message))

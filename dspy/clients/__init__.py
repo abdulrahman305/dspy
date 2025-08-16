@@ -13,11 +13,14 @@ from dspy.clients.provider import Provider, TrainingJob
 
 logger = logging.getLogger(__name__)
 
-DISK_CACHE_DIR = os.environ.get("DSPY_CACHEDIR") or os.path.join(Path.home(), ".dspy_cache")
-DISK_CACHE_LIMIT = int(os.environ.get("DSPY_CACHE_LIMIT", 3e10))  # 30 GB default
+DISK_CACHE_DIR = os.environ.get("DSPY_CACHEDIR") or os.path.join(
+    Path.home(), ".dspy_cache")
+DISK_CACHE_LIMIT = int(os.environ.get("DSPY_CACHE_LIMIT",
+                                      3e10))  # 30 GB default
 
 
-def _litellm_track_cache_hit_callback(kwargs, completion_response, start_time, end_time):
+def _litellm_track_cache_hit_callback(kwargs, completion_response, start_time,
+                                      end_time):
     # Access the cache_hit information
     completion_response.cache_hit = kwargs.get("cache_hit", False)
 
@@ -46,15 +49,16 @@ def configure_cache(
     if enable_disk_cache and enable_litellm_cache:
         raise ValueError(
             "Cannot enable both LiteLLM and DSPy on-disk cache, please set at most one of `enable_disk_cache` or "
-            "`enable_litellm_cache` to True."
-        )
+            "`enable_litellm_cache` to True.")
 
     if enable_litellm_cache:
         try:
-            litellm.cache = LitellmCache(disk_cache_dir=DISK_CACHE_DIR, type="disk")
+            litellm.cache = LitellmCache(disk_cache_dir=DISK_CACHE_DIR,
+                                         type="disk")
 
             if litellm.cache.cache.disk_cache.size_limit != DISK_CACHE_LIMIT:
-                litellm.cache.cache.disk_cache.reset("size_limit", DISK_CACHE_LIMIT)
+                litellm.cache.cache.disk_cache.reset("size_limit",
+                                                     DISK_CACHE_LIMIT)
         except Exception as e:
             # It's possible that users don't have the write permissions to the cache directory.
             # In that case, we'll just disable the cache.
@@ -75,7 +79,8 @@ def configure_cache(
 
 
 litellm.telemetry = False
-litellm.cache = None  # By default we disable litellm cache and use DSPy on-disk cache.
+# By default we disable litellm cache and use DSPy on-disk cache.
+litellm.cache = None
 
 DSPY_CACHE = Cache(
     enable_disk_cache=True,

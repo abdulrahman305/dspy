@@ -6,11 +6,12 @@ from typing import Any, Callable
 
 
 class Unbatchify:
+
     def __init__(
         self,
         batch_fn: Callable[[list[Any]], list[Any]],
         max_batch_size: int = 32,
-        max_wait_time: float = 0.1
+        max_wait_time: float = 0.1,
     ):
         """
         Initializes the Unbatchify.
@@ -56,9 +57,11 @@ class Unbatchify:
             batch = []
             futures = []
             start_time = time.time()
-            while len(batch) < self.max_batch_size and (time.time() - start_time) < self.max_wait_time:
+            while len(batch) < self.max_batch_size and (
+                    time.time() - start_time) < self.max_wait_time:
                 try:
-                    input_item, future = self.input_queue.get(timeout=self.max_wait_time)
+                    input_item, future = self.input_queue.get(
+                        timeout=self.max_wait_time)
                     batch.append(input_item)
                     futures.append(future)
                 except queue.Empty:

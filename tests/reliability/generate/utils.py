@@ -16,7 +16,10 @@ import pydantic
 from datamodel_code_generator import InputFileType, generate
 
 import dspy
-from tests.reliability.utils import assert_program_output_correct, judge_dspy_configuration
+from tests.reliability.utils import (
+    assert_program_output_correct,
+    judge_dspy_configuration,
+)
 
 
 def _retry(retries):
@@ -28,6 +31,7 @@ def _retry(retries):
     """
 
     def decorator(func):
+
         @wraps(func)
         def wrapper(*args, **kwargs):
             attempt = 0
@@ -36,7 +40,9 @@ def _retry(retries):
                     return func(*args, **kwargs)
                 except Exception as e:
                     attempt += 1
-                    print(f"Retrying {func.__name__} (attempt {attempt} of {retries})." f" Exception: {e}")
+                    print(
+                        f"Retrying {func.__name__} (attempt {attempt} of {retries}). Exception: {e}"
+                    )
                     if attempt >= retries:
                         raise e
 
@@ -46,7 +52,9 @@ def _retry(retries):
 
 
 @_retry(retries=5)
-def generate_test_program(dst_path: str, additional_instructions: Optional[str] = None) -> dspy.Module:
+def generate_test_program(
+        dst_path: str,
+        additional_instructions: Optional[str] = None) -> dspy.Module:
     """
     Generate a DSPy program for a reliability test case and save it to a destination path.
 
@@ -78,7 +86,8 @@ def generate_test_program(dst_path: str, additional_instructions: Optional[str] 
             )
             # Remove annotation imports from __future__, which break compatibility with Python's
             # built-in type hints
-            _remove_line_from_file(tmp_model_path, "from __future__ import annotations")
+            _remove_line_from_file(tmp_model_path,
+                                   "from __future__ import annotations")
             # Remove comments inserted by datamodel-code-generator from the generated model file
             _remove_comments_from_file(tmp_model_path)
             with open(tmp_model_path, "r") as f:
@@ -91,22 +100,26 @@ def generate_test_program(dst_path: str, additional_instructions: Optional[str] 
         input_fields = set(input_schema.get("properties", {}))
         output_schema["properties"] = {
             (f"{field}_output" if field in input_fields else field): properties
-            for field, properties in output_schema.get("properties", {}).items()
+            for field, properties in output_schema.get("properties",
+                                                       {}).items()
         }
         # Update required fields, if they exist
         if "required" in output_schema:
             output_schema["required"] = [
-                f"{field}_output" if field in input_fields else field for field in output_schema["required"]
+                f"{field}_output" if field in input_fields else field
+                for field in output_schema["required"]
             ]
         return output_schema
 
     # Disable caching and use a nonzero temperature to ensure that new programs are generated
     # upon retry if there's an error in the generation process (e.g. the program has an
     # invalid signature)
-    with judge_dspy_configuration(cache=False, temperature=0.5), tempfile.TemporaryDirectory() as tmp_dir:
+    with (
+            judge_dspy_configuration(cache=False, temperature=0.5),
+            tempfile.TemporaryDirectory() as tmp_dir,
+    ):
         generated_signature = _get_test_program_generation_program()(
-            additional_instructions=additional_instructions or ""
-        )
+            additional_instructions=additional_instructions or "")
         input_schema = json.loads(generated_signature.program_input_fields)
         output_schema = json.loads(generated_signature.program_output_fields)
         # If there are conflicting field names between input and output schemas, rename the output
@@ -114,22 +127,18 @@ def generate_test_program(dst_path: str, additional_instructions: Optional[str] 
         output_schema = rename_conflicting_fields(input_schema, output_schema)
 
         # Generate input and output models
-        input_models = generate_models(schema=input_schema, class_name="ProgramInputs")
-        output_models = generate_models(schema=output_schema, class_name="ProgramOutputs")
+        input_models = generate_models(schema=input_schema,
+                                       class_name="ProgramInputs")
+        output_models = generate_models(schema=output_schema,
+                                        class_name="ProgramOutputs")
 
         # Write program code
         program_code = (
-            "### Input models ###\n"
-            + input_models
-            + "\n"
-            + "### Output models ###\n"
-            + output_models
-            + "\n"
-            + "### Program definition ###\n"
-            + _get_test_program_signature_and_module_definition(
-                program_description=generated_signature.program_description
-            )
-        )
+            "### Input models ###\n" + input_models + "\n" +
+            "### Output models ###\n" + output_models + "\n" +
+            "### Program definition ###\n" +
+            _get_test_program_signature_and_module_definition(
+                program_description=generated_signature.program_description))
         program_path = os.path.join(tmp_dir, "program.py")
         with open(program_path, "w") as f:
             f.write(program_code)
@@ -169,7 +178,10 @@ def generate_test_inputs(
     # Disable caching and use a nonzero temperature to ensure that new inputs are generated
     # upon retry if there's an error in the generation process (e.g. the input doesn't match the
     # program signature)
-    with judge_dspy_configuration(cache=False, temperature=0.5), tempfile.TemporaryDirectory() as tmp_dir:
+    with (
+            judge_dspy_configuration(cache=False, temperature=0.5),
+            tempfile.TemporaryDirectory() as tmp_dir,
+    ):
         program: dspy.Module
         program_input_schema: pydantic.BaseModel
         program, program_input_schema = load_generated_program(program_path)
@@ -177,8 +189,10 @@ def generate_test_inputs(
         inputs, outputs = _split_schema(signature_json_schema)
         generated_test_inputs = _get_test_inputs_generation_program()(
             program_description=program.signature.__doc__ or "",
-            program_input_signature=_write_pretty_json({"properties": _clean_schema(inputs)}),
-            program_output_signature=_write_pretty_json({"properties": _clean_schema(outputs)}),
+            program_input_signature=_write_pretty_json(
+                {"properties": _clean_schema(inputs)}),
+            program_output_signature=_write_pretty_json(
+                {"properties": _clean_schema(outputs)}),
             additional_instructions=additional_instructions or "",
             num_inputs=num_inputs,
         ).test_inputs[:num_inputs]
@@ -202,7 +216,8 @@ def generate_test_inputs(
             output_assertions = _get_assertions_generation_program()(
                 program_description=program.signature.__doc__ or "",
                 program_input=test_input.program_input,
-                program_output_signature=_write_pretty_json({"properties": _clean_schema(outputs)}),
+                program_output_signature=_write_pretty_json(
+                    {"properties": _clean_schema(outputs)}),
             ).output_assertions
 
             # Verify that the generated input is valid JSON and matches the input signature of the
@@ -212,7 +227,8 @@ def generate_test_inputs(
                 json_input=test_input.program_input,
             )
 
-            test_input_file_path = os.path.join(tmp_dir, f"input{base_input_number + idx}.json")
+            test_input_file_path = os.path.join(
+                tmp_dir, f"input{base_input_number + idx}.json")
             json_program_input = json.loads(test_input.program_input)
             _write_pretty_json(
                 data={
@@ -241,7 +257,8 @@ def load_generated_program(path) -> Tuple[dspy.Module, pydantic.BaseModel]:
     if not os.path.exists(path):
         raise ValueError(f"DSPy test program file not found: {path}")
 
-    program_module = _import_program_module_from_path(module_name="program", file_path=path)
+    program_module = _import_program_module_from_path(module_name="program",
+                                                      file_path=path)
     return program_module.program, program_module.ProgramInputs
 
 
@@ -286,9 +303,10 @@ def load_generated_cases(dir_path) -> list[GeneratedTestCase]:
                     with open(os.path.join(inputs_path, input_file), "r") as f:
                         # Best effort to extract a meaningful enclosing directory name
                         # from the test path that can be used as part of the test case name
-                        readable_dir_name = os.path.basename(os.path.dirname(os.path.dirname(root)))
+                        readable_dir_name = os.path.basename(
+                            os.path.dirname(os.path.dirname(root)))
                         test_case_name = (
-                            f"{readable_dir_name}-" f"{os.path.basename(root)}-" f"{os.path.splitext(input_file)[0]}"
+                            f"{readable_dir_name}-{os.path.basename(root)}-{os.path.splitext(input_file)[0]}"
                         )
                         program_input_and_assertions = json.load(f)
                         program_input = program_input_and_assertions["input"]
@@ -301,8 +319,7 @@ def load_generated_cases(dir_path) -> list[GeneratedTestCase]:
                                 program_path=program_path,
                                 program_input=json.dumps(program_input),
                                 output_assertions=assertions,
-                            )
-                        )
+                            ))
 
     return test_cases
 
@@ -316,7 +333,8 @@ def run_generated_case(generated_case: GeneratedTestCase):
     Args:
         generated_case: The generated test case to run.
     """
-    program, program_input_schema = load_generated_program(generated_case.program_path)
+    program, program_input_schema = load_generated_program(
+        generated_case.program_path)
     program_input = _json_input_to_program_input(
         input_schema=program_input_schema,
         json_input=generated_case.program_input,
@@ -330,7 +348,8 @@ def run_generated_case(generated_case: GeneratedTestCase):
         )
 
 
-def _get_test_program_signature_and_module_definition(program_description: str) -> str:
+def _get_test_program_signature_and_module_definition(
+        program_description: str) -> str:
     """
     Generate the signature and model definition for a test DSPy program.
 
@@ -366,7 +385,10 @@ for output_field_name, output_field in ProgramOutputs.model_fields.items():
     )
 
 {program_var_definition}
-'''.format(program_description=program_description, program_var_definition=program_var_definition)
+'''.format(
+        program_description=program_description,
+        program_var_definition=program_var_definition,
+    )
 
 
 def _get_test_program_generation_program() -> dspy.Module:
@@ -436,7 +458,8 @@ def _get_test_inputs_generation_program() -> dspy.Module:
         program_output_signature: str = dspy.InputField(
             description="The output signature of the program in JSON Schema format, including output field names, types, and descriptions. The outermost fields in the JSON schema definition represent the top-level output fields of the program."
         )
-        additional_instructions: str = dspy.InputField(description="Additional instructions for generating test inputs")
+        additional_instructions: str = dspy.InputField(
+            description="Additional instructions for generating test inputs")
         test_inputs: list[_TestInput] = dspy.OutputField(
             description="Generated test inputs for the program, used to verify the correctness of the program outputs for a variety of inputs"
         )
@@ -453,8 +476,7 @@ class _TestInput(pydantic.BaseModel):
         "Generated input matching the program signature that will be used to test the program, represented as a JSON string."
         " The schema of the JSON string must match the input signature of the program precisely, including any wrapper objects."
         " Be very careful to ensure that the input is valid JSON and matches the input signature of the program, with correct"
-        " field nesting."
-    )
+        " field nesting.")
 
 
 def _get_assertions_generation_program() -> dspy.Module:
@@ -483,8 +505,7 @@ def _get_assertions_generation_program() -> dspy.Module:
             description="A description of the AI program being tested, including its purpose and expected behavior"
         )
         program_input: str = dspy.InputField(
-            description="An example input to the AI program, represented as a JSON string"
-        )
+            description="An example input to the AI program, represented as a JSON string")
         program_output_signature: str = dspy.InputField(
             description="The output signature of the program in JSON Schema format, including output field names, types, and descriptions. The outermost fields in the JSON schema definition represent the top-level output fields of the program."
         )
@@ -506,12 +527,17 @@ def _clean_json_schema_property(prop: dict[str, Any]) -> dict[str, Any]:
         The cleaned JSON schema property dictionary.
     """
     cleaned_prop = {
-        k: v for k, v in prop.items() if k not in {"desc", "__dspy_field_type", "title", "prefix", "required"}
+        k: v
+        for k, v in prop.items() if k not in
+        {"desc", "__dspy_field_type", "title", "prefix", "required"}
     }
 
     # Recursively clean nested properties
     if "properties" in cleaned_prop:
-        cleaned_prop["properties"] = {k: _clean_json_schema_property(v) for k, v in cleaned_prop["properties"].items()}
+        cleaned_prop["properties"] = {
+            k: _clean_json_schema_property(v)
+            for k, v in cleaned_prop["properties"].items()
+        }
 
     return cleaned_prop
 
@@ -526,7 +552,8 @@ def _get_json_schema(signature: dspy.Signature) -> dict[str, Any]:
         A JSON schema representation of the signature.
     """
 
-    def expand_refs(schema: dict[str, Any], definitions: dict[str, Any]) -> dict[str, Any]:
+    def expand_refs(schema: dict[str, Any],
+                    definitions: dict[str, Any]) -> dict[str, Any]:
         """
         Expand $ref fields in a JSON schema, inlining the referenced schema definitions
         directly into the $ref field locations.
@@ -536,12 +563,16 @@ def _get_json_schema(signature: dspy.Signature) -> dict[str, Any]:
                 ref_path = schema["$ref"].replace("#/$defs/", "")
                 ref_schema = definitions.get(ref_path, {})
                 if "__dspy_field_type" in schema:
-                    ref_schema["__dspy_field_type"] = schema["__dspy_field_type"]
+                    ref_schema["__dspy_field_type"] = schema[
+                        "__dspy_field_type"]
                 # Recursively expand the reference schema as well
                 return expand_refs(ref_schema, definitions)
             else:
                 # Recursively expand properties in the schema
-                return {key: expand_refs(value, definitions) for key, value in schema.items()}
+                return {
+                    key: expand_refs(value, definitions)
+                    for key, value in schema.items()
+                }
         elif isinstance(schema, list):
             return [expand_refs(item, definitions) for item in schema]
         return schema
@@ -551,7 +582,8 @@ def _get_json_schema(signature: dspy.Signature) -> dict[str, Any]:
     return expand_refs(signature_schema_with_refs, definitions)
 
 
-def _split_schema(schema: dict[str, Any]) -> Tuple[dict[str, Any], dict[str, Any]]:
+def _split_schema(
+        schema: dict[str, Any]) -> Tuple[dict[str, Any], dict[str, Any]]:
     """
     Split a JSON schema into input and output components based on DSPy field types.
 
@@ -580,7 +612,8 @@ def _split_schema(schema: dict[str, Any]) -> Tuple[dict[str, Any], dict[str, Any
             nested_inputs, nested_outputs = _split_schema(prop)
             if nested_inputs and field_type == "input":
                 inputs[key] = {"properties": nested_inputs, **cleaned_prop}
-            elif nested_outputs and (field_type == "output" or field_type is None):
+            elif nested_outputs and (field_type == "output"
+                                     or field_type is None):
                 outputs[key] = {"properties": nested_outputs, **cleaned_prop}
 
     return inputs, outputs
@@ -595,18 +628,22 @@ def _clean_schema(prop: dict[str, Any]) -> dict[str, Any]:
     Returns:
         A cleaned version of the property.
     """
-    keys_to_remove = ["__dspy_field_type", "title"]  # Add any other keys to be removed here
+    keys_to_remove = [
+        "__dspy_field_type",
+        "title",
+    ]  # Add any other keys to be removed here
 
     # Iterate through the dictionary, applying cleaning recursively if value is a nested dict
     cleaned_prop = {
-        k: (_clean_schema(v) if isinstance(v, dict) else v)  # Recurse if value is a dict
-        for k, v in prop.items()
-        if k not in keys_to_remove
+        k: (_clean_schema(v) if isinstance(v, dict) else v
+            )  # Recurse if value is a dict
+        for k, v in prop.items() if k not in keys_to_remove
     }
     return cleaned_prop
 
 
-def _json_input_to_program_input(input_schema: pydantic.BaseModel, json_input: str) -> dict[str, Any]:
+def _json_input_to_program_input(input_schema: pydantic.BaseModel,
+                                 json_input: str) -> dict[str, Any]:
     """
     Convert a JSON input string to a DSPy program input dictionary, validating it against the
     provided program signature.
@@ -619,7 +656,10 @@ def _json_input_to_program_input(input_schema: pydantic.BaseModel, json_input: s
     """
     json_input = json.loads(json_input)
     program_input: pydantic.BaseModel = input_schema.model_validate(json_input)
-    return {field: getattr(program_input, field) for field in program_input.__fields__}
+    return {
+        field: getattr(program_input, field)
+        for field in program_input.__fields__
+    }
 
 
 @contextmanager
@@ -686,14 +726,17 @@ def _remove_comments_from_file(file_path: str) -> None:
         lines = file.readlines()
 
     # Filter out lines that start with '#'
-    cleaned_lines = [line for line in lines if not line.strip().startswith("#")]
+    cleaned_lines = [
+        line for line in lines if not line.strip().startswith("#")
+    ]
 
     # Write the cleaned lines back to the file
     with open(file_path, "w") as file:
         file.writelines(cleaned_lines)
 
 
-def _write_pretty_json(data: dict[str, Any], path: Optional[str] = None) -> Optional[str]:
+def _write_pretty_json(data: dict[str, Any],
+                       path: Optional[str] = None) -> Optional[str]:
     """
     Format JSON data with indentation, and write it to a file if specified.
 

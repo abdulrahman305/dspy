@@ -14,7 +14,14 @@ if TYPE_CHECKING:
     import mcp
     from langchain.tools import BaseTool
 
-_TYPE_MAPPING = {"string": str, "integer": int, "number": float, "boolean": bool, "array": list, "object": dict}
+_TYPE_MAPPING = {
+    "string": str,
+    "integer": int,
+    "number": float,
+    "boolean": bool,
+    "array": list,
+    "object": dict,
+}
 
 
 class Tool(Type):
@@ -69,18 +76,29 @@ class Tool(Type):
         # Expected output: {'x': {'type': 'integer'}, 'y': {'type': 'string', 'default': 'hello'}}
         ```
         """
-        super().__init__(func=func, name=name, desc=desc, args=args, arg_types=arg_types, arg_desc=arg_desc)
+        super().__init__(
+            func=func,
+            name=name,
+            desc=desc,
+            args=args,
+            arg_types=arg_types,
+            arg_desc=arg_desc,
+        )
         self._parse_function(func, arg_desc)
 
-    def _parse_function(self, func: Callable, arg_desc: dict[str, str] | None = None):
+    def _parse_function(self,
+                        func: Callable,
+                        arg_desc: dict[str, str] | None = None):
         """Helper method that parses a function to extract the name, description, and args.
 
         This is a helper function that automatically infers the name, description, and args of the tool from the
         provided function. In order to make the inference work, the function must have valid type hints.
         """
-        annotations_func = func if inspect.isfunction(func) or inspect.ismethod(func) else func.__call__
+        annotations_func = func if inspect.isfunction(
+            func) or inspect.ismethod(func) else func.__call__
         name = getattr(func, "__name__", type(func).__name__)
-        desc = getattr(func, "__doc__", None) or getattr(annotations_func, "__doc__", "")
+        desc = getattr(func, "__doc__", None) or getattr(
+            annotations_func, "__doc__", "")
         args = {}
         arg_types = {}
 
@@ -89,8 +107,14 @@ class Tool(Type):
         # Get available type hints
         available_hints = get_type_hints(annotations_func)
         # Build a dictionary of arg name -> type (defaulting to Any when missing)
-        hints = {param_name: available_hints.get(param_name, Any) for param_name in sig.parameters.keys()}
-        default_values = {param_name: sig.parameters[param_name].default for param_name in sig.parameters.keys()}
+        hints = {
+            param_name: available_hints.get(param_name, Any)
+            for param_name in sig.parameters.keys()
+        }
+        default_values = {
+            param_name: sig.parameters[param_name].default
+            for param_name in sig.parameters.keys()
+        }
 
         # Process each argument's type to generate its JSON schema.
         for k, v in hints.items():
@@ -101,10 +125,12 @@ class Tool(Type):
             origin = get_origin(v) or v
             if isinstance(origin, type) and issubclass(origin, BaseModel):
                 # Get json schema, and replace $ref with the actual schema
-                v_json_schema = _resolve_json_schema_reference(v.model_json_schema())
+                v_json_schema = _resolve_json_schema_reference(
+                    v.model_json_schema())
                 args[k] = v_json_schema
             else:
-                args[k] = _resolve_json_schema_reference(TypeAdapter(v).json_schema())
+                args[k] = _resolve_json_schema_reference(
+                    TypeAdapter(v).json_schema())
             if default_values[k] is not inspect.Parameter.empty:
                 args[k]["default"] = default_values[k]
             if arg_desc and k in arg_desc:
@@ -114,7 +140,8 @@ class Tool(Type):
         self.desc = self.desc or desc
         self.args = self.args if self.args is not None else args
         self.arg_types = self.arg_types if self.arg_types is not None else arg_types
-        self.has_kwargs = any(param.kind == param.VAR_KEYWORD for param in sig.parameters.values())
+        self.has_kwargs = any(param.kind == param.VAR_KEYWORD
+                              for param in sig.parameters.values())
 
     def _validate_and_parse_args(self, **kwargs):
         # Validate the args value comply to the json schema.
@@ -138,7 +165,8 @@ class Tool(Type):
             if k in self.arg_types and self.arg_types[k] != Any:
                 # Create a pydantic model wrapper with a dummy field `value` to parse the arg to the correct type.
                 # This is specifically useful for handling nested Pydantic models like `list[list[MyPydanticModel]]`
-                pydantic_wrapper = create_model("Wrapper", value=(self.arg_types[k], ...))
+                pydantic_wrapper = create_model("Wrapper",
+                                                value=(self.arg_types[k], ...))
                 parsed = pydantic_wrapper.model_validate({"value": v})
                 parsed_kwargs[k] = parsed.value
             else:
@@ -180,8 +208,7 @@ class Tool(Type):
             else:
                 raise ValueError(
                     "You are calling `__call__` on an async tool, please use `acall` instead or set "
-                    "`allow_async=True` to run the async tool in sync mode."
-                )
+                    "`allow_async=True` to run the async tool in sync mode.")
         return result
 
     @with_callbacks
@@ -195,7 +222,8 @@ class Tool(Type):
             return result
 
     @classmethod
-    def from_mcp_tool(cls, session: "mcp.client.session.ClientSession", tool: "mcp.types.Tool") -> "Tool":
+    def from_mcp_tool(cls, session: "mcp.client.session.ClientSession",
+                      tool: "mcp.types.Tool") -> "Tool":
         """
         Build a DSPy tool from an MCP tool and a ClientSession.
 
@@ -250,12 +278,14 @@ class Tool(Type):
         return f"Tool(name={self.name}, desc={self.desc}, args={self.args})"
 
     def __str__(self):
-        desc = f", whose description is <desc>{self.desc}</desc>.".replace("\n", "  ") if self.desc else "."
+        desc = f", whose description is <desc>{self.desc}</desc>.".replace(
+            "\n", "  ") if self.desc else "."
         arg_desc = f"It takes arguments {self.args}."
         return f"{self.name}{desc} {arg_desc}"
 
 
 class ToolCalls(Type):
+
     class ToolCall(Type):
         name: str
         args: dict[str, Any]
@@ -272,7 +302,8 @@ class ToolCalls(Type):
     tool_calls: list[ToolCall]
 
     @classmethod
-    def from_dict_list(cls, tool_calls_dicts: list[dict[str, Any]]) -> "ToolCalls":
+    def from_dict_list(cls, tool_calls_dicts: list[dict[str,
+                                                        Any]]) -> "ToolCalls":
         """Convert a list of dictionaries to a ToolCalls instance.
 
         Args:
@@ -298,13 +329,13 @@ class ToolCalls(Type):
     def description(cls) -> str:
         return (
             "Tool calls information, including the name of the tools and the arguments to be passed to it. "
-            "Arguments must be provided in JSON format."
-        )
+            "Arguments must be provided in JSON format.")
 
     def format(self) -> list[dict[str, Any]]:
         # The tool_call field is compatible with OpenAI's tool calls schema.
         return {
-            "tool_calls": [tool_call.format() for tool_call in self.tool_calls],
+            "tool_calls":
+            [tool_call.format() for tool_call in self.tool_calls],
         }
 
     @pydantic.model_validator(mode="before")
@@ -315,8 +346,8 @@ class ToolCalls(Type):
 
         # Handle case where data is a list of dicts with "name" and "args" keys
         if isinstance(data, list) and all(
-            isinstance(item, dict) and "name" in item and "args" in item for item in data
-        ):
+                isinstance(item, dict) and "name" in item and "args" in item
+                for item in data):
             return {"tool_calls": [cls.ToolCall(**item) for item in data]}
         # Handle case where data is a dict
         elif isinstance(data, dict):
@@ -326,14 +357,17 @@ class ToolCalls(Type):
                 if isinstance(tool_calls_data, list):
                     return {
                         "tool_calls": [
-                            cls.ToolCall(**item) if isinstance(item, dict) else item for item in tool_calls_data
+                            cls.ToolCall(
+                                **item) if isinstance(item, dict) else item
+                            for item in tool_calls_data
                         ]
                     }
             elif "name" in data and "args" in data:
                 # Handle case where data is a dict with "name" and "args" keys
                 return {"tool_calls": [cls.ToolCall(**data)]}
 
-        raise ValueError(f"Received invalid value for `dspy.ToolCalls`: {data}")
+        raise ValueError(
+            f"Received invalid value for `dspy.ToolCalls`: {data}")
 
 
 def _resolve_json_schema_reference(schema: dict) -> dict:

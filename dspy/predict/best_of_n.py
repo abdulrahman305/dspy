@@ -5,6 +5,7 @@ from dspy.predict.predict import Module, Prediction
 
 
 class BestOfN(Module):
+
     def __init__(
         self,
         module: Module,
@@ -46,15 +47,17 @@ class BestOfN(Module):
             ```
         """
         self.module = module
-        self.reward_fn = lambda *args: reward_fn(*args)  # to prevent this from becoming a parameter
+        self.reward_fn = lambda *args: reward_fn(
+            *args)  # to prevent this from becoming a parameter
         self.threshold = threshold
         self.N = N
         self.fail_count = fail_count or N  # default to N if fail_count is not provided
 
     def forward(self, **kwargs):
         lm = self.module.get_lm() or dspy.settings.lm
-        temps = [lm.kwargs["temperature"]] + [0.5 + i * (0.5 / self.N) for i in range(self.N)]
-        temps = list(dict.fromkeys(temps))[: self.N]
+        temps = [lm.kwargs["temperature"]
+                 ] + [0.5 + i * (0.5 / self.N) for i in range(self.N)]
+        temps = list(dict.fromkeys(temps))[:self.N]
         best_pred, best_trace, best_reward = None, None, -float("inf")
 
         for idx, t in enumerate(temps):
@@ -77,7 +80,9 @@ class BestOfN(Module):
                     break
 
             except Exception as e:
-                print(f"BestOfN: Attempt {idx + 1} failed with temperature {t}: {e}")
+                print(
+                    f"BestOfN: Attempt {idx + 1} failed with temperature {t}: {e}"
+                )
                 if idx > self.fail_count:
                     raise e
                 self.fail_count -= 1

@@ -17,21 +17,26 @@ async def test_async_limiter():
     with dspy.context(async_max_workers=16):
         assert get_limiter() == limiter, "AsyncLimiter should be a singleton"
         assert get_limiter().total_tokens == 16, "Async capacity should be 16"
-        assert get_limiter() == get_limiter(), "AsyncLimiter should be a singleton"
+        assert get_limiter() == get_limiter(
+        ), "AsyncLimiter should be a singleton"
 
 
 @pytest.mark.anyio
 async def test_asyncify():
+
     def the_answer_to_life_the_universe_and_everything(wait: float):
         sleep(wait)
         return 42
 
-    ask_the_question = dspy.asyncify(the_answer_to_life_the_universe_and_everything)
+    ask_the_question = dspy.asyncify(
+        the_answer_to_life_the_universe_and_everything)
 
     async def run_n_tasks(n: int, wait: float):
         await asyncio.gather(*[ask_the_question(wait) for _ in range(n)])
 
-    async def verify_asyncify(capacity: int, number_of_tasks: int, wait: float = 0.5):
+    async def verify_asyncify(capacity: int,
+                              number_of_tasks: int,
+                              wait: float = 0.5):
         with dspy.context(async_max_workers=capacity):
             start = time()
             await run_n_tasks(number_of_tasks, wait)
@@ -43,7 +48,8 @@ async def test_asyncify():
         # be `math.floor(number_of_tasks * 1.0 / capacity) * wait` because there are more than
         # `math.floor(number_of_tasks * 1.0 / capacity)` loops.
         lower_bound = math.floor(number_of_tasks * 1.0 / capacity) * wait
-        upper_bound = math.ceil(number_of_tasks * 1.0 / capacity) * wait + 2 * wait  # 2*wait for buffer
+        upper_bound = math.ceil(number_of_tasks * 1.0 / capacity
+                                ) * wait + 2 * wait  # 2*wait for buffer
 
         assert lower_bound < total_time < upper_bound
 

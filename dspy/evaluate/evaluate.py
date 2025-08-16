@@ -52,7 +52,8 @@ class EvaluationResult(Prediction):
     - results: a list of (example, prediction, score) tuples for each example in devset
     """
 
-    def __init__(self, score: float, results: list[tuple["dspy.Example", "dspy.Example", Any]]):
+    def __init__(self, score: float,
+                 results: list[tuple["dspy.Example", "dspy.Example", Any]]):
         super().__init__(score=score, results=results)
 
     def __repr__(self):
@@ -102,7 +103,9 @@ class Evaluate:
         self.failure_score = failure_score
 
         if "return_outputs" in kwargs:
-            raise ValueError("`return_outputs` is no longer supported. Results are always returned inside the `results` field of the `EvaluationResult` object.")
+            raise ValueError(
+                "`return_outputs` is no longer supported. Results are always returned inside the `results` field of the `EvaluationResult` object."
+            )
 
     @with_callbacks
     def __call__(
@@ -142,14 +145,17 @@ class Evaluate:
         display_table = display_table if display_table is not None else self.display_table
 
         if callback_metadata:
-            logger.debug(f"Evaluate is called with callback metadata: {callback_metadata}")
+            logger.debug(
+                f"Evaluate is called with callback metadata: {callback_metadata}"
+            )
 
         tqdm.tqdm._instances.clear()
 
         executor = ParallelExecutor(
             num_threads=num_threads,
             disable_progress_bar=not display_progress,
-            max_errors=(self.max_errors if self.max_errors is not None else dspy.settings.max_errors),
+            max_errors=(self.max_errors if self.max_errors is not None else
+                        dspy.settings.max_errors),
             provide_traceback=self.provide_traceback,
             compare_results=True,
         )
@@ -162,22 +168,30 @@ class Evaluate:
         results = executor.execute(process_item, devset)
         assert len(devset) == len(results)
 
-        results = [((dspy.Prediction(), self.failure_score) if r is None else r) for r in results]
-        results = [(example, prediction, score) for example, (prediction, score) in zip(devset, results, strict=False)]
+        results = [((dspy.Prediction(),
+                     self.failure_score) if r is None else r) for r in results]
+        results = [(example, prediction, score)
+                   for example, (prediction,
+                                 score) in zip(devset, results, strict=False)]
         ncorrect, ntotal = sum(score for *_, score in results), len(devset)
 
-        logger.info(f"Average Metric: {ncorrect} / {ntotal} ({round(100 * ncorrect / ntotal, 1)}%)")
+        logger.info(
+            f"Average Metric: {ncorrect} / {ntotal} ({round(100 * ncorrect / ntotal, 1)}%)"
+        )
 
         if display_table:
             if importlib.util.find_spec("pandas") is not None:
                 # Rename the 'correct' column to the name of the metric object
-                metric_name = metric.__name__ if isinstance(metric, types.FunctionType) else metric.__class__.__name__
+                metric_name = metric.__name__ if isinstance(
+                    metric, types.FunctionType) else metric.__class__.__name__
                 # Construct a pandas DataFrame from the results
                 result_df = self._construct_result_table(results, metric_name)
 
-                self._display_result_table(result_df, display_table, metric_name)
+                self._display_result_table(result_df, display_table,
+                                           metric_name)
             else:
-                logger.warning("Skipping table display since `pandas` is not installed.")
+                logger.warning(
+                    "Skipping table display since `pandas` is not installed.")
 
         return EvaluationResult(
             score=round(100 * ncorrect / ntotal, 2),
@@ -185,7 +199,9 @@ class Evaluate:
         )
 
     def _construct_result_table(
-        self, results: list[tuple["dspy.Example", "dspy.Example", Any]], metric_name: str
+        self,
+        results: list[tuple["dspy.Example", "dspy.Example", Any]],
+        metric_name: str,
     ) -> "pd.DataFrame":
         """
         Construct a pandas DataFrame from the specified result list.
@@ -200,22 +216,22 @@ class Evaluate:
         """
         import pandas as pd
 
-        data = [
-            (
-                merge_dicts(example, prediction) | {"correct": score}
-                if prediction_is_dictlike(prediction)
-                else dict(example) | {"prediction": prediction, "correct": score}
-            )
-            for example, prediction, score in results
-        ]
+        data = [(merge_dicts(example, prediction) | {
+            "correct": score
+        } if prediction_is_dictlike(prediction) else dict(example) | {
+            "prediction": prediction,
+            "correct": score
+        }) for example, prediction, score in results]
 
         # Truncate every cell in the DataFrame (DataFrame.applymap was renamed to DataFrame.map in Pandas 2.1.0)
         result_df = pd.DataFrame(data)
-        result_df = result_df.map(truncate_cell) if hasattr(result_df, "map") else result_df.applymap(truncate_cell)
+        result_df = result_df.map(truncate_cell) if hasattr(
+            result_df, "map") else result_df.applymap(truncate_cell)
 
         return result_df.rename(columns={"correct": metric_name})
 
-    def _display_result_table(self, result_df: "pd.DataFrame", display_table: bool | int, metric_name: str):
+    def _display_result_table(self, result_df: "pd.DataFrame",
+                              display_table: bool | int, metric_name: str):
         """
         Display the specified result DataFrame in a table format.
 
@@ -282,16 +298,17 @@ def truncate_cell(content) -> str:
     return content
 
 
-def stylize_metric_name(df: "pd.DataFrame", metric_name: str) -> "pd.DataFrame":
+def stylize_metric_name(df: "pd.DataFrame",
+                        metric_name: str) -> "pd.DataFrame":
     """
     Stylize the cell contents of a pandas DataFrame corresponding to the specified metric name.
 
     :param df: The pandas DataFrame for which to stylize cell contents.
     :param metric_name: The name of the metric for which to stylize DataFrame cell contents.
     """
-    df[metric_name] = df[metric_name].apply(
-        lambda x: f"✔️ [{x:.3f}]" if x and isinstance(x, float) else f"✔️ [{x}]" if x else ""
-    )
+    df[metric_name] = df[metric_name].apply(lambda x: (
+        f"✔️ [{x:.3f}]" if x and isinstance(x, float) else f"✔️ [{x}]"
+        if x else ""))
     return df
 
 
@@ -307,13 +324,13 @@ def display_dataframe(df: "pd.DataFrame"):
         display(configure_dataframe_for_ipython_notebook_display(df))
     else:
         # Pretty print the DataFrame to the console
-        with pd.option_context(
-            "display.max_rows", None, "display.max_columns", None
-        ):  # more options can be specified also
+        with pd.option_context("display.max_rows", None, "display.max_columns",
+                               None):  # more options can be specified also
             print(df)
 
 
-def configure_dataframe_for_ipython_notebook_display(df: "pd.DataFrame") -> "pd.DataFrame":
+def configure_dataframe_for_ipython_notebook_display(
+        df: "pd.DataFrame", ) -> "pd.DataFrame":
     """Set various pandas display options for DataFrame in an IPython notebook environment."""
     import pandas as pd
 

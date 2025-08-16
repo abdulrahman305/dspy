@@ -24,47 +24,98 @@ class MyCallback(BaseCallback):
         self.calls = []
 
     def on_module_start(self, call_id, instance, inputs):
-        self.calls.append({"handler": "on_module_start", "instance": instance, "inputs": inputs})
+        self.calls.append({
+            "handler": "on_module_start",
+            "instance": instance,
+            "inputs": inputs
+        })
 
     def on_module_end(self, call_id, outputs, exception):
-        self.calls.append({"handler": "on_module_end", "outputs": outputs, "exception": exception})
+        self.calls.append({
+            "handler": "on_module_end",
+            "outputs": outputs,
+            "exception": exception
+        })
 
     def on_lm_start(self, call_id, instance, inputs):
-        self.calls.append({"handler": "on_lm_start", "instance": instance, "inputs": inputs})
+        self.calls.append({
+            "handler": "on_lm_start",
+            "instance": instance,
+            "inputs": inputs
+        })
 
     def on_lm_end(self, call_id, outputs, exception):
-        self.calls.append({"handler": "on_lm_end", "outputs": outputs, "exception": exception})
+        self.calls.append({
+            "handler": "on_lm_end",
+            "outputs": outputs,
+            "exception": exception
+        })
 
     def on_adapter_format_start(self, call_id, instance, inputs):
-        self.calls.append({"handler": "on_adapter_format_start", "instance": instance, "inputs": inputs})
+        self.calls.append({
+            "handler": "on_adapter_format_start",
+            "instance": instance,
+            "inputs": inputs,
+        })
 
     def on_adapter_format_end(self, call_id, outputs, exception):
-        self.calls.append({"handler": "on_adapter_format_end", "outputs": outputs, "exception": exception})
+        self.calls.append({
+            "handler": "on_adapter_format_end",
+            "outputs": outputs,
+            "exception": exception,
+        })
 
     def on_adapter_parse_start(self, call_id, instance, inputs):
-        self.calls.append({"handler": "on_adapter_parse_start", "instance": instance, "inputs": inputs})
+        self.calls.append({
+            "handler": "on_adapter_parse_start",
+            "instance": instance,
+            "inputs": inputs,
+        })
 
     def on_adapter_parse_end(self, call_id, outputs, exception):
-        self.calls.append({"handler": "on_adapter_parse_end", "outputs": outputs, "exception": exception})
+        self.calls.append({
+            "handler": "on_adapter_parse_end",
+            "outputs": outputs,
+            "exception": exception,
+        })
 
     def on_tool_start(self, call_id, instance, inputs):
-        self.calls.append({"handler": "on_tool_start", "instance": instance, "inputs": inputs})
+        self.calls.append({
+            "handler": "on_tool_start",
+            "instance": instance,
+            "inputs": inputs
+        })
 
     def on_tool_end(self, call_id, outputs, exception):
-        self.calls.append({"handler": "on_tool_end", "outputs": outputs, "exception": exception})
+        self.calls.append({
+            "handler": "on_tool_end",
+            "outputs": outputs,
+            "exception": exception
+        })
 
 
 @pytest.mark.parametrize(
     ("args", "kwargs"),
     [
         ([1, "2", 3.0], {}),
-        ([1, "2"], {"z": 3.0}),
-        ([1], {"y": "2", "z": 3.0}),
-        ([], {"x": 1, "y": "2", "z": 3.0}),
+        ([1, "2"], {
+            "z": 3.0
+        }),
+        ([1], {
+            "y": "2",
+            "z": 3.0
+        }),
+        ([], {
+            "x": 1,
+            "y": "2",
+            "z": 3.0
+        }),
     ],
 )
 def test_callback_injection(args, kwargs):
+
     class Target(dspy.Module):
+
         @with_callbacks
         def forward(self, x: int, y: str, z: float) -> int:
             time.sleep(0.1)
@@ -86,7 +137,9 @@ def test_callback_injection(args, kwargs):
 
 
 def test_callback_injection_local():
+
     class Target(dspy.Module):
+
         @with_callbacks
         def forward(self, x: int, y: str, z: float) -> int:
             time.sleep(0.1)
@@ -115,7 +168,9 @@ def test_callback_injection_local():
 
 
 def test_callback_error_handling():
+
     class Target(dspy.Module):
+
         @with_callbacks
         def forward(self, x: int, y: str, z: float) -> int:
             time.sleep(0.1)
@@ -136,7 +191,9 @@ def test_callback_error_handling():
 
 
 def test_multiple_callbacks():
+
     class Target(dspy.Module):
+
         @with_callbacks
         def forward(self, x: int, y: str, z: float) -> int:
             time.sleep(0.1)
@@ -158,7 +215,12 @@ def test_multiple_callbacks():
 def test_callback_complex_module():
     callback = MyCallback()
     dspy.settings.configure(
-        lm=DummyLM({"How are you?": {"answer": "test output", "reasoning": "No more responses"}}),
+        lm=DummyLM({
+            "How are you?": {
+                "answer": "test output",
+                "reasoning": "No more responses",
+            }
+        }),
         callbacks=[callback],
     )
 
@@ -186,12 +248,18 @@ def test_callback_complex_module():
         "on_module_end",
     ]
 
+
 @pytest.mark.asyncio
 async def test_callback_async_module():
     callback = MyCallback()
     with dspy.context(
-        lm=DummyLM({"How are you?": {"answer": "test output", "reasoning": "No more responses"}}),
-        callbacks=[callback],
+            lm=DummyLM({
+                "How are you?": {
+                    "answer": "test output",
+                    "reasoning": "No more responses",
+                }
+            }),
+            callbacks=[callback],
     ):
         cot = dspy.ChainOfThought("question -> answer", n=3)
         result = await cot.acall(question="How are you?")
@@ -231,6 +299,7 @@ def test_tool_calls():
         return "result 2"
 
     class MyModule(dspy.Module):
+
         def __init__(self):
             self.tools = [dspy.Tool(tool_1), dspy.Tool(tool_2)]
 
@@ -256,6 +325,7 @@ def test_tool_calls():
 def test_active_id():
     # Test the call ID is generated and handled properly
     class CustomCallback(BaseCallback):
+
         def __init__(self):
             self.parent_call_ids = []
             self.call_ids = []
@@ -266,6 +336,7 @@ def test_active_id():
             self.call_ids.append(call_id)
 
     class Parent(dspy.Module):
+
         def __init__(self):
             self.child_1 = Child()
             self.child_2 = Child()
@@ -275,6 +346,7 @@ def test_active_id():
             self.child_2()
 
     class Child(dspy.Module):
+
         def forward(self):
             pass
 

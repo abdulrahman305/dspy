@@ -55,7 +55,9 @@ class Note(BaseModel):
     author: str
 
 
-def complex_dummy_function(profile: UserProfile, priority: int, notes: list[Note] | None = None) -> dict[str, Any]:
+def complex_dummy_function(profile: UserProfile,
+                           priority: int,
+                           notes: list[Note] | None = None) -> dict[str, Any]:
     """Process user profile with complex nested structure.
 
     Args:
@@ -64,7 +66,8 @@ def complex_dummy_function(profile: UserProfile, priority: int, notes: list[Note
         notes: Optional processing notes
     """
     primary_address = next(
-        (addr for addr in profile.contact.addresses if addr.is_primary), profile.contact.addresses[0]
+        (addr for addr in profile.contact.addresses if addr.is_primary),
+        profile.contact.addresses[0],
     )
 
     return {
@@ -109,7 +112,8 @@ async def async_complex_dummy_function(
     await asyncio.sleep(0.1)
 
     primary_address = next(
-        (addr for addr in profile.contact.addresses if addr.is_primary), profile.contact.addresses[0]
+        (addr for addr in profile.contact.addresses if addr.is_primary),
+        profile.contact.addresses[0],
     )
 
     # Simulate more async work after finding primary address
@@ -125,7 +129,14 @@ async def async_complex_dummy_function(
 
 
 def test_basic_initialization():
-    tool = Tool(name="test_tool", desc="A test tool", args={"param1": {"type": "string"}}, func=lambda x: x)
+    tool = Tool(
+        name="test_tool",
+        desc="A test tool",
+        args={"param1": {
+            "type": "string"
+        }},
+        func=lambda x: x,
+    )
     assert tool.name == "test_tool"
     assert tool.desc == "A test tool"
     assert tool.args == {"param1": {"type": "string"}}
@@ -145,7 +156,9 @@ def test_tool_from_function():
 
 
 def test_tool_from_class():
+
     class Foo:
+
         def __init__(self, user_id: str):
             self.user_id = user_id
 
@@ -181,16 +194,26 @@ def test_tool_from_function_with_pydantic_nesting():
     assert tool.args["profile"]["type"] == "object"
     assert tool.args["profile"]["properties"]["user_id"]["type"] == "integer"
     assert tool.args["profile"]["properties"]["name"]["type"] == "string"
-    assert tool.args["profile"]["properties"]["age"]["anyOf"] == [{"type": "integer"}, {"type": "null"}]
+    assert tool.args["profile"]["properties"]["age"]["anyOf"] == [
+        {
+            "type": "integer"
+        },
+        {
+            "type": "null"
+        },
+    ]
     assert tool.args["profile"]["properties"]["contact"]["type"] == "object"
-    assert tool.args["profile"]["properties"]["contact"]["properties"]["email"]["type"] == "string"
+    assert tool.args["profile"]["properties"]["contact"]["properties"][
+        "email"]["type"] == "string"
 
     # Reference should be resolved for nested pydantic models
     assert "$defs" not in str(tool.args["notes"])
     assert tool.args["notes"]["anyOf"][0]["type"] == "array"
     assert tool.args["notes"]["anyOf"][0]["items"]["type"] == "object"
-    assert tool.args["notes"]["anyOf"][0]["items"]["properties"]["content"]["type"] == "string"
-    assert tool.args["notes"]["anyOf"][0]["items"]["properties"]["author"]["type"] == "string"
+    assert tool.args["notes"]["anyOf"][0]["items"]["properties"]["content"][
+        "type"] == "string"
+    assert tool.args["notes"]["anyOf"][0]["items"]["properties"]["author"][
+        "type"] == "string"
 
 
 def test_tool_callable():
@@ -218,6 +241,7 @@ def test_parameter_desc():
 
 
 def test_tool_with_default_args_without_type_hints():
+
     def foo(x=100):
         return x
 
@@ -241,19 +265,16 @@ def test_tool_call_parses_args():
 
 
 def test_tool_call_parses_nested_list_of_pydantic_model():
+
     def dummy_function(x: list[list[DummyModel]]):
         return x
 
     tool = Tool(dummy_function)
     args = {
-        "x": [
-            [
-                {
-                    "field1": "hello",
-                    "field2": 123,
-                }
-            ]
-        ]
+        "x": [[{
+            "field1": "hello",
+            "field2": 123,
+        }]]
     }
 
     result = tool(**args)
@@ -261,6 +282,7 @@ def test_tool_call_parses_nested_list_of_pydantic_model():
 
 
 def test_tool_call_kwarg():
+
     def fn(x: int, **kwargs):
         return kwargs
 
@@ -270,14 +292,15 @@ def test_tool_call_kwarg():
 
 
 def test_tool_str():
+
     def add(x: int, y: int = 0) -> int:
         """Add two integers."""
         return x + y
 
     tool = Tool(add)
     assert (
-        str(tool)
-        == "add, whose description is <desc>Add two integers.</desc>. It takes arguments {'x': {'type': 'integer'}, 'y': {'type': 'integer', 'default': 0}}."
+        str(tool) ==
+        "add, whose description is <desc>Add two integers.</desc>. It takes arguments {'x': {'type': 'integer'}, 'y': {'type': 'integer', 'default': 0}}."
     )
 
 
@@ -328,13 +351,24 @@ async def test_async_tool_with_complex_pydantic():
         contact=ContactInfo(
             email="test@example.com",
             addresses=[
-                Address(street="123 Main St", city="Test City", zip_code="12345", is_primary=True),
-                Address(street="456 Side St", city="Test City", zip_code="12345"),
+                Address(
+                    street="123 Main St",
+                    city="Test City",
+                    zip_code="12345",
+                    is_primary=True,
+                ),
+                Address(street="456 Side St",
+                        city="Test City",
+                        zip_code="12345"),
             ],
         ),
     )
 
-    result = await tool.acall(profile=profile, priority=1, notes=[Note(content="Test note", author="Test author")])
+    result = await tool.acall(
+        profile=profile,
+        priority=1,
+        notes=[Note(content="Test note", author="Test author")],
+    )
     assert result["user_id"] == 1
     assert result["name"] == "Test User"
     assert result["priority"] == 1
@@ -351,6 +385,7 @@ async def test_async_tool_invalid_call():
 
 @pytest.mark.asyncio
 async def test_async_tool_with_kwargs():
+
     async def fn(x: int, **kwargs):
         return kwargs
 
@@ -394,32 +429,81 @@ def test_async_tool_call_in_sync_mode():
 
 
 TOOL_CALL_TEST_CASES = [
-    ([], {"tool_calls": []}),
+    ([], {
+        "tool_calls": []
+    }),
     (
-        [{"name": "search", "args": {"query": "hello"}}],
+        [{
+            "name": "search",
+            "args": {
+                "query": "hello"
+            }
+        }],
         {
-            "tool_calls": [{"type": "function", "function": {"name": "search", "arguments": {"query": "hello"}}}],
+            "tool_calls": [{
+                "type": "function",
+                "function": {
+                    "name": "search",
+                    "arguments": {
+                        "query": "hello"
+                    }
+                },
+            }],
         },
     ),
     (
         [
-            {"name": "search", "args": {"query": "hello"}},
-            {"name": "translate", "args": {"text": "world", "lang": "fr"}},
+            {
+                "name": "search",
+                "args": {
+                    "query": "hello"
+                }
+            },
+            {
+                "name": "translate",
+                "args": {
+                    "text": "world",
+                    "lang": "fr"
+                }
+            },
         ],
         {
             "tool_calls": [
-                {"type": "function", "function": {"name": "search", "arguments": {"query": "hello"}}},
                 {
                     "type": "function",
-                    "function": {"name": "translate", "arguments": {"text": "world", "lang": "fr"}},
+                    "function": {
+                        "name": "search",
+                        "arguments": {
+                            "query": "hello"
+                        }
+                    },
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "translate",
+                        "arguments": {
+                            "text": "world",
+                            "lang": "fr"
+                        },
+                    },
                 },
             ],
         },
     ),
     (
-        [{"name": "get_time", "args": {}}],
+        [{
+            "name": "get_time",
+            "args": {}
+        }],
         {
-            "tool_calls": [{"type": "function", "function": {"name": "get_time", "arguments": {}}}],
+            "tool_calls": [{
+                "type": "function",
+                "function": {
+                    "name": "get_time",
+                    "arguments": {}
+                }
+            }],
         },
     ),
 ]
@@ -438,8 +522,19 @@ def test_tool_calls_format_basic(tool_calls_data, expected):
 def test_tool_calls_format_from_dict_list():
     """Test format works with ToolCalls created from from_dict_list."""
     tool_calls_dicts = [
-        {"name": "search", "args": {"query": "hello"}},
-        {"name": "translate", "args": {"text": "world", "lang": "fr"}},
+        {
+            "name": "search",
+            "args": {
+                "query": "hello"
+            }
+        },
+        {
+            "name": "translate",
+            "args": {
+                "text": "world",
+                "lang": "fr"
+            }
+        },
     ]
 
     tool_calls = ToolCalls.from_dict_list(tool_calls_dicts)
@@ -468,8 +563,19 @@ def test_toolcalls_vague_match():
 
     # List of dicts with "name" and "args" should parse as multiple ToolCalls
     data_list = [
-        {"name": "search", "args": {"query": "hello"}},
-        {"name": "translate", "args": {"text": "world", "lang": "fr"}},
+        {
+            "name": "search",
+            "args": {
+                "query": "hello"
+            }
+        },
+        {
+            "name": "translate",
+            "args": {
+                "text": "world",
+                "lang": "fr"
+            }
+        },
     ]
     tc = ToolCalls.model_validate(data_list)
     assert isinstance(tc, ToolCalls)
@@ -480,8 +586,16 @@ def test_toolcalls_vague_match():
     # Dict with "tool_calls" key containing a list of dicts
     data_tool_calls = {
         "tool_calls": [
-            {"name": "search", "args": {"query": "hello"}},
-            {"name": "get_time", "args": {}},
+            {
+                "name": "search",
+                "args": {
+                    "query": "hello"
+                }
+            },
+            {
+                "name": "get_time",
+                "args": {}
+            },
         ]
     }
     tc = ToolCalls.model_validate(data_tool_calls)
@@ -498,7 +612,8 @@ def test_toolcalls_vague_match():
 
 
 def test_tool_convert_input_schema_to_tool_args_no_input_params():
-    args, arg_types, arg_desc = convert_input_schema_to_tool_args(schema={"properties": {}})
+    args, arg_types, arg_desc = convert_input_schema_to_tool_args(
+        schema={"properties": {}})
     assert args == {}
     assert arg_types == {}
     assert arg_desc == {}
@@ -526,11 +641,17 @@ def test_tool_convert_input_schema_to_tool_args_lang_chain():
             "required": [
                 "baz",
             ],
-        }
-    )
+        })
     assert args == {
-        "bar": {"title": "Bar", "description": "The bar.", "type": "string"},
-        "baz": {"title": "Baz", "type": "integer"},
+        "bar": {
+            "title": "Bar",
+            "description": "The bar.",
+            "type": "string"
+        },
+        "baz": {
+            "title": "Baz",
+            "type": "integer"
+        },
     }
     assert arg_types == {
         "bar": str,

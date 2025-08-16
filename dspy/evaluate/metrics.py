@@ -63,7 +63,9 @@ def f1_score(prediction, ground_truth):
 
     if len(prediction_tokens) == len(ground_truth_tokens) == 0:
         # Unlike most tasks, QReCC and SQuAD-2.0 assign 1.0 in this edge case. We don't for uniformity.
-        print_message("\n#> F1 Metric: Rare edge case of len(prediction_tokens) == len(ground_truth_tokens) == 0.\n")
+        print_message(
+            "\n#> F1 Metric: Rare edge case of len(prediction_tokens) == len(ground_truth_tokens) == 0.\n"
+        )
 
     if num_same == 0:
         return 0
@@ -79,9 +81,13 @@ def hotpot_f1_score(prediction, ground_truth):
     normalized_prediction = normalize_text(prediction)
     normalized_ground_truth = normalize_text(ground_truth)
 
-    if normalized_prediction in ["yes", "no", "noanswer"] and normalized_prediction != normalized_ground_truth:
+    if normalized_prediction in [
+            "yes", "no", "noanswer"
+    ] and normalized_prediction != normalized_ground_truth:
         return 0
-    if normalized_ground_truth in ["yes", "no", "noanswer"] and normalized_prediction != normalized_ground_truth:
+    if normalized_ground_truth in [
+            "yes", "no", "noanswer"
+    ] and normalized_prediction != normalized_ground_truth:
         return 0
 
     prediction_tokens = normalized_prediction.split()
@@ -105,7 +111,9 @@ def precision_score(prediction, ground_truth):
 
     if len(prediction_tokens) == len(ground_truth_tokens) == 0:
         # Unlike most tasks, QReCC and SQuAD-2.0 assign 1.0 in this edge case. We don't for uniformity.
-        print_message("\n#> Precision Metric: Rare edge case of len(prediction_tokens) == len(ground_truth_tokens) == 0.\n")
+        print_message(
+            "\n#> Precision Metric: Rare edge case of len(prediction_tokens) == len(ground_truth_tokens) == 0.\n"
+        )
 
     if num_same == 0:
         return 0
@@ -122,7 +130,9 @@ def _passage_match(passages: list[str], answers: list[str]) -> bool:
     def passage_has_answers(passage: str, answers: list[str]) -> bool:
         """Returns True if the passage contains the answer."""
         return has_answer(
-            tokenized_answers=[DPR_normalize(normalize_text(ans)) for ans in answers],
+            tokenized_answers=[
+                DPR_normalize(normalize_text(ans)) for ans in answers
+            ],
             text=normalize_text(passage),
         )
 

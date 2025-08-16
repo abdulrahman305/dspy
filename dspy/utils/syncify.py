@@ -51,6 +51,7 @@ def syncify(program: "Module", in_place: bool = True) -> "Module":
         from dspy.primitives.module import Module
 
         class SyncWrapper(Module):
+
             def __init__(self, program: "Module"):
                 self.program = program
 

@@ -9,51 +9,60 @@ from dspy.utils.dummies import DummyLM
 
 
 def test_tool_calling_with_pydantic_args():
+
     class CalendarEvent(BaseModel):
         name: str
         date: str
         participants: dict[str, str]
 
-    def write_invitation_letter(participant_name: str, event_info: CalendarEvent):
+    def write_invitation_letter(participant_name: str,
+                                event_info: CalendarEvent):
         if participant_name not in event_info.participants:
             return None
         return f"It's my honor to invite {participant_name} to event {event_info.name} on {event_info.date}"
 
     class InvitationSignature(dspy.Signature):
-        participant_name: str = dspy.InputField(desc="The name of the participant to invite")
-        event_info: CalendarEvent = dspy.InputField(desc="The information about the event")
-        invitation_letter: str = dspy.OutputField(desc="The invitation letter to be sent to the participant")
+        participant_name: str = dspy.InputField(
+            desc="The name of the participant to invite")
+        event_info: CalendarEvent = dspy.InputField(
+            desc="The information about the event")
+        invitation_letter: str = dspy.OutputField(
+            desc="The invitation letter to be sent to the participant")
 
     react = dspy.ReAct(InvitationSignature, tools=[write_invitation_letter])
 
-    lm = DummyLM(
-        [
-            {
-                "next_thought": "I need to write an invitation letter for Alice to the Science Fair event.",
-                "next_tool_name": "write_invitation_letter",
-                "next_tool_args": {
-                    "participant_name": "Alice",
-                    "event_info": {
-                        "name": "Science Fair",
-                        "date": "Friday",
-                        "participants": {"Alice": "female", "Bob": "male"},
+    lm = DummyLM([
+        {
+            "next_thought":
+            "I need to write an invitation letter for Alice to the Science Fair event.",
+            "next_tool_name": "write_invitation_letter",
+            "next_tool_args": {
+                "participant_name": "Alice",
+                "event_info": {
+                    "name": "Science Fair",
+                    "date": "Friday",
+                    "participants": {
+                        "Alice": "female",
+                        "Bob": "male"
                     },
                 },
             },
-            {
-                "next_thought": (
-                    "I have successfully written the invitation letter for Alice to the Science Fair. Now "
-                    "I can finish the task."
-                ),
-                "next_tool_name": "finish",
-                "next_tool_args": {},
-            },
-            {
-                "reasoning": "This is a very rigorous reasoning process, trust me bro!",
-                "invitation_letter": "It's my honor to invite Alice to the Science Fair event on Friday.",
-            },
-        ]
-    )
+        },
+        {
+            "next_thought":
+            ("I have successfully written the invitation letter for Alice to the Science Fair. Now "
+             "I can finish the task."),
+            "next_tool_name":
+            "finish",
+            "next_tool_args": {},
+        },
+        {
+            "reasoning":
+            "This is a very rigorous reasoning process, trust me bro!",
+            "invitation_letter":
+            "It's my honor to invite Alice to the Science Fair event on Friday.",
+        },
+    ])
     dspy.settings.configure(lm=lm)
 
     outputs = react(
@@ -61,24 +70,33 @@ def test_tool_calling_with_pydantic_args():
         event_info=CalendarEvent(
             name="Science Fair",
             date="Friday",
-            participants={"Alice": "female", "Bob": "male"},
+            participants={
+                "Alice": "female",
+                "Bob": "male"
+            },
         ),
     )
     assert outputs.invitation_letter == "It's my honor to invite Alice to the Science Fair event on Friday."
 
     expected_trajectory = {
-        "thought_0": "I need to write an invitation letter for Alice to the Science Fair event.",
+        "thought_0":
+        "I need to write an invitation letter for Alice to the Science Fair event.",
         "tool_name_0": "write_invitation_letter",
         "tool_args_0": {
             "participant_name": "Alice",
             "event_info": {
                 "name": "Science Fair",
                 "date": "Friday",
-                "participants": {"Alice": "female", "Bob": "male"},
+                "participants": {
+                    "Alice": "female",
+                    "Bob": "male"
+                },
             },
         },
-        "observation_0": "It's my honor to invite Alice to event Science Fair on Friday",
-        "thought_1": "I have successfully written the invitation letter for Alice to the Science Fair. Now I can finish the task.",
+        "observation_0":
+        "It's my honor to invite Alice to event Science Fair on Friday",
+        "thought_1":
+        "I have successfully written the invitation letter for Alice to the Science Fair. Now I can finish the task.",
         "tool_name_1": "finish",
         "tool_args_1": {},
         "observation_1": "Completed.",
@@ -87,18 +105,31 @@ def test_tool_calling_with_pydantic_args():
 
 
 def test_tool_calling_without_typehint():
+
     def foo(a, b):
         """Add two numbers."""
         return a + b
 
     react = dspy.ReAct("a, b -> c:int", tools=[foo])
-    lm = DummyLM(
-        [
-            {"next_thought": "I need to add two numbers.", "next_tool_name": "foo", "next_tool_args": {"a": 1, "b": 2}},
-            {"next_thought": "I have the sum, now I can finish.", "next_tool_name": "finish", "next_tool_args": {}},
-            {"reasoning": "I added the numbers successfully", "c": 3},
-        ]
-    )
+    lm = DummyLM([
+        {
+            "next_thought": "I need to add two numbers.",
+            "next_tool_name": "foo",
+            "next_tool_args": {
+                "a": 1,
+                "b": 2
+            },
+        },
+        {
+            "next_thought": "I have the sum, now I can finish.",
+            "next_tool_name": "finish",
+            "next_tool_args": {},
+        },
+        {
+            "reasoning": "I added the numbers successfully",
+            "c": 3
+        },
+    ])
     dspy.settings.configure(lm=lm)
     outputs = react(a=1, b=2)
 
@@ -142,13 +173,18 @@ def test_trajectory_truncation():
             )
         elif call_count == 3:
             # The 3rd call raises context window exceeded error
-            raise litellm.ContextWindowExceededError("Context window exceeded", "dummy_model", "dummy_provider")
+            raise litellm.ContextWindowExceededError("Context window exceeded",
+                                                     "dummy_model",
+                                                     "dummy_provider")
         else:
             # The 4th call finishes
-            return dspy.Prediction(next_thought="Final thought", next_tool_name="finish", next_tool_args={})
+            return dspy.Prediction(next_thought="Final thought",
+                                   next_tool_name="finish",
+                                   next_tool_args={})
 
     react.react = mock_react
-    react.extract = lambda **kwargs: dspy.Prediction(output_text="Final output")
+    react.extract = lambda **kwargs: dspy.Prediction(output_text="Final output"
+                                                     )
 
     # Call forward and get the result
     result = react(input_text="test input")
@@ -166,22 +202,29 @@ def test_error_retry():
 
     # --- program under test -------------------------------------------------
     react = dspy.ReAct("a, b -> c:int", tools=[foo])
-    lm = DummyLM(
-        [
-            {
-                "next_thought": "I need to add two numbers.",
-                "next_tool_name": "foo",
-                "next_tool_args": {"a": 1, "b": 2},
+    lm = DummyLM([
+        {
+            "next_thought": "I need to add two numbers.",
+            "next_tool_name": "foo",
+            "next_tool_args": {
+                "a": 1,
+                "b": 2
             },
-            {
-                "next_thought": "I need to add two numbers.",
-                "next_tool_name": "foo",
-                "next_tool_args": {"a": 1, "b": 2},
+        },
+        {
+            "next_thought": "I need to add two numbers.",
+            "next_tool_name": "foo",
+            "next_tool_args": {
+                "a": 1,
+                "b": 2
             },
-            # (The model *would* succeed on the 3rd turn, but max_iters=2 stops earlier.)
-            {"reasoning": "I added the numbers successfully", "c": 3},
-        ]
-    )
+        },
+        # (The model *would* succeed on the 3rd turn, but max_iters=2 stops earlier.)
+        {
+            "reasoning": "I added the numbers successfully",
+            "c": 3
+        },
+    ])
     dspy.settings.configure(lm=lm)
 
     outputs = react(a=1, b=2, max_iters=2)
@@ -191,10 +234,16 @@ def test_error_retry():
     control_expected = {
         "thought_0": "I need to add two numbers.",
         "tool_name_0": "foo",
-        "tool_args_0": {"a": 1, "b": 2},
+        "tool_args_0": {
+            "a": 1,
+            "b": 2
+        },
         "thought_1": "I need to add two numbers.",
         "tool_name_1": "foo",
-        "tool_args_1": {"a": 1, "b": 2},
+        "tool_args_1": {
+            "a": 1,
+            "b": 2
+        },
     }
     for k, v in control_expected.items():
         assert traj[k] == v, f"{k} mismatch"
@@ -204,80 +253,99 @@ def test_error_retry():
     # any extra traceback detail or differing prefixes.
     for i in range(2):
         obs = traj[f"observation_{i}"]
-        assert re.search(r"\btool error\b", obs), f"unexpected observation_{i!r}: {obs}"
+        assert re.search(r"\btool error\b",
+                         obs), f"unexpected observation_{i!r}: {obs}"
 
 
 @pytest.mark.asyncio
 async def test_async_tool_calling_with_pydantic_args():
+
     class CalendarEvent(BaseModel):
         name: str
         date: str
         participants: dict[str, str]
 
-    async def write_invitation_letter(participant_name: str, event_info: CalendarEvent):
+    async def write_invitation_letter(participant_name: str,
+                                      event_info: CalendarEvent):
         if participant_name not in event_info.participants:
             return None
         return f"It's my honor to invite {participant_name} to event {event_info.name} on {event_info.date}"
 
     class InvitationSignature(dspy.Signature):
-        participant_name: str = dspy.InputField(desc="The name of the participant to invite")
-        event_info: CalendarEvent = dspy.InputField(desc="The information about the event")
-        invitation_letter: str = dspy.OutputField(desc="The invitation letter to be sent to the participant")
+        participant_name: str = dspy.InputField(
+            desc="The name of the participant to invite")
+        event_info: CalendarEvent = dspy.InputField(
+            desc="The information about the event")
+        invitation_letter: str = dspy.OutputField(
+            desc="The invitation letter to be sent to the participant")
 
     react = dspy.ReAct(InvitationSignature, tools=[write_invitation_letter])
 
-    lm = DummyLM(
-        [
-            {
-                "next_thought": "I need to write an invitation letter for Alice to the Science Fair event.",
-                "next_tool_name": "write_invitation_letter",
-                "next_tool_args": {
-                    "participant_name": "Alice",
-                    "event_info": {
-                        "name": "Science Fair",
-                        "date": "Friday",
-                        "participants": {"Alice": "female", "Bob": "male"},
+    lm = DummyLM([
+        {
+            "next_thought":
+            "I need to write an invitation letter for Alice to the Science Fair event.",
+            "next_tool_name": "write_invitation_letter",
+            "next_tool_args": {
+                "participant_name": "Alice",
+                "event_info": {
+                    "name": "Science Fair",
+                    "date": "Friday",
+                    "participants": {
+                        "Alice": "female",
+                        "Bob": "male"
                     },
                 },
             },
-            {
-                "next_thought": (
-                    "I have successfully written the invitation letter for Alice to the Science Fair. Now "
-                    "I can finish the task."
-                ),
-                "next_tool_name": "finish",
-                "next_tool_args": {},
-            },
-            {
-                "reasoning": "This is a very rigorous reasoning process, trust me bro!",
-                "invitation_letter": "It's my honor to invite Alice to the Science Fair event on Friday.",
-            },
-        ]
-    )
+        },
+        {
+            "next_thought":
+            ("I have successfully written the invitation letter for Alice to the Science Fair. Now "
+             "I can finish the task."),
+            "next_tool_name":
+            "finish",
+            "next_tool_args": {},
+        },
+        {
+            "reasoning":
+            "This is a very rigorous reasoning process, trust me bro!",
+            "invitation_letter":
+            "It's my honor to invite Alice to the Science Fair event on Friday.",
+        },
+    ])
     with dspy.context(lm=lm):
         outputs = await react.acall(
             participant_name="Alice",
             event_info=CalendarEvent(
                 name="Science Fair",
                 date="Friday",
-                participants={"Alice": "female", "Bob": "male"},
+                participants={
+                    "Alice": "female",
+                    "Bob": "male"
+                },
             ),
         )
     assert outputs.invitation_letter == "It's my honor to invite Alice to the Science Fair event on Friday."
 
     expected_trajectory = {
-        "thought_0": "I need to write an invitation letter for Alice to the Science Fair event.",
+        "thought_0":
+        "I need to write an invitation letter for Alice to the Science Fair event.",
         "tool_name_0": "write_invitation_letter",
         "tool_args_0": {
             "participant_name": "Alice",
             "event_info": {
                 "name": "Science Fair",
                 "date": "Friday",
-                "participants": {"Alice": "female", "Bob": "male"},
+                "participants": {
+                    "Alice": "female",
+                    "Bob": "male"
+                },
             },
         },
-        "observation_0": "It's my honor to invite Alice to event Science Fair on Friday",
-        "thought_1": "I have successfully written the invitation letter for Alice to the Science Fair. Now I can finish the task.",
+        "observation_0":
+        "It's my honor to invite Alice to event Science Fair on Friday",
+        "thought_1":
+        "I have successfully written the invitation letter for Alice to the Science Fair. Now I can finish the task.",
         "tool_name_1": "finish",
         "tool_args_1": {},
         "observation_1": "Completed.",
@@ -292,22 +360,29 @@ async def test_async_error_retry():
         raise Exception("tool error")
 
     react = dspy.ReAct("a, b -> c:int", tools=[foo])
-    lm = DummyLM(
-        [
-            {
-                "next_thought": "I need to add two numbers.",
-                "next_tool_name": "foo",
-                "next_tool_args": {"a": 1, "b": 2},
+    lm = DummyLM([
+        {
+            "next_thought": "I need to add two numbers.",
+            "next_tool_name": "foo",
+            "next_tool_args": {
+                "a": 1,
+                "b": 2
             },
-            {
-                "next_thought": "I need to add two numbers.",
-                "next_tool_name": "foo",
-                "next_tool_args": {"a": 1, "b": 2},
+        },
+        {
+            "next_thought": "I need to add two numbers.",
+            "next_tool_name": "foo",
+            "next_tool_args": {
+                "a": 1,
+                "b": 2
             },
-            # (The model *would* succeed on the 3rd turn, but max_iters=2 stops earlier.)
-            {"reasoning": "I added the numbers successfully", "c": 3},
-        ]
-    )
+        },
+        # (The model *would* succeed on the 3rd turn, but max_iters=2 stops earlier.)
+        {
+            "reasoning": "I added the numbers successfully",
+            "c": 3
+        },
+    ])
     with dspy.context(lm=lm):
         outputs = await react.acall(a=1, b=2, max_iters=2)
     traj = outputs.trajectory
@@ -316,10 +391,16 @@ async def test_async_error_retry():
     control_expected = {
         "thought_0": "I need to add two numbers.",
         "tool_name_0": "foo",
-        "tool_args_0": {"a": 1, "b": 2},
+        "tool_args_0": {
+            "a": 1,
+            "b": 2
+        },
         "thought_1": "I need to add two numbers.",
         "tool_name_1": "foo",
-        "tool_args_1": {"a": 1, "b": 2},
+        "tool_args_1": {
+            "a": 1,
+            "b": 2
+        },
     }
     for k, v in control_expected.items():
         assert traj[k] == v, f"{k} mismatch"
@@ -329,4 +410,5 @@ async def test_async_error_retry():
     # any extra traceback detail or differing prefixes.
     for i in range(2):
         obs = traj[f"observation_{i}"]
-        assert re.search(r"\btool error\b", obs), f"unexpected observation_{i!r}: {obs}"
+        assert re.search(r"\btool error\b",
+                         obs), f"unexpected observation_{i!r}: {obs}"

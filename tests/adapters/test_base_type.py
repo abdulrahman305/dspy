@@ -4,6 +4,7 @@ import dspy
 
 
 def test_basic_extract_custom_type_from_annotation():
+
     class Event(dspy.Type):
         event_name: str
         start_date_time: str
@@ -16,7 +17,8 @@ def test_basic_extract_custom_type_from_annotation():
         email: str = dspy.InputField()
         event: Event = dspy.OutputField()
 
-    assert dspy.Type.extract_custom_type_from_annotation(ExtractEvent.output_fields["event"].annotation) == [Event]
+    assert dspy.Type.extract_custom_type_from_annotation(
+        ExtractEvent.output_fields["event"].annotation) == [Event]
 
     class ExtractEvents(dspy.Signature):
         """Extract all events from the email content."""
@@ -24,10 +26,12 @@ def test_basic_extract_custom_type_from_annotation():
         email: str = dspy.InputField()
         events: list[Event] = dspy.OutputField()
 
-    assert dspy.Type.extract_custom_type_from_annotation(ExtractEvents.output_fields["events"].annotation) == [Event]
+    assert dspy.Type.extract_custom_type_from_annotation(
+        ExtractEvents.output_fields["events"].annotation) == [Event]
 
 
 def test_extract_custom_type_from_annotation_with_nested_type():
+
     class Event(dspy.Type):
         event_name: str
         start_date_time: str
@@ -45,7 +49,8 @@ def test_extract_custom_type_from_annotation_with_nested_type():
         email: str = dspy.InputField()
         events: list[dict[EventIdentifier, Event]] = dspy.OutputField()
 
-    assert dspy.Type.extract_custom_type_from_annotation(ExtractEvents.output_fields["events"].annotation) == [
-        EventIdentifier,
-        Event,
+    assert dspy.Type.extract_custom_type_from_annotation(
+        ExtractEvents.output_fields["events"].annotation) == [
+            EventIdentifier,
+            Event,
     ]
