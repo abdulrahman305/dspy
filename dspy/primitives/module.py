@@ -38,6 +38,7 @@ class ProgramMeta(type):
 
 
 class Module(BaseModule, metaclass=ProgramMeta):
+
     def _base_init(self):
         self._compiled = False
         self.callbacks = []
@@ -69,7 +70,8 @@ class Module(BaseModule, metaclass=ProgramMeta):
         caller_modules.append(self)
 
         with settings.context(caller_modules=caller_modules):
-            if settings.track_usage and thread_local_overrides.get().get("usage_tracker") is None:
+            if settings.track_usage and thread_local_overrides.get().get(
+                    "usage_tracker") is None:
                 with track_usage() as usage_tracker:
                     output = self.forward(*args, **kwargs)
                 output.set_lm_usage(usage_tracker.get_total_tokens())
@@ -84,7 +86,8 @@ class Module(BaseModule, metaclass=ProgramMeta):
         caller_modules.append(self)
 
         with settings.context(caller_modules=caller_modules):
-            if settings.track_usage and thread_local_overrides.get().get("usage_tracker") is None:
+            if settings.track_usage and thread_local_overrides.get().get(
+                    "usage_tracker") is None:
                 with track_usage() as usage_tracker:
                     output = await self.aforward(*args, **kwargs)
                     output.set_lm_usage(usage_tracker.get_total_tokens())
@@ -95,7 +98,8 @@ class Module(BaseModule, metaclass=ProgramMeta):
     def named_predictors(self):
         from dspy.predict.predict import Predict
 
-        return [(name, param) for name, param in self.named_parameters() if isinstance(param, Predict)]
+        return [(name, param) for name, param in self.named_parameters()
+                if isinstance(param, Predict)]
 
     def predictors(self):
         return [param for _, param in self.named_predictors()]
@@ -110,7 +114,9 @@ class Module(BaseModule, metaclass=ProgramMeta):
         if len(set(all_used_lms)) == 1:
             return all_used_lms[0]
 
-        raise ValueError("Multiple LMs are being used in the module. There's no unique LM to return.")
+        raise ValueError(
+            "Multiple LMs are being used in the module. There's no unique LM to return."
+        )
 
     def __repr__(self):
         s = []
@@ -167,7 +173,8 @@ class Module(BaseModule, metaclass=ProgramMeta):
 
         # Execute the forward method of Parallel
         if return_failed_examples:
-            results, failed_examples, exceptions = parallel_executor.forward(exec_pairs)
+            results, failed_examples, exceptions = parallel_executor.forward(
+                exec_pairs)
             return results, failed_examples, exceptions
         else:
             results = parallel_executor.forward(exec_pairs)
@@ -179,13 +186,13 @@ class Module(BaseModule, metaclass=ProgramMeta):
         if name == "forward" and callable(attr):
             # Check if forward is called through __call__ or directly
             stack = inspect.stack()
-            forward_called_directly = len(stack) <= 1 or stack[1].function != "__call__"
+            forward_called_directly = len(
+                stack) <= 1 or stack[1].function != "__call__"
 
             if forward_called_directly:
                 logger.warning(
                     f"Calling module.forward(...) on {self.__class__.__name__} directly is discouraged. "
-                    f"Please use module(...) instead."
-                )
+                    f"Please use module(...) instead.")
 
         return attr
 
