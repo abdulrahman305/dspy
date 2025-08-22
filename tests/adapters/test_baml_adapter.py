@@ -31,7 +31,8 @@ class ComplexNestedModel(pydantic.BaseModel):
 
 
 class ModelWithLists(pydantic.BaseModel):
-    items: list[PatientAddress] = pydantic.Field(description="List of patient addresses")
+    items: list[PatientAddress] = pydantic.Field(
+        description="List of patient addresses")
     scores: list[float]
 
 
@@ -149,7 +150,8 @@ def test_baml_adapter_raise_error_on_circular_references():
     with pytest.raises(ValueError) as error:
         adapter.format_field_structure(TestSignature)
 
-    assert "BAMLAdapter cannot handle recursive pydantic models" in str(error.value)
+    assert "BAMLAdapter cannot handle recursive pydantic models" in str(
+        error.value)
 
 
 def test_baml_adapter_formats_pydantic_inputs_as_clean_json():
@@ -162,10 +164,17 @@ def test_baml_adapter_formats_pydantic_inputs_as_clean_json():
 
     adapter = BAMLAdapter()
     patient = PatientDetails(
-        name="John Doe", age=45, address=PatientAddress(street="123 Main St", city="Anytown", country="US")
+        name="John Doe",
+        age=45,
+        address=PatientAddress(street="123 Main St",
+                               city="Anytown",
+                               country="US"),
     )
 
-    messages = adapter.format(TestSignature, [], {"patient": patient, "question": "What is the diagnosis?"})
+    messages = adapter.format(TestSignature, [], {
+        "patient": patient,
+        "question": "What is the diagnosis?"
+    })
 
     # Should have clean, indented JSON for Pydantic input
     user_message = messages[-1]["content"]
@@ -187,7 +196,11 @@ def test_baml_adapter_handles_mixed_input_types():
     adapter = BAMLAdapter()
     patient = PatientDetails(name="Jane Doe", age=30)
 
-    messages = adapter.format(TestSignature, [], {"patient": patient, "priority": 1, "notes": "Urgent case"})
+    messages = adapter.format(TestSignature, [], {
+        "patient": patient,
+        "priority": 1,
+        "notes": "Urgent case"
+    })
 
     user_message = messages[-1]["content"]
     # Pydantic should be JSON formatted
@@ -236,7 +249,8 @@ def test_baml_adapter_raises_on_missing_fields():
     with pytest.raises(dspy.utils.exceptions.AdapterParseError) as e:
         adapter.parse(TestSignature, completion)
 
-    assert e.value.adapter_name == "JSONAdapter"  # BAMLAdapter inherits from JSONAdapter
+    # BAMLAdapter inherits from JSONAdapter
+    assert e.value.adapter_name == "JSONAdapter"
     assert "summary" in str(e.value)
 
 
@@ -253,7 +267,8 @@ def test_baml_adapter_handles_type_casting_errors():
     completion = '{"patient": {"name": "John", "age": "not_a_number"}}'
 
     # Should raise ValidationError from Pydantic (which is the expected behavior)
-    with pytest.raises((dspy.utils.exceptions.AdapterParseError, pydantic.ValidationError)):
+    with pytest.raises(
+            (dspy.utils.exceptions.AdapterParseError, pydantic.ValidationError)):
         adapter.parse(TestSignature, completion)
 
 
@@ -267,7 +282,10 @@ def test_baml_adapter_with_images():
     adapter = BAMLAdapter()
 
     image_wrapper = ImageWrapper(
-        images=[dspy.Image(url="https://example.com/image1.jpg"), dspy.Image(url="https://example.com/image2.jpg")],
+        images=[
+            dspy.Image(url="https://example.com/image1.jpg"),
+            dspy.Image(url="https://example.com/image2.jpg"),
+        ],
         tag=["test", "medical"],
     )
 
@@ -276,12 +294,23 @@ def test_baml_adapter_with_images():
     # Should contain image URLs in the message content
     user_message = messages[-1]["content"]
     image_contents = [
-        content for content in user_message if isinstance(content, dict) and content.get("type") == "image_url"
+        content for content in user_message
+        if isinstance(content, dict) and content.get("type") == "image_url"
     ]
 
     assert len(image_contents) == 2
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}} in user_message
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}} in user_message
+    assert {
+        "type": "image_url",
+        "image_url": {
+            "url": "https://example.com/image1.jpg"
+        },
+    } in user_message
+    assert {
+        "type": "image_url",
+        "image_url": {
+            "url": "https://example.com/image2.jpg"
+        },
+    } in user_message
 
 
 def test_baml_adapter_with_tools():
@@ -303,7 +332,14 @@ def test_baml_adapter_with_tools():
     tools = [dspy.Tool(get_patient_info), dspy.Tool(schedule_appointment)]
 
     adapter = BAMLAdapter()
-    messages = adapter.format(TestSignature, [], {"question": "Schedule an appointment for John", "tools": tools})
+    messages = adapter.format(
+        TestSignature,
+        [],
+        {
+            "question": "Schedule an appointment for John",
+            "tools": tools
+        },
+    )
 
     user_message = messages[-1]["content"]
     assert "get_patient_info" in user_message
@@ -321,7 +357,9 @@ def test_baml_adapter_with_code():
         analysis: str = dspy.OutputField()
 
     adapter = BAMLAdapter()
-    messages = adapter.format(CodeAnalysisSignature, [], {"code": "def hello():\n    print('Hello, world!')"})
+    messages = adapter.format(
+        CodeAnalysisSignature, [],
+        {"code": "def hello():\n    print('Hello, world!')"})
 
     user_message = messages[-1]["content"]
     assert "def hello():" in user_message
@@ -334,7 +372,10 @@ def test_baml_adapter_with_code():
 
     with mock.patch("litellm.completion") as mock_completion:
         mock_completion.return_value = ModelResponse(
-            choices=[Choices(message=Message(content='{"code": "print(\\"Generated code\\")"}'))],
+            choices=[
+                Choices(message=Message(
+                    content='{"code": "print(\\"Generated code\\")"}'))
+            ],
             model="openai/gpt-4o-mini",
         )
 
@@ -357,15 +398,26 @@ def test_baml_adapter_with_conversation_history():
         question: str = dspy.InputField()
         answer: str = dspy.OutputField()
 
-    history = dspy.History(
-        messages=[
-            {"question": "What is the patient's age?", "answer": "45 years old"},
-            {"question": "Any allergies?", "answer": "Penicillin allergy"},
-        ]
-    )
+    history = dspy.History(messages=[
+        {
+            "question": "What is the patient's age?",
+            "answer": "45 years old"
+        },
+        {
+            "question": "Any allergies?",
+            "answer": "Penicillin allergy"
+        },
+    ])
 
     adapter = BAMLAdapter()
-    messages = adapter.format(TestSignature, [], {"history": history, "question": "What medications should we avoid?"})
+    messages = adapter.format(
+        TestSignature,
+        [],
+        {
+            "history": history,
+            "question": "What medications should we avoid?"
+        },
+    )
 
     # Should format history as separate messages
     assert len(messages) == 6  # system + 2 history pairs + user
@@ -416,7 +468,8 @@ def test_baml_vs_json_adapter_functional_compatibility():
     # Results should be functionally equivalent
     assert baml_result["patient"].name == json_result["patient"].name
     assert baml_result["patient"].age == json_result["patient"].age
-    assert baml_result["patient"].address.street == json_result["patient"].address.street
+    assert baml_result["patient"].address.street == json_result[
+        "patient"].address.street
 
 
 @pytest.mark.asyncio
@@ -429,13 +482,20 @@ async def test_baml_adapter_async_functionality():
 
     with mock.patch("litellm.acompletion") as mock_acompletion:
         mock_acompletion.return_value = ModelResponse(
-            choices=[Choices(message=Message(content='{"patient": {"name": "John Doe", "age": 28}}'))],
+            choices=[
+                Choices(message=Message(
+                    content='{"patient": {"name": "John Doe", "age": 28}}'))
+            ],
             model="openai/gpt-4o",
         )
 
         adapter = BAMLAdapter()
         result = await adapter.acall(
-            dspy.LM(model="openai/gpt-4o", cache=False), {}, TestSignature, [], {"question": "Extract patient info"}
+            dspy.LM(model="openai/gpt-4o", cache=False),
+            {},
+            TestSignature,
+            [],
+            {"question": "Extract patient info"},
         )
 
         assert result[0]["patient"].name == "John Doe"
@@ -467,7 +527,8 @@ def test_baml_adapter_field_alias_without_description():
     class ModelWithAliasNoDescription(pydantic.BaseModel):
         internal_field: str = pydantic.Field(alias="public_name")
         regular_field: int
-        field_with_description: str = pydantic.Field(description="This field has a description", alias="desc_field")
+        field_with_description: str = pydantic.Field(
+            description="This field has a description", alias="desc_field")
 
     class TestSignature(dspy.Signature):
         input: str = dspy.InputField()
@@ -483,7 +544,8 @@ def test_baml_adapter_field_alias_without_description():
     # Regular field (without alias) should appear in schema but without alias comment
     assert "regular_field: int," in schema
     # Check that regular_field section doesn't have an alias comment
-    regular_field_section = schema.split("regular_field: int,")[0].split("\n")[-1]
+    regular_field_section = schema.split("regular_field: int,")[0].split(
+        "\n")[-1]
     assert f"{COMMENT_SYMBOL} alias:" not in regular_field_section
 
 
@@ -509,10 +571,13 @@ def test_baml_adapter_multiple_pydantic_input_fields():
 
     # Test schema generation includes headers for ALL input fields
     schema = adapter.format_field_structure(TestSignature)
-    assert "[[ ## input_1 ## ]]" in schema  # Should include first input field header
-    assert "[[ ## input_2 ## ]]" in schema  # Should include second input field header
+    # Should include first input field header
+    assert "[[ ## input_1 ## ]]" in schema
+    # Should include second input field header
+    assert "[[ ## input_2 ## ]]" in schema
     assert "[[ ## result ## ]]" in schema  # Should include output field header
-    assert "[[ ## completed ## ]]" in schema  # Should include completed section
+    # Should include completed section
+    assert "[[ ## completed ## ]]" in schema
     assert "All interactions will be structured in the following way" in schema
     assert "{input_1}" in schema
     assert "{input_2}" in schema
@@ -524,10 +589,17 @@ def test_baml_adapter_multiple_pydantic_input_fields():
     assert "Your output fields are:" in field_desc
 
     # Test message formatting with actual Pydantic instances
-    user_profile = UserProfile(name="John Doe", email="john@example.com", age=30)
-    system_config = SystemConfig(timeout=300, debug=True, endpoints=["api1", "api2"])
+    user_profile = UserProfile(name="John Doe",
+                               email="john@example.com",
+                               age=30)
+    system_config = SystemConfig(timeout=300,
+                                 debug=True,
+                                 endpoints=["api1", "api2"])
 
-    messages = adapter.format(TestSignature, [], {"input_1": user_profile, "input_2": system_config})
+    messages = adapter.format(TestSignature, [], {
+        "input_1": user_profile,
+        "input_2": system_config
+    })
 
     user_message = messages[-1]["content"]
 
