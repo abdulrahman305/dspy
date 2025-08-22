@@ -87,7 +87,10 @@ def bootstrap_trace_data(
                         + (failure_score - format_failure_score) * (present / expected),
                     )
                 else:
-                    failed_pred = FailedPrediction(completion_text=completion_str, format_reward=format_failure_score)
+                    failed_pred = FailedPrediction(
+                        completion_text=completion_str,
+                        format_reward=format_failure_score,
+                    )
 
                 trace.append(
                     (
@@ -129,7 +132,12 @@ def bootstrap_trace_data(
                 raise ve
             else:
                 continue
-        data_dict = {"example": example, "prediction": prediction, "trace": trace, "example_ind": example_ind}
+        data_dict = {
+            "example": example,
+            "prediction": prediction,
+            "trace": trace,
+            "example_ind": example_ind,
+        }
         if metric:
             data_dict["score"] = score
         data.append(data_dict)
