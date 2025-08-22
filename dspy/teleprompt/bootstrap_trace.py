@@ -76,32 +76,35 @@ def bootstrap_trace_data(
                         found_pred = pred
                         break
                 if found_pred is None:
-                    raise ValueError(f"Failed to find the predictor for the failed signature: {failed_signature}")
+                    raise ValueError(
+                        f"Failed to find the predictor for the failed signature: {failed_signature}"
+                    )
 
                 trace = dspy.settings.trace.copy()
                 # Trace is Tuple[signature, inputs, prediction outputs]
                 if present:
                     failed_pred = FailedPrediction(
                         completion_text=completion_str,
-                        format_reward=format_failure_score
-                        + (failure_score - format_failure_score) * (present / expected),
+                        format_reward=format_failure_score +
+                        (failure_score - format_failure_score) *
+                        (present / expected),
                     )
                 else:
-                    failed_pred = FailedPrediction(completion_text=completion_str, format_reward=format_failure_score)
-
-                trace.append(
-                    (
-                        found_pred,
-                        failed_inputs,
-                        failed_pred,
+                    failed_pred = FailedPrediction(
+                        completion_text=completion_str,
+                        format_reward=format_failure_score,
                     )
-                )
+
+                trace.append((
+                    found_pred,
+                    failed_inputs,
+                    failed_pred,
+                ))
 
                 if log_format_failures:
                     logging.warning(
                         "Failed to parse output for example. This is likely due to the LLM response not following "
-                        "the adapter's formatting."
-                    )
+                        "the adapter's formatting.")
 
                 return failed_pred, trace
 
@@ -123,13 +126,17 @@ def bootstrap_trace_data(
             # and pass it to in the GRPO group with a high-negative user-configurable score.
             logger.warning(
                 "Failed to unpack prediction and trace. This is likely due to the LLM response not following "
-                "dspy formatting."
-            )
+                "dspy formatting.")
             if raise_on_error:
                 raise ve
             else:
                 continue
-        data_dict = {"example": example, "prediction": prediction, "trace": trace, "example_ind": example_ind}
+        data_dict = {
+            "example": example,
+            "prediction": prediction,
+            "trace": trace,
+            "example_ind": example_ind,
+        }
         if metric:
             data_dict["score"] = score
         data.append(data_dict)
