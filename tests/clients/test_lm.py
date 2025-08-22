@@ -24,7 +24,7 @@ def make_response(output_blocks):
         model="openai/dspy-test-model",
         object="response",
         output=output_blocks,
-        metadata = {},
+        metadata={},
         parallel_tool_calls=False,
         temperature=1.0,
         tool_choice="auto",
@@ -36,7 +36,8 @@ def make_response(output_blocks):
         status="completed",
         text=None,
         truncation="disabled",
-        usage=ResponseAPIUsage(input_tokens=1, output_tokens=1, total_tokens=2),
+        usage=ResponseAPIUsage(input_tokens=1, output_tokens=1,
+                               total_tokens=2),
         user=None,
     )
 
@@ -154,7 +155,9 @@ def test_text_lms_can_be_queried(litellm_test_server):
 def test_lm_calls_support_callables(litellm_test_server):
     api_base, _ = litellm_test_server
 
-    with mock.patch("litellm.completion", autospec=True, wraps=litellm.completion) as spy_completion:
+    with mock.patch("litellm.completion",
+                    autospec=True,
+                    wraps=litellm.completion) as spy_completion:
 
         def azure_ad_token_provider(*args, **kwargs):
             return None
@@ -209,10 +212,14 @@ def test_retry_made_on_system_errors():
         mock_response = mock.Mock()
         mock_response.headers = {}
         mock_response.status_code = 429
-        raise RateLimitError(response=mock_response, message="message", body="error")
+        raise RateLimitError(response=mock_response,
+                             message="message",
+                             body="error")
 
     lm = dspy.LM(model="openai/gpt-4o-mini", max_tokens=250, num_retries=3)
-    with mock.patch.object(litellm.OpenAIChatCompletion, "completion", side_effect=mock_create):
+    with mock.patch.object(litellm.OpenAIChatCompletion,
+                           "completion",
+                           side_effect=mock_create):
         with pytest.raises(RateLimitError):
             lm("question")
 
@@ -248,12 +255,13 @@ def test_reasoning_model_token_parameter():
             assert "max_tokens" in lm.kwargs
             assert lm.kwargs["max_tokens"] == 1000
 
+
 @pytest.mark.parametrize("model_name", ["openai/o1", "openai/gpt-5-nano"])
 def test_reasoning_model_requirements(model_name):
     # Should raise assertion error if temperature or max_tokens requirements not met
     with pytest.raises(
-        ValueError,
-        match="reasoning models require passing temperature=1.0 and max_tokens >= 20000",
+            ValueError,
+            match="reasoning models require passing temperature=1.0 and max_tokens >= 20000",
     ):
         dspy.LM(
             model=model_name,
@@ -290,8 +298,12 @@ def test_dump_state():
         "cache": True,
         "cache_in_memory": True,
         "finetuning_model": None,
-        "launch_kwargs": {"temperature": 1},
-        "train_kwargs": {"temperature": 5},
+        "launch_kwargs": {
+            "temperature": 1
+        },
+        "train_kwargs": {
+            "temperature": 5
+        },
     }
 
 
@@ -304,16 +316,20 @@ def test_exponential_backoff_retry():
         mock_response = mock.Mock()
         mock_response.headers = {}
         mock_response.status_code = 429
-        raise RateLimitError(response=mock_response, message="message", body="error")
+        raise RateLimitError(response=mock_response,
+                             message="message",
+                             body="error")
 
     lm = dspy.LM(model="openai/gpt-3.5-turbo", max_tokens=250, num_retries=3)
-    with mock.patch.object(litellm.OpenAIChatCompletion, "completion", side_effect=mock_create):
+    with mock.patch.object(litellm.OpenAIChatCompletion,
+                           "completion",
+                           side_effect=mock_create):
         with pytest.raises(RateLimitError):
             lm("question")
 
     # The first retry happens immediately regardless of the configuration
     for i in range(1, len(time_counter) - 1):
-        assert time_counter[i + 1] - time_counter[i] >= 2 ** (i - 1)
+        assert time_counter[i + 1] - time_counter[i] >= 2**(i - 1)
 
 
 def test_logprobs_included_when_requested():
@@ -325,8 +341,26 @@ def test_logprobs_included_when_requested():
                     message=Message(content="test answer"),
                     logprobs={
                         "content": [
-                            {"token": "test", "logprob": 0.1, "top_logprobs": [{"token": "test", "logprob": 0.1}]},
-                            {"token": "answer", "logprob": 0.2, "top_logprobs": [{"token": "answer", "logprob": 0.2}]},
+                            {
+                                "token":
+                                "test",
+                                "logprob":
+                                0.1,
+                                "top_logprobs": [{
+                                    "token": "test",
+                                    "logprob": 0.1
+                                }],
+                            },
+                            {
+                                "token":
+                                "answer",
+                                "logprob":
+                                0.2,
+                                "top_logprobs": [{
+                                    "token": "answer",
+                                    "logprob": 0.2
+                                }],
+                            },
                         ]
                     },
                 )
@@ -338,16 +372,30 @@ def test_logprobs_included_when_requested():
         assert result[0]["logprobs"].model_dump() == {
             "content": [
                 {
-                    "token": "test",
-                    "bytes": None,
-                    "logprob": 0.1,
-                    "top_logprobs": [{"token": "test", "bytes": None, "logprob": 0.1}],
+                    "token":
+                    "test",
+                    "bytes":
+                    None,
+                    "logprob":
+                    0.1,
+                    "top_logprobs": [{
+                        "token": "test",
+                        "bytes": None,
+                        "logprob": 0.1
+                    }],
                 },
                 {
-                    "token": "answer",
-                    "bytes": None,
-                    "logprob": 0.2,
-                    "top_logprobs": [{"token": "answer", "bytes": None, "logprob": 0.2}],
+                    "token":
+                    "answer",
+                    "bytes":
+                    None,
+                    "logprob":
+                    0.2,
+                    "top_logprobs": [{
+                        "token": "answer",
+                        "bytes": None,
+                        "logprob": 0.2
+                    }],
                 },
             ]
         }
@@ -358,7 +406,9 @@ def test_logprobs_included_when_requested():
 async def test_async_lm_call():
     from litellm.utils import Choices, Message, ModelResponse
 
-    mock_response = ModelResponse(choices=[Choices(message=Message(content="answer"))], model="openai/gpt-4o-mini")
+    mock_response = ModelResponse(
+        choices=[Choices(message=Message(content="answer"))],
+        model="openai/gpt-4o-mini")
 
     with patch("litellm.acompletion") as mock_acompletion:
         mock_acompletion.return_value = mock_response
@@ -384,9 +434,11 @@ async def test_async_lm_call_with_cache(tmp_path):
 
     lm = dspy.LM(model="openai/gpt-4o-mini")
 
-    with mock.patch("dspy.clients.lm.alitellm_completion") as mock_alitellm_completion:
+    with mock.patch(
+            "dspy.clients.lm.alitellm_completion") as mock_alitellm_completion:
         mock_alitellm_completion.return_value = ModelResponse(
-            choices=[Choices(message=Message(content="answer"))], model="openai/gpt-4o-mini"
+            choices=[Choices(message=Message(content="answer"))],
+            model="openai/gpt-4o-mini",
         )
         mock_alitellm_completion.__qualname__ = "alitellm_completion"
         await lm.acall("Query")
@@ -445,25 +497,30 @@ def test_disable_history():
                 model="openai/gpt-4o-mini",
             )
 
+
 def test_responses_api(litellm_test_server):
     api_base, _ = litellm_test_server
     expected_text = "This is a test answer from responses API."
 
-    api_response = make_response(
-        output_blocks=[
-            {
-                "id": "msg_1",
-                "type": "message",
-                "role": "assistant",
-                "status": "completed",
-                "content": [
-                    {"type": "output_text", "text": expected_text, "annotations": []}
-                ],
-            }
-        ]
-    )
+    api_response = make_response(output_blocks=[{
+        "id":
+        "msg_1",
+        "type":
+        "message",
+        "role":
+        "assistant",
+        "status":
+        "completed",
+        "content": [{
+            "type": "output_text",
+            "text": expected_text,
+            "annotations": []
+        }],
+    }])
 
-    with mock.patch("litellm.responses", autospec=True, return_value=api_response) as dspy_responses:
+    with mock.patch("litellm.responses",
+                    autospec=True,
+                    return_value=api_response) as dspy_responses:
         lm = dspy.LM(
             model="openai/dspy-test-model",
             api_base=api_base,
@@ -475,7 +532,8 @@ def test_responses_api(litellm_test_server):
         assert lm("openai query") == [expected_text]
 
         dspy_responses.assert_called_once()
-        assert dspy_responses.call_args.kwargs["model"] == "openai/dspy-test-model"
+        assert dspy_responses.call_args.kwargs[
+            "model"] == "openai/dspy-test-model"
 
 
 def test_responses_api_tool_calls(litellm_test_server):
@@ -490,11 +548,11 @@ def test_responses_api_tool_calls(litellm_test_server):
     }
     expected_response = [{"tool_calls": [expected_tool_call]}]
 
-    api_response = make_response(
-        output_blocks=[expected_tool_call],
-    )
+    api_response = make_response(output_blocks=[expected_tool_call], )
 
-    with mock.patch("litellm.responses", autospec=True, return_value=api_response) as dspy_responses:
+    with mock.patch("litellm.responses",
+                    autospec=True,
+                    return_value=api_response) as dspy_responses:
         lm = dspy.LM(
             model="openai/dspy-test-model",
             api_base=api_base,
@@ -506,4 +564,5 @@ def test_responses_api_tool_calls(litellm_test_server):
         assert lm("openai query") == expected_response
 
         dspy_responses.assert_called_once()
-        assert dspy_responses.call_args.kwargs["model"] == "openai/dspy-test-model"
+        assert dspy_responses.call_args.kwargs[
+            "model"] == "openai/dspy-test-model"
