@@ -388,6 +388,7 @@ async def alitellm_text_completion(request: dict[str, Any], num_retries: int, ca
         **request,
     )
 
+
 def litellm_responses_completion(request: dict[str, Any], num_retries: int, cache: dict[str, Any] | None = None):
     cache = cache or {"no-cache": True, "no-store": True}
     request = _convert_chat_request_to_responses_request(request)
@@ -410,6 +411,7 @@ async def alitellm_responses_completion(request: dict[str, Any], num_retries: in
         retry_strategy="exponential_backoff_retry",
         **request,
     )
+
 
 def _convert_chat_request_to_responses_request(request: dict[str, Any]):
     if "messages" in request:
