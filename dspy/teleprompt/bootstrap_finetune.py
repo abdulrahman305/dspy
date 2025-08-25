@@ -58,7 +58,10 @@ class BootstrapFinetune(FinetuneTeleprompter):
         self.num_threads = num_threads
 
     def compile(
-        self, student: Module, trainset: list[Example], teacher: Module | list[Module] | None = None
+        self,
+        student: Module,
+        trainset: list[Example],
+        teacher: Module | list[Module] | None = None,
     ) -> Module:
         # TODO: Print statements can be converted to logger.info if we ensure
         # that the default DSPy logger logs info level messages in notebook
@@ -180,7 +183,10 @@ class BootstrapFinetune(FinetuneTeleprompter):
                 include_data = pred_ind is None or pred_ind == pred_ind
                 if include_data:
                     call_data = build_call_data_from_trace(
-                        trace=item["trace"], pred_ind=pred_ind, adapter=adapter, exclude_demos=self.exclude_demos
+                        trace=item["trace"],
+                        pred_ind=pred_ind,
+                        adapter=adapter,
+                        exclude_demos=self.exclude_demos,
                     )
                     data.append(call_data)
 
