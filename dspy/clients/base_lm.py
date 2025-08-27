@@ -41,7 +41,15 @@ class BaseLM:
     ```
     """
 
-    def __init__(self, model, model_type="chat", temperature=0.0, max_tokens=1000, cache=True, **kwargs):
+    def __init__(
+        self,
+        model,
+        model_type="chat",
+        temperature=0.0,
+        max_tokens=1000,
+        cache=True,
+        **kwargs,
+    ):
         self.model = model
         self.model_type = model_type
         self.cache = cache
@@ -156,12 +164,12 @@ class BaseLM:
 
     def _process_completion(self, response, merged_kwargs):
         """Process the response of OpenAI chat completion API and extract outputs.
-        
+
         Args:
             response: The OpenAI chat completion response
                 https://platform.openai.com/docs/api-reference/chat/object
             merged_kwargs: Merged kwargs from self.kwargs and method kwargs
-            
+
         Returns:
             List of processed outputs
         """
@@ -183,11 +191,11 @@ class BaseLM:
 
     def _process_response(self, response):
         """Process the response of OpenAI Response API and extract outputs.
-        
+
         Args:
             response: OpenAI Response API response
                 https://platform.openai.com/docs/api-reference/responses/object
-            
+
         Returns:
             List of processed outputs
         """
