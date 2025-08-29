@@ -11,7 +11,12 @@ from dspy.teleprompt.teleprompt import Teleprompter
 if TYPE_CHECKING:
     from gepa import GEPAResult
 
-    from dspy.teleprompt.gepa.gepa_utils import DspyAdapter, DSPyTrace, PredictorFeedbackFn, ScoreWithFeedback
+    from dspy.teleprompt.gepa.gepa_utils import (
+        DspyAdapter,
+        DSPyTrace,
+        PredictorFeedbackFn,
+        ScoreWithFeedback,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +25,7 @@ AUTO_RUN_SETTINGS = {
     "medium": {"n": 12},
     "heavy": {"n": 18},
 }
+
 
 class GEPAFeedbackMetric(Protocol):
     def __call__(
@@ -34,21 +40,22 @@ class GEPAFeedbackMetric(Protocol):
         - gold: The gold example.
         - pred: The predicted output.
         - trace: Optional. The trace of the program's execution.
-        - pred_name: Optional. The name of the target predictor currently being optimized by GEPA, for which 
+        - pred_name: Optional. The name of the target predictor currently being optimized by GEPA, for which
             the feedback is being requested.
         - pred_trace: Optional. The trace of the target predictor's execution GEPA is seeking feedback for.
 
         Note the `pred_name` and `pred_trace` arguments. During optimization, GEPA will call the metric to obtain
         feedback for individual predictors being optimized. GEPA provides the name of the predictor in `pred_name`
         and the sub-trace (of the trace) corresponding to the predictor in `pred_trace`.
-        If available at the predictor level, the metric should return dspy.Prediction(score: float, feedback: str) corresponding 
+        If available at the predictor level, the metric should return dspy.Prediction(score: float, feedback: str) corresponding
         to the predictor.
         If not available at the predictor level, the metric can also return a text feedback at the program level
         (using just the gold, pred and trace).
-        If no feedback is returned, GEPA will use a simple text feedback consisting of just the score: 
+        If no feedback is returned, GEPA will use a simple text feedback consisting of just the score:
         f"This trajectory got a score of {score}."
         """
         ...
+
 
 @dataclass(frozen=True)
 class DspyGEPAResult:
@@ -71,6 +78,7 @@ class DspyGEPAResult:
     - best_idx: candidate index with the highest val_aggregate_scores
     - best_candidate: the program text mapping for best_idx
     """
+
     # Data about the proposed candidates
     candidates: list[Module]
     parents: list[list[int | None]]
@@ -105,10 +113,7 @@ class DspyGEPAResult:
         ]
 
     def to_dict(self) -> dict[str, Any]:
-        cands = [
-            {k: v for k, v in cand.items()}
-            for cand in self.candidates
-        ]
+        cands = [{k: v for k, v in cand.items()} for cand in self.candidates]
 
         return dict(
             candidates=cands,
@@ -141,6 +146,7 @@ class DspyGEPAResult:
             seed=gepa_result.seed,
         )
 
+
 class GEPA(Teleprompter):
     """
     GEPA is an evolutionary optimizer, which uses reflection to evolve text components
@@ -168,18 +174,18 @@ class GEPA(Teleprompter):
         - gold: The gold example.
         - pred: The predicted output.
         - trace: Optional. The trace of the program's execution.
-        - pred_name: Optional. The name of the target predictor currently being optimized by GEPA, for which 
+        - pred_name: Optional. The name of the target predictor currently being optimized by GEPA, for which
             the feedback is being requested.
         - pred_trace: Optional. The trace of the target predictor's execution GEPA is seeking feedback for.
 
         Note the `pred_name` and `pred_trace` arguments. During optimization, GEPA will call the metric to obtain
         feedback for individual predictors being optimized. GEPA provides the name of the predictor in `pred_name`
         and the sub-trace (of the trace) corresponding to the predictor in `pred_trace`.
-        If available at the predictor level, the metric should return {'score': float, 'feedback': str} corresponding 
+        If available at the predictor level, the metric should return {'score': float, 'feedback': str} corresponding
         to the predictor.
         If not available at the predictor level, the metric can also return a text feedback at the program level
         (using just the gold, pred and trace).
-        If no feedback is returned, GEPA will use a simple text feedback consisting of just the score: 
+        If no feedback is returned, GEPA will use a simple text feedback consisting of just the score:
         f"This trajectory got a score of {score}."
         \"""
         ...
@@ -203,11 +209,11 @@ class GEPA(Teleprompter):
         max_full_evals: The maximum number of full evaluations to perform.
         max_metric_calls: The maximum number of metric calls to perform.
         reflection_minibatch_size: The number of examples to use for reflection in a single GEPA step. Default is 3.
-        candidate_selection_strategy: The strategy to use for candidate selection. Default is "pareto", 
-            which stochastically selects candidates from the Pareto frontier of all validation scores. 
+        candidate_selection_strategy: The strategy to use for candidate selection. Default is "pareto",
+            which stochastically selects candidates from the Pareto frontier of all validation scores.
             Options: "pareto", "current_best".
-        reflection_lm: The language model to use for reflection. Required parameter. GEPA benefits from 
-            a strong reflection model. Consider using `dspy.LM(model='gpt-5', temperature=1.0, max_tokens=32000)` 
+        reflection_lm: The language model to use for reflection. Required parameter. GEPA benefits from
+            a strong reflection model. Consider using `dspy.LM(model='gpt-5', temperature=1.0, max_tokens=32000)`
             for optimal performance.
         skip_perfect_score: Whether to skip examples with perfect scores during reflection. Default is True.
         add_format_failure_as_feedback: Whether to add format failures as feedback. Default is False.
@@ -215,43 +221,44 @@ class GEPA(Teleprompter):
         max_merge_invocations: The maximum number of merge invocations to perform. Default is 5.
         num_threads: The number of threads to use for evaluation with `Evaluate`. Optional.
         failure_score: The score to assign to failed examples. Default is 0.0.
-        perfect_score: The maximum score achievable by the metric. Default is 1.0. Used by GEPA 
+        perfect_score: The maximum score achievable by the metric. Default is 1.0. Used by GEPA
             to determine if all examples in a minibatch are perfect.
-        log_dir: The directory to save the logs. GEPA saves elaborate logs, along with all candidate 
-            programs, in this directory. Running GEPA with the same `log_dir` will resume the run 
+        log_dir: The directory to save the logs. GEPA saves elaborate logs, along with all candidate
+            programs, in this directory. Running GEPA with the same `log_dir` will resume the run
             from the last checkpoint.
-        track_stats: Whether to return detailed results and all proposed programs in the `detailed_results` 
+        track_stats: Whether to return detailed results and all proposed programs in the `detailed_results`
             attribute of the optimized program. Default is False.
         use_wandb: Whether to use wandb for logging. Default is False.
-        wandb_api_key: The API key to use for wandb. If not provided, wandb will use the API key 
+        wandb_api_key: The API key to use for wandb. If not provided, wandb will use the API key
             from the environment variable `WANDB_API_KEY`.
         wandb_init_kwargs: Additional keyword arguments to pass to `wandb.init`.
-        track_best_outputs: Whether to track the best outputs on the validation set. track_stats must 
-            be True if track_best_outputs is True. The optimized program's `detailed_results.best_outputs_valset` 
+        track_best_outputs: Whether to track the best outputs on the validation set. track_stats must
+            be True if track_best_outputs is True. The optimized program's `detailed_results.best_outputs_valset`
             will contain the best outputs for each task in the validation set.
         seed: The random seed to use for reproducibility. Default is 0.
-        
+
     Note:
         Budget Configuration: Exactly one of `auto`, `max_full_evals`, or `max_metric_calls` must be provided.
         The `auto` parameter provides preset configurations: "light" for quick experimentation, "medium" for
         balanced optimization, and "heavy" for thorough optimization.
-        
+
         Reflection Configuration: The `reflection_lm` parameter is required and should be a strong language model.
         GEPA performs best with models like `dspy.LM(model='gpt-5', temperature=1.0, max_tokens=32000)`.
         The reflection process analyzes failed examples to generate feedback for program improvement.
-        
+
         Merge Configuration: GEPA can merge successful program variants using `use_merge=True`.
         The `max_merge_invocations` parameter controls how many merge attempts are made during optimization.
-        
-        Evaluation Configuration: Use `num_threads` to parallelize evaluation. The `failure_score` and 
+
+        Evaluation Configuration: Use `num_threads` to parallelize evaluation. The `failure_score` and
         `perfect_score` parameters help GEPA understand your metric's range and optimize accordingly.
-        
+
         Logging Configuration: Set `log_dir` to save detailed logs and enable checkpoint resuming.
         Use `track_stats=True` to access detailed optimization results via the `detailed_results` attribute.
         Enable `use_wandb=True` for experiment tracking and visualization.
-        
+
         Reproducibility: Set `seed` to ensure consistent results across runs with the same configuration.
     """
+
     def __init__(
         self,
         metric: GEPAFeedbackMetric,
@@ -294,12 +301,7 @@ class GEPA(Teleprompter):
         self.metric_fn = metric
 
         # Budget configuration
-        assert (
-            (max_metric_calls is not None) +
-            (max_full_evals is not None) +
-            (auto is not None)
-            == 1
-        ), (
+        assert (max_metric_calls is not None) + (max_full_evals is not None) + (auto is not None) == 1, (
             "Exactly one of max_metric_calls, max_full_evals, auto must be set. "
             f"You set max_metric_calls={max_metric_calls}, "
             f"max_full_evals={max_full_evals}, "
@@ -313,7 +315,9 @@ class GEPA(Teleprompter):
         self.reflection_minibatch_size = reflection_minibatch_size
         self.candidate_selection_strategy = candidate_selection_strategy
         # self.reflection_lm = reflection_lm
-        assert reflection_lm is not None, "GEPA requires a reflection language model to be provided. Typically, you can use `dspy.LM(model='gpt-5', temperature=1.0, max_tokens=32000)` to get a good reflection model. Reflection LM is used by GEPA to reflect on the behavior of the program and propose new instructions, and will benefit from a strong model."
+        assert reflection_lm is not None, (
+            "GEPA requires a reflection language model to be provided. Typically, you can use `dspy.LM(model='gpt-5', temperature=1.0, max_tokens=32000)` to get a good reflection model. Reflection LM is used by GEPA to reflect on the behavior of the program and propose new instructions, and will benefit from a strong model."
+        )
         self.reflection_lm = lambda x: reflection_lm(x)[0]
         self.skip_perfect_score = skip_perfect_score
         self.add_format_failure_as_feedback = add_format_failure_as_feedback
@@ -341,8 +345,16 @@ class GEPA(Teleprompter):
         # Reproducibility
         self.seed = seed
 
-    def auto_budget(self, num_preds, num_candidates, valset_size: int, minibatch_size: int = 35, full_eval_steps: int = 5) -> int:
+    def auto_budget(
+        self,
+        num_preds,
+        num_candidates,
+        valset_size: int,
+        minibatch_size: int = 35,
+        full_eval_steps: int = 5,
+    ) -> int:
         import numpy as np
+
         num_trials = int(max(2 * (num_preds * 2) * np.log2(num_candidates), 1.5 * num_candidates))
         if num_trials < 0 or valset_size < 0 or minibatch_size < 0:
             raise ValueError("num_trials, valset_size, and minibatch_size must be >= 0.")
@@ -407,10 +419,14 @@ class GEPA(Teleprompter):
         else:
             assert self.max_metric_calls is not None, "Either auto, max_full_evals, or max_metric_calls must be set."
 
-        logger.info(f"Running GEPA for approx {self.max_metric_calls} metric calls of the program. This amounts to {self.max_metric_calls / len(trainset) if valset is None else self.max_metric_calls / (len(trainset) + len(valset)):.2f} full evals on the {'train' if valset is None else 'train+val'} set.")
+        logger.info(
+            f"Running GEPA for approx {self.max_metric_calls} metric calls of the program. This amounts to {self.max_metric_calls / len(trainset) if valset is None else self.max_metric_calls / (len(trainset) + len(valset)):.2f} full evals on the {'train' if valset is None else 'train+val'} set."
+        )
 
         valset = valset or trainset
-        logger.info(f"Using {len(valset)} examples for tracking Pareto scores. You can consider using a smaller sample of the valset to allow GEPA to explore more diverse solutions within the same budget.")
+        logger.info(
+            f"Using {len(valset)} examples for tracking Pareto scores. You can consider using a smaller sample of the valset to allow GEPA to explore more diverse solutions within the same budget."
+        )
 
         rng = random.Random(self.seed)
 
@@ -436,12 +452,10 @@ class GEPA(Teleprompter):
                     return o
                 else:
                     return dict(score=o, feedback=f"This trajectory got a score of {o}.")
+
             return feedback_fn
 
-        feedback_map = {
-            k: feedback_fn_creator(k, v)
-            for k, v in student.named_predictors()
-        }
+        feedback_map = {k: feedback_fn_creator(k, v) for k, v in student.named_predictors()}
 
         # Build the DSPy adapter that encapsulates evaluation, trace capture, feedback extraction, and instruction proposal
         adapter = DspyAdapter(
@@ -463,22 +477,17 @@ class GEPA(Teleprompter):
             trainset=trainset,
             valset=valset,
             adapter=adapter,
-
             # Reflection-based configuration
             reflection_lm=reflection_lm,
             candidate_selection_strategy=self.candidate_selection_strategy,
             skip_perfect_score=self.skip_perfect_score,
             reflection_minibatch_size=self.reflection_minibatch_size,
-
             perfect_score=self.perfect_score,
-
             # Merge-based configuration
             use_merge=self.use_merge,
             max_merge_invocations=self.max_merge_invocations,
-
             # Budget
             max_metric_calls=self.max_metric_calls,
-
             # Logging
             logger=LoggerAdapter(logger),
             run_dir=self.log_dir,
@@ -488,7 +497,6 @@ class GEPA(Teleprompter):
             track_best_outputs=self.track_best_outputs,
             display_progress_bar=True,
             raise_on_exception=True,
-
             # Reproducibility
             seed=self.seed,
         )
