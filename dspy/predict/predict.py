@@ -17,7 +17,12 @@ logger = logging.getLogger(__name__)
 
 
 class Predict(Module, Parameter):
-    def __init__(self, signature: str | type[Signature], callbacks: list[BaseCallback] | None = None, **config):
+    def __init__(
+        self,
+        signature: str | type[Signature],
+        callbacks: list[BaseCallback] | None = None,
+        **config,
+    ):
         super().__init__(callbacks=callbacks)
         self.stage = random.randbytes(8).hex()
         self.signature = ensure_signature(signature)
@@ -172,10 +177,22 @@ class Predict(Module, Parameter):
 
         if self._should_stream():
             with settings.context(caller_predict=self):
-                completions = adapter(lm, lm_kwargs=config, signature=signature, demos=demos, inputs=kwargs)
+                completions = adapter(
+                    lm,
+                    lm_kwargs=config,
+                    signature=signature,
+                    demos=demos,
+                    inputs=kwargs,
+                )
         else:
             with settings.context(send_stream=None):
-                completions = adapter(lm, lm_kwargs=config, signature=signature, demos=demos, inputs=kwargs)
+                completions = adapter(
+                    lm,
+                    lm_kwargs=config,
+                    signature=signature,
+                    demos=demos,
+                    inputs=kwargs,
+                )
 
         return self._forward_postprocess(completions, signature, **kwargs)
 
@@ -185,10 +202,22 @@ class Predict(Module, Parameter):
         adapter = settings.adapter or ChatAdapter()
         if self._should_stream():
             with settings.context(caller_predict=self):
-                completions = await adapter.acall(lm, lm_kwargs=config, signature=signature, demos=demos, inputs=kwargs)
+                completions = await adapter.acall(
+                    lm,
+                    lm_kwargs=config,
+                    signature=signature,
+                    demos=demos,
+                    inputs=kwargs,
+                )
         else:
             with settings.context(send_stream=None):
-                completions = await adapter.acall(lm, lm_kwargs=config, signature=signature, demos=demos, inputs=kwargs)
+                completions = await adapter.acall(
+                    lm,
+                    lm_kwargs=config,
+                    signature=signature,
+                    demos=demos,
+                    inputs=kwargs,
+                )
 
         return self._forward_postprocess(completions, signature, **kwargs)
 
