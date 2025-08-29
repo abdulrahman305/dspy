@@ -97,16 +97,42 @@ def test_save_and_load_with_pkl(tmp_path):
         date_diff: int = dspy.OutputField(desc="The difference in days between the current_date and the target_date")
 
     trainset = [
-        {"current_date": datetime.date(2024, 1, 1), "target_date": datetime.date(2024, 1, 2), "date_diff": 1},
-        {"current_date": datetime.date(2024, 1, 1), "target_date": datetime.date(2024, 1, 3), "date_diff": 2},
-        {"current_date": datetime.date(2024, 1, 1), "target_date": datetime.date(2024, 1, 4), "date_diff": 3},
-        {"current_date": datetime.date(2024, 1, 1), "target_date": datetime.date(2024, 1, 5), "date_diff": 4},
-        {"current_date": datetime.date(2024, 1, 1), "target_date": datetime.date(2024, 1, 6), "date_diff": 5},
+        {
+            "current_date": datetime.date(2024, 1, 1),
+            "target_date": datetime.date(2024, 1, 2),
+            "date_diff": 1,
+        },
+        {
+            "current_date": datetime.date(2024, 1, 1),
+            "target_date": datetime.date(2024, 1, 3),
+            "date_diff": 2,
+        },
+        {
+            "current_date": datetime.date(2024, 1, 1),
+            "target_date": datetime.date(2024, 1, 4),
+            "date_diff": 3,
+        },
+        {
+            "current_date": datetime.date(2024, 1, 1),
+            "target_date": datetime.date(2024, 1, 5),
+            "date_diff": 4,
+        },
+        {
+            "current_date": datetime.date(2024, 1, 1),
+            "target_date": datetime.date(2024, 1, 6),
+            "date_diff": 5,
+        },
     ]
     trainset = [dspy.Example(**example).with_inputs("current_date", "target_date") for example in trainset]
 
     dspy.settings.configure(
-        lm=DummyLM([{"date_diff": "1", "reasoning": "n/a"}, {"date_diff": "2", "reasoning": "n/a"}] * 10)
+        lm=DummyLM(
+            [
+                {"date_diff": "1", "reasoning": "n/a"},
+                {"date_diff": "2", "reasoning": "n/a"},
+            ]
+            * 10
+        )
     )
 
     cot = dspy.ChainOfThought(MySignature)
@@ -217,11 +243,17 @@ def test_load_with_version_mismatch(tmp_path):
     try:
         save_path = tmp_path / "program.pkl"
         # Mock version during save
-        with patch("dspy.primitives.base_module.get_dependency_versions", return_value=save_versions):
+        with patch(
+            "dspy.primitives.base_module.get_dependency_versions",
+            return_value=save_versions,
+        ):
             predict.save(save_path)
 
         # Mock version during load
-        with patch("dspy.primitives.base_module.get_dependency_versions", return_value=load_versions):
+        with patch(
+            "dspy.primitives.base_module.get_dependency_versions",
+            return_value=load_versions,
+        ):
             loaded_predict = dspy.Predict("question->answer")
             loaded_predict.load(save_path)
 
@@ -288,7 +320,10 @@ def test_multi_module_call_with_usage_tracker(lm_for_test):
 
 
 # TODO: prepare second model for testing this unit test in ci
-@pytest.mark.skipif(not os.getenv("OPENAI_API_KEY"), reason="Skip the test if OPENAI_API_KEY is not set.")
+@pytest.mark.skipif(
+    not os.getenv("OPENAI_API_KEY"),
+    reason="Skip the test if OPENAI_API_KEY is not set.",
+)
 def test_usage_tracker_in_parallel():
     class MyProgram(dspy.Module):
         def __init__(self, lm):
@@ -353,7 +388,9 @@ async def test_usage_tracker_async_parallel():
             program.acall(question="What is the capital of France?"),
         ]
         with dspy.settings.context(
-            lm=dspy.LM("openai/gpt-4o-mini", cache=False), track_usage=True, adapter=dspy.JSONAdapter()
+            lm=dspy.LM("openai/gpt-4o-mini", cache=False),
+            track_usage=True,
+            adapter=dspy.JSONAdapter(),
         ):
             results = await asyncio.gather(*coroutines)
 
@@ -485,7 +522,9 @@ async def test_module_history_async():
         assert program.history[0]["outputs"] == ["{'reasoning': 'Paris is the capital of France', 'answer': 'Paris'}"]
 
         with dspy.context(
-            disable_history=True, lm=dspy.LM("openai/gpt-4o-mini", cache=False), adapter=dspy.JSONAdapter()
+            disable_history=True,
+            lm=dspy.LM("openai/gpt-4o-mini", cache=False),
+            adapter=dspy.JSONAdapter(),
         ):
             await program.acall(question="What is the capital of France?")
 
@@ -495,7 +534,9 @@ async def test_module_history_async():
         assert len(program.cot.predict.history) == 2
 
         with dspy.context(
-            disable_history=False, lm=dspy.LM("openai/gpt-4o-mini", cache=False), adapter=dspy.JSONAdapter()
+            disable_history=False,
+            lm=dspy.LM("openai/gpt-4o-mini", cache=False),
+            adapter=dspy.JSONAdapter(),
         ):
             await program.acall(question="What is the capital of France?")
         # History is recorded again when history is enabled.

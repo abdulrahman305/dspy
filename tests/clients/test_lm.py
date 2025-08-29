@@ -24,7 +24,7 @@ def make_response(output_blocks):
         model="openai/dspy-test-model",
         object="response",
         output=output_blocks,
-        metadata = {},
+        metadata={},
         parallel_tool_calls=False,
         temperature=1.0,
         tool_choice="auto",
@@ -248,6 +248,7 @@ def test_reasoning_model_token_parameter():
             assert "max_tokens" in lm.kwargs
             assert lm.kwargs["max_tokens"] == 1000
 
+
 @pytest.mark.parametrize("model_name", ["openai/o1", "openai/gpt-5-nano"])
 def test_reasoning_model_requirements(model_name):
     # Should raise assertion error if temperature or max_tokens requirements not met
@@ -325,8 +326,16 @@ def test_logprobs_included_when_requested():
                     message=Message(content="test answer"),
                     logprobs={
                         "content": [
-                            {"token": "test", "logprob": 0.1, "top_logprobs": [{"token": "test", "logprob": 0.1}]},
-                            {"token": "answer", "logprob": 0.2, "top_logprobs": [{"token": "answer", "logprob": 0.2}]},
+                            {
+                                "token": "test",
+                                "logprob": 0.1,
+                                "top_logprobs": [{"token": "test", "logprob": 0.1}],
+                            },
+                            {
+                                "token": "answer",
+                                "logprob": 0.2,
+                                "top_logprobs": [{"token": "answer", "logprob": 0.2}],
+                            },
                         ]
                     },
                 )
@@ -386,7 +395,8 @@ async def test_async_lm_call_with_cache(tmp_path):
 
     with mock.patch("dspy.clients.lm.alitellm_completion") as mock_alitellm_completion:
         mock_alitellm_completion.return_value = ModelResponse(
-            choices=[Choices(message=Message(content="answer"))], model="openai/gpt-4o-mini"
+            choices=[Choices(message=Message(content="answer"))],
+            model="openai/gpt-4o-mini",
         )
         mock_alitellm_completion.__qualname__ = "alitellm_completion"
         await lm.acall("Query")
@@ -445,6 +455,7 @@ def test_disable_history():
                 model="openai/gpt-4o-mini",
             )
 
+
 def test_responses_api(litellm_test_server):
     api_base, _ = litellm_test_server
     expected_text = "This is a test answer from responses API."
@@ -456,9 +467,7 @@ def test_responses_api(litellm_test_server):
                 "type": "message",
                 "role": "assistant",
                 "status": "completed",
-                "content": [
-                    {"type": "output_text", "text": expected_text, "annotations": []}
-                ],
+                "content": [{"type": "output_text", "text": expected_text, "annotations": []}],
             }
         ]
     )

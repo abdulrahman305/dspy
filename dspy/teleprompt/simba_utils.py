@@ -39,16 +39,18 @@ def wrap_program(program: dspy.Module, metric: Callable):
             "prediction": prediction,
             "trace": trace,
             "score": score,
-            "example": example
+            "example": example,
         }
 
     return wrapped_program
 
 
-
 def append_a_demo(demo_input_field_maxlen):
     def append_a_demo_(bucket, system, **kwargs):
-        predictor2name, name2predictor = kwargs["predictor2name"], kwargs["name2predictor"]
+        predictor2name, name2predictor = (
+            kwargs["predictor2name"],
+            kwargs["name2predictor"],
+        )
 
         trace = bucket[0]["trace"]
         name2demo = {}
@@ -76,15 +78,20 @@ def append_a_demo(demo_input_field_maxlen):
 
 def append_a_rule(bucket, system, **kwargs):
     predictor2name = kwargs["predictor2name"]
-    batch_10p_score, batch_90p_score = kwargs["batch_10p_score"], kwargs["batch_90p_score"]
+    batch_10p_score, batch_90p_score = (
+        kwargs["batch_10p_score"],
+        kwargs["batch_90p_score"],
+    )
 
     module_names = [name for name, _ in system.named_predictors()]
     good, bad = bucket[0], bucket[-1]
     example = good["example"]
 
     if good["score"] < batch_10p_score or bad["score"] > batch_90p_score:
-        logger.info(f"Skipping rule generation as good score {good['score']} is below the 10th percentile "
-                    f"*or* bad score {bad['score']} is above the 90th percentile.")
+        logger.info(
+            f"Skipping rule generation as good score {good['score']} is below the 10th percentile "
+            f"*or* bad score {bad['score']} is above the 90th percentile."
+        )
         return False
 
     if good["score"] <= bad["score"]:
@@ -98,12 +105,10 @@ def append_a_rule(bucket, system, **kwargs):
             good["prediction"] = {"N/A": "Prediction not available"}
 
     better_trajectory = [
-        {"module_name": predictor2name[id(p)], "inputs": i, "outputs": dict(o)}
-        for p, i, o in good["trace"]
+        {"module_name": predictor2name[id(p)], "inputs": i, "outputs": dict(o)} for p, i, o in good["trace"]
     ]
     worse_trajectory = [
-        {"module_name": predictor2name[id(p)], "inputs": i, "outputs": dict(o)}
-        for p, i, o in bad["trace"]
+        {"module_name": predictor2name[id(p)], "inputs": i, "outputs": dict(o)} for p, i, o in bad["trace"]
     ]
 
     kwargs = {
@@ -120,8 +125,10 @@ def append_a_rule(bucket, system, **kwargs):
         "module_names": module_names,
     }
 
-    kwargs = {k: v if isinstance(v, str) else orjson.dumps(recursive_mask(v), option=orjson.OPT_INDENT_2).decode()
-              for k, v in kwargs.items()}
+    kwargs = {
+        k: (v if isinstance(v, str) else orjson.dumps(recursive_mask(v), option=orjson.OPT_INDENT_2).decode())
+        for k, v in kwargs.items()
+    }
     advice = dspy.Predict(OfferFeedback)(**kwargs).module_advice
 
     for name, predictor in system.named_predictors():
@@ -131,6 +138,7 @@ def append_a_rule(bucket, system, **kwargs):
             predictor.signature = predictor.signature.with_instructions(instructions)
 
     return True
+
 
 class OfferFeedback(dspy.Signature):
     """
