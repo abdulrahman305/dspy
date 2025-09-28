@@ -94,6 +94,7 @@ LOCATION_OVERRIDES = {
     "docs/api/optimizers/GEPA.md": "docs/api/optimizers/GEPA/overview.md",
 }
 
+
 def should_document_method(obj):
     name = obj.__name__
     # Exclude methods not defined in dspy, such as `model_dump_json` from pydantic.
@@ -117,7 +118,8 @@ def get_module_contents(module):
         if inspect.ismodule(obj) and obj.__name__.startswith(module.__name__) and not name.startswith("_"):
             contents[name] = obj
         elif (
-            (inspect.isclass(obj) or (inspect.isroutine(obj) and should_document_method(obj)))
+            (inspect.isclass(obj) or (inspect.isroutine(
+                obj) and should_document_method(obj)))
             # classes or functions in experimental module are not located in dspy/experimental
             and (obj.__module__.startswith(module.__name__) or module.__name__.startswith("dspy.experimental"))
             and not name.startswith("_")
@@ -131,7 +133,8 @@ def get_public_methods(cls):
     return [
         name
         for name, member in inspect.getmembers(
-            cls, predicate=lambda x: inspect.isroutine(x) and should_document_method(x)
+            cls, predicate=lambda x: inspect.isroutine(
+                x) and should_document_method(x)
         )
     ]
 
@@ -142,7 +145,8 @@ def generate_doc_page(name: str, module_path: str, obj: Any, is_root: bool = Fal
     if inspect.isclass(obj):
         methods = get_public_methods(obj)
         if methods:
-            methods_list = "\n".join(f"            - {method}" for method in methods)
+            methods_list = "\n".join(
+                f"            - {method}" for method in methods)
             members_config = f"""
         members:
 {methods_list}"""
@@ -212,7 +216,8 @@ def write_doc_file(file_path: Path, title: str, api_content: str):
         pre_content = f"# {title}\n"
 
     # Combine all sections
-    full_content = f"{pre_content}\n\n{api_content}\n{post_content}".strip() + "\n"
+    full_content = f"{pre_content}\n\n{api_content}\n{post_content}".strip() + \
+        "\n"
 
     # Write the combined content
     file_path.write_text(full_content)
@@ -256,7 +261,8 @@ def generate_md_docs(output_dir: Path, excluded_modules=None):
         if submodule_name.startswith("_") or submodule_name not in init_contents:
             continue
 
-        generate_md_docs_submodule(submodule.name, output_dir, objects_processed, excluded_modules)
+        generate_md_docs_submodule(
+            submodule.name, output_dir, objects_processed, excluded_modules)
 
 
 def generate_md_docs_submodule(module_path: str, output_dir: Path, objects_processed=None, excluded_modules=None):
@@ -294,7 +300,8 @@ def generate_md_docs_submodule(module_path: str, output_dir: Path, objects_proce
         full_name = f"{obj.__module__}.{name}"
         if full_name not in objects_processed:
             # Only generate docs for objects that are not root-level objects.
-            page_content = generate_doc_page(name, module_path, obj, is_root=False)
+            page_content = generate_doc_page(
+                name, module_path, obj, is_root=False)
             file_path = output_dir / category / f"{name}.md"
             if file_path.as_posix() in LOCATION_OVERRIDES:
                 file_path = Path(LOCATION_OVERRIDES[file_path.as_posix()])
@@ -304,7 +311,8 @@ def generate_md_docs_submodule(module_path: str, output_dir: Path, objects_proce
 
     for name, obj in init_contents.items():
         if inspect.ismodule(obj):
-            generate_md_docs_submodule(f"{module_path}.{name}", output_dir / name, objects_processed)
+            generate_md_docs_submodule(
+                f"{module_path}.{name}", output_dir / name, objects_processed)
 
 
 def remove_empty_dirs(path: Path):

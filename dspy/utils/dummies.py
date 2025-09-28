@@ -67,7 +67,12 @@ class DummyLM(LM):
 
     """
 
-    def __init__(self, answers: list[dict[str, Any]] | dict[str, dict[str, Any]], follow_examples: bool = False, adapter=None):
+    def __init__(
+        self,
+        answers: list[dict[str, Any]] | dict[str, dict[str, Any]],
+        follow_examples: bool = False,
+        adapter=None,
+    ):
         super().__init__("dummy", "chat", 0.0, 1000, True)
         self.answers = answers
         if isinstance(answers, list):
@@ -77,6 +82,7 @@ class DummyLM(LM):
         # Set adapter, defaulting to ChatAdapter
         if adapter is None:
             from dspy.adapters.chat_adapter import ChatAdapter
+
             adapter = ChatAdapter()
         self.adapter = adapter
 
@@ -86,10 +92,11 @@ class DummyLM(LM):
         for message in messages:
             if "content" in message:
                 if ma := field_header_pattern.match(message["content"]):
-                    fields[message["content"][ma.start() : ma.end()]] += 1
+                    fields[message["content"][ma.start(): ma.end()]] += 1
         # find the fields which are missing from the final turns
         max_count = max(fields.values())
-        output_fields = [field for field, count in fields.items() if count != max_count]
+        output_fields = [field for field,
+                         count in fields.items() if count != max_count]
 
         # get the output from the last turn that has the output fields as headers
         final_input = messages[-1]["content"].split("\n\n")[0]
@@ -126,15 +133,18 @@ class DummyLM(LM):
             elif isinstance(self.answers, dict):
                 outputs.append(
                     next(
-                        (format_answer_fields(v) for k, v in self.answers.items() if k in messages[-1]["content"]),
+                        (format_answer_fields(v) for k, v in self.answers.items()
+                         if k in messages[-1]["content"]),
                         "No more responses",
                     )
                 )
             else:
-                outputs.append(format_answer_fields(next(self.answers, {"answer": "No more responses"})))
+                outputs.append(format_answer_fields(
+                    next(self.answers, {"answer": "No more responses"})))
 
             # Logging, with removed api key & where `cost` is None on cache hit.
-            kwargs = {k: v for k, v in kwargs.items() if not k.startswith("api_")}
+            kwargs = {k: v for k, v in kwargs.items()
+                      if not k.startswith("api_")}
             entry = {"prompt": prompt, "messages": messages, "kwargs": kwargs}
             entry = {**entry, "outputs": outputs, "usage": 0}
             entry = {**entry, "cost": 0}
@@ -193,7 +203,8 @@ class DummyVectorizer:
     def __call__(self, texts: list[str]) -> np.ndarray:
         vecs = []
         for text in texts:
-            grams = [text[i : i + self.n_gram] for i in range(len(text) - self.n_gram + 1)]
+            grams = [text[i: i + self.n_gram]
+                     for i in range(len(text) - self.n_gram + 1)]
             vec = [0] * self.max_length
             for gram in grams:
                 vec[self._hash(gram)] += 1
@@ -201,5 +212,6 @@ class DummyVectorizer:
 
         vecs = np.array(vecs, dtype=np.float32)
         vecs -= np.mean(vecs, axis=1, keepdims=True)
-        vecs /= np.linalg.norm(vecs, axis=1, keepdims=True) + 1e-10  # Added epsilon to avoid division by zero
+        # Added epsilon to avoid division by zero
+        vecs /= np.linalg.norm(vecs, axis=1, keepdims=True) + 1e-10
         return vecs

@@ -46,7 +46,10 @@ class TwoStepAdapter(Adapter):
         self.extraction_model = extraction_model
 
     def format(
-        self, signature: type[Signature], demos: list[dict[str, Any]], inputs: dict[str, Any]
+        self,
+        signature: type[Signature],
+        demos: list[dict[str, Any]],
+        inputs: dict[str, Any],
     ) -> list[dict[str, Any]]:
         """
         Format a prompt for the first stage with the main LM.
@@ -70,7 +73,12 @@ class TwoStepAdapter(Adapter):
         messages.extend(self.format_demos(signature, demos))
 
         # Format the current input
-        messages.append({"role": "user", "content": self.format_user_message_content(signature, inputs)})
+        messages.append(
+            {
+                "role": "user",
+                "content": self.format_user_message_content(signature, inputs),
+            }
+        )
 
         return messages
 
@@ -101,7 +109,8 @@ class TwoStepAdapter(Adapter):
             return parsed_result[0]
 
         except Exception as e:
-            raise ValueError(f"Failed to parse response from the original completion: {completion}") from e
+            raise ValueError(
+                f"Failed to parse response from the original completion: {completion}") from e
 
     async def acall(
         self,
@@ -119,7 +128,8 @@ class TwoStepAdapter(Adapter):
 
         values = []
 
-        tool_call_output_field_name = self._get_tool_call_output_field_name(signature)
+        tool_call_output_field_name = self._get_tool_call_output_field_name(
+            signature)
         for output in outputs:
             output_logprobs = None
             tool_calls = None
@@ -142,7 +152,8 @@ class TwoStepAdapter(Adapter):
                 value = value[0]
 
             except Exception as e:
-                raise ValueError(f"Failed to parse response from the original completion: {output}") from e
+                raise ValueError(
+                    f"Failed to parse response from the original completion: {output}") from e
 
             if tool_calls and tool_call_output_field_name:
                 tool_calls = [
@@ -152,7 +163,8 @@ class TwoStepAdapter(Adapter):
                     }
                     for v in tool_calls
                 ]
-                value[tool_call_output_field_name] = ToolCalls.from_dict_list(tool_calls)
+                value[tool_call_output_field_name] = ToolCalls.from_dict_list(
+                    tool_calls)
 
             if output_logprobs is not None:
                 value["logprobs"] = output_logprobs
@@ -164,10 +176,14 @@ class TwoStepAdapter(Adapter):
         """Create a description of the task based on the signature"""
         parts = []
 
-        parts.append("You are a helpful assistant that can solve tasks based on user input.")
-        parts.append("As input, you will be provided with:\n" + get_field_description_string(signature.input_fields))
-        parts.append("Your outputs must contain:\n" + get_field_description_string(signature.output_fields))
-        parts.append("You should lay out your outputs in detail so that your answer can be understood by another agent")
+        parts.append(
+            "You are a helpful assistant that can solve tasks based on user input.")
+        parts.append("As input, you will be provided with:\n" +
+                     get_field_description_string(signature.input_fields))
+        parts.append("Your outputs must contain:\n" +
+                     get_field_description_string(signature.output_fields))
+        parts.append(
+            "You should lay out your outputs in detail so that your answer can be understood by another agent")
 
         if signature.instructions:
             parts.append(f"Specific instructions: {signature.instructions}")
@@ -200,7 +216,8 @@ class TwoStepAdapter(Adapter):
 
         for name in signature.output_fields.keys():
             if name in outputs:
-                parts.append(f"{name}: {outputs.get(name, missing_field_message)}")
+                parts.append(
+                    f"{name}: {outputs.get(name, missing_field_message)}")
 
         return "\n\n".join(parts).strip()
 
@@ -222,7 +239,8 @@ class TwoStepAdapter(Adapter):
             **{name: (field.annotation, field) for name, field in original_signature.output_fields.items()},
         }
 
-        outputs_str = ", ".join([f"`{field}`" for field in original_signature.output_fields])
+        outputs_str = ", ".join(
+            [f"`{field}`" for field in original_signature.output_fields])
         instructions = f"The input is a text that should contain all the necessary information to produce the fields {outputs_str}. \
             Your job is to extract the fields from the text verbatim. Extract precisely the appropriate value (content) for each field."
 
