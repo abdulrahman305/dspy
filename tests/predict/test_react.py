@@ -20,7 +20,6 @@ def test_tool_observation_preserves_custom_type():
     def make_images():
         return dspy.Image("https://example.com/test.png"), dspy.Image(Image.new("RGB", (100, 100), "red"))
 
-
     adapter = SpyChatAdapter()
     lm = DummyLM(
         [
@@ -43,11 +42,13 @@ def test_tool_observation_preserves_custom_type():
     react = dspy.ReAct("question -> answer", tools=[make_images])
     react(question="Draw me something red")
 
-    sigs_with_obs = [sig for sig, inputs in captured_calls if "observation_0" in inputs]
+    sigs_with_obs = [sig for sig,
+                     inputs in captured_calls if "observation_0" in inputs]
     assert sigs_with_obs, "Expected ReAct to format a trajectory containing observation_0"
 
     observation_content = lm.history[1]["messages"][1]["content"]
-    assert sum(1 for part in observation_content if isinstance(part, dict) and part.get("type") == "image_url") == 2
+    assert sum(1 for part in observation_content if isinstance(
+        part, dict) and part.get("type") == "image_url") == 2
 
 
 def test_tool_calling_with_pydantic_args():
@@ -62,9 +63,12 @@ def test_tool_calling_with_pydantic_args():
         return f"It's my honor to invite {participant_name} to event {event_info.name} on {event_info.date}"
 
     class InvitationSignature(dspy.Signature):
-        participant_name: str = dspy.InputField(desc="The name of the participant to invite")
-        event_info: CalendarEvent = dspy.InputField(desc="The information about the event")
-        invitation_letter: str = dspy.OutputField(desc="The invitation letter to be sent to the participant")
+        participant_name: str = dspy.InputField(
+            desc="The name of the participant to invite")
+        event_info: CalendarEvent = dspy.InputField(
+            desc="The information about the event")
+        invitation_letter: str = dspy.OutputField(
+            desc="The invitation letter to be sent to the participant")
 
     react = dspy.ReAct(InvitationSignature, tools=[write_invitation_letter])
 
@@ -136,8 +140,16 @@ def test_tool_calling_without_typehint():
     react = dspy.ReAct("a, b -> c:int", tools=[foo])
     lm = DummyLM(
         [
-            {"next_thought": "I need to add two numbers.", "next_tool_name": "foo", "next_tool_args": {"a": 1, "b": 2}},
-            {"next_thought": "I have the sum, now I can finish.", "next_tool_name": "finish", "next_tool_args": {}},
+            {
+                "next_thought": "I need to add two numbers.",
+                "next_tool_name": "foo",
+                "next_tool_args": {"a": 1, "b": 2},
+            },
+            {
+                "next_thought": "I have the sum, now I can finish.",
+                "next_tool_name": "finish",
+                "next_tool_args": {},
+            },
             {"reasoning": "I added the numbers successfully", "c": 3},
         ]
     )
@@ -184,13 +196,15 @@ def test_trajectory_truncation():
             )
         elif call_count == 3:
             # The 3rd call raises context window exceeded error
-            raise litellm.ContextWindowExceededError("Context window exceeded", "dummy_model", "dummy_provider")
+            raise litellm.ContextWindowExceededError(
+                "Context window exceeded", "dummy_model", "dummy_provider")
         else:
             # The 4th call finishes
             return dspy.Prediction(next_thought="Final thought", next_tool_name="finish", next_tool_args={})
 
     react.react = mock_react
-    react.extract = lambda **kwargs: dspy.Prediction(output_text="Final output")
+    react.extract = lambda **kwargs: dspy.Prediction(
+        output_text="Final output")
 
     # Call forward and get the result
     result = react(input_text="test input")
@@ -246,7 +260,8 @@ def test_error_retry():
     # any extra traceback detail or differing prefixes.
     for i in range(2):
         obs = traj[f"observation_{i}"]
-        assert re.search(r"\btool error\b", obs), f"unexpected observation_{i!r}: {obs}"
+        assert re.search(r"\btool error\b",
+                         obs), f"unexpected observation_{i!r}: {obs}"
 
 
 @pytest.mark.asyncio
@@ -262,9 +277,12 @@ async def test_async_tool_calling_with_pydantic_args():
         return f"It's my honor to invite {participant_name} to event {event_info.name} on {event_info.date}"
 
     class InvitationSignature(dspy.Signature):
-        participant_name: str = dspy.InputField(desc="The name of the participant to invite")
-        event_info: CalendarEvent = dspy.InputField(desc="The information about the event")
-        invitation_letter: str = dspy.OutputField(desc="The invitation letter to be sent to the participant")
+        participant_name: str = dspy.InputField(
+            desc="The name of the participant to invite")
+        event_info: CalendarEvent = dspy.InputField(
+            desc="The information about the event")
+        invitation_letter: str = dspy.OutputField(
+            desc="The invitation letter to be sent to the participant")
 
     react = dspy.ReAct(InvitationSignature, tools=[write_invitation_letter])
 
@@ -371,4 +389,5 @@ async def test_async_error_retry():
     # any extra traceback detail or differing prefixes.
     for i in range(2):
         obs = traj[f"observation_{i}"]
-        assert re.search(r"\btool error\b", obs), f"unexpected observation_{i!r}: {obs}"
+        assert re.search(r"\btool error\b",
+                         obs), f"unexpected observation_{i!r}: {obs}"

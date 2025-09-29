@@ -8,7 +8,8 @@ from dspy.utils.dummies import DummyLM
 
 def count_messages_with_image_url_pattern(messages):
     """Helper to count image URLs in messages - borrowed from image adapter tests"""
-    pattern = {"type": "image_url", "image_url": {"url": lambda x: isinstance(x, str)}}
+    pattern = {"type": "image_url", "image_url": {
+        "url": lambda x: isinstance(x, str)}}
 
     try:
 
@@ -57,7 +58,8 @@ def check_images_in_history(history: list[Any]) -> ImagesInHistory:
 
     for call in history:
         if call.get("messages"):
-            image_count = count_messages_with_image_url_pattern(call["messages"])
+            image_count = count_messages_with_image_url_pattern(
+                call["messages"])
             if image_count > 0:
                 has_structured_images = True
 
@@ -65,7 +67,8 @@ def check_images_in_history(history: list[Any]) -> ImagesInHistory:
 
     return ImagesInHistory(
         has_structured_images=has_structured_images,
-        has_text_serialized_images=any(check_text_serialized(i) for i in history),
+        has_text_serialized_images=any(
+            check_text_serialized(i) for i in history),
     )
 
 
@@ -146,7 +149,8 @@ def test_custom_proposer_without_reflection_lm():
             # This proposer manages its own external reflection LM
             with dspy.context(lm=external_reflection_lm):
                 # Use external LM for reflection (optional - could be any custom logic)
-                external_reflection_lm([{"role": "user", "content": "Improve this instruction"}])
+                external_reflection_lm(
+                    [{"role": "user", "content": "Improve this instruction"}])
                 return {name: f"Externally-improved: {candidate[name]}" for name in components_to_update}
 
     student = dspy.Predict("text -> label")
@@ -177,7 +181,8 @@ def test_custom_proposer_without_reflection_lm():
     # Test the full flexibility: no reflection_lm provided to GEPA at all!
     # The updated GEPA core library now allows this when using custom proposers
     gepa = dspy.GEPA(
-        metric=lambda gold, pred, trace=None, pred_name=None, pred_trace=None: 0.7,  # Score to trigger optimization
+        # Score to trigger optimization
+        metric=lambda gold, pred, trace=None, pred_name=None, pred_trace=None: 0.7,
         max_metric_calls=5,  # More calls to allow proper optimization
         reflection_lm=None,  # No reflection_lm provided - this now works!
         instruction_proposer=ProposerWithExternalLM(),
@@ -187,7 +192,8 @@ def test_custom_proposer_without_reflection_lm():
 
     assert result is not None
     assert len(lm.history) > 0, "Main LM should have been called"
-    assert len(external_reflection_lm.history) > 0, "External reflection LM should have been called by custom proposer"
+    assert len(
+        external_reflection_lm.history) > 0, "External reflection LM should have been called by custom proposer"
 
 
 def test_image_serialization_into_strings():
@@ -227,7 +233,10 @@ def test_image_serialization_into_strings():
 
                 context_lm = dspy.settings.lm
                 messages = [
-                    {"role": "system", "content": "You are an instruction improvement assistant."},
+                    {
+                        "role": "system",
+                        "content": "You are an instruction improvement assistant.",
+                    },
                     {
                         "role": "user",
                         "content": f"Current instruction: {current_instruction}\n\nFeedback: {feedback_analysis}\n\nProvide an improved instruction:",
