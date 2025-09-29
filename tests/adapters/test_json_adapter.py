@@ -2,14 +2,21 @@ from unittest import mock
 
 import pydantic
 import pytest
-from litellm.utils import ChatCompletionMessageToolCall, Choices, Function, Message, ModelResponse
+from litellm.utils import (
+    ChatCompletionMessageToolCall,
+    Choices,
+    Function,
+    Message,
+    ModelResponse,
+)
 
 import dspy
 
 
 def test_json_adapter_passes_structured_output_when_supported_by_model():
     class OutputField3(pydantic.BaseModel):
-        subfield1: int = pydantic.Field(description="Int subfield 1", ge=0, le=10)
+        subfield1: int = pydantic.Field(
+            description="Int subfield 1", ge=0, le=10)
         subfield2: float = pydantic.Field(description="Float subfield 2")
 
     class TestSignature(dspy.Signature):
@@ -22,7 +29,8 @@ def test_json_adapter_passes_structured_output_when_supported_by_model():
     program = dspy.Predict(TestSignature)
 
     # Configure DSPy to use an OpenAI LM that supports structured outputs
-    dspy.configure(lm=dspy.LM(model="openai/gpt-4o"), adapter=dspy.JSONAdapter())
+    dspy.configure(lm=dspy.LM(model="openai/gpt-4o"),
+                   adapter=dspy.JSONAdapter())
     with mock.patch("litellm.completion") as mock_completion:
         program(input1="Test input")
 
@@ -41,7 +49,12 @@ def test_json_adapter_passes_structured_output_when_supported_by_model():
     response_format = call_kwargs.get("response_format")
     assert response_format is not None
     assert issubclass(response_format, pydantic.BaseModel)
-    assert response_format.model_fields.keys() == {"output1", "output2", "output3", "output4_unannotated"}
+    assert response_format.model_fields.keys() == {
+        "output1",
+        "output2",
+        "output3",
+        "output4_unannotated",
+    }
 
 
 def test_json_adapter_not_using_structured_outputs_when_not_supported_by_model():
@@ -53,10 +66,14 @@ def test_json_adapter_not_using_structured_outputs_when_not_supported_by_model()
     program = dspy.Predict(TestSignature)
 
     # Configure DSPy to use a model from a fake provider that doesn't support structured outputs
-    dspy.configure(lm=dspy.LM(model="fakeprovider/fakemodel", cache=False), adapter=dspy.JSONAdapter())
+    dspy.configure(
+        lm=dspy.LM(model="fakeprovider/fakemodel", cache=False),
+        adapter=dspy.JSONAdapter(),
+    )
     with mock.patch("litellm.completion") as mock_completion:
         mock_completion.return_value = ModelResponse(
-            choices=[Choices(message=Message(content=("{'output1': 'Test output', 'output2': True}")))],
+            choices=[Choices(message=Message(
+                content=("{'output1': 'Test output', 'output2': True}")))],
             model="openai/gpt-4o",
         )
 
@@ -72,16 +89,22 @@ def test_json_adapter_falls_back_when_structured_outputs_fails():
         input1: str = dspy.InputField()
         output1: str = dspy.OutputField(desc="String output field")
 
-    dspy.configure(lm=dspy.LM(model="openai/gpt4o", cache=False), adapter=dspy.JSONAdapter())
+    dspy.configure(lm=dspy.LM(model="openai/gpt4o", cache=False),
+                   adapter=dspy.JSONAdapter())
     program = dspy.Predict(TestSignature)
     with mock.patch("litellm.completion") as mock_completion:
-        mock_completion.side_effect = [Exception("Bad structured outputs!"), mock_completion.return_value]
+        mock_completion.side_effect = [
+            Exception("Bad structured outputs!"),
+            mock_completion.return_value,
+        ]
         program(input1="Test input")
         assert mock_completion.call_count == 2
         _, first_call_kwargs = mock_completion.call_args_list[0]
-        assert issubclass(first_call_kwargs.get("response_format"), pydantic.BaseModel)
+        assert issubclass(first_call_kwargs.get(
+            "response_format"), pydantic.BaseModel)
         _, second_call_kwargs = mock_completion.call_args_list[1]
-        assert second_call_kwargs.get("response_format") == {"type": "json_object"}
+        assert second_call_kwargs.get("response_format") == {
+            "type": "json_object"}
 
 
 def test_json_adapter_with_structured_outputs_does_not_mutate_original_signature():
@@ -96,7 +119,8 @@ def test_json_adapter_with_structured_outputs_does_not_mutate_original_signature
         output3: OutputField3 = dspy.OutputField(desc="Nested output field")
         output4_unannotated = dspy.OutputField(desc="Unannotated output field")
 
-    dspy.configure(lm=dspy.LM(model="openai/gpt4o"), adapter=dspy.JSONAdapter())
+    dspy.configure(lm=dspy.LM(model="openai/gpt4o"),
+                   adapter=dspy.JSONAdapter())
     program = dspy.Predict(TestSignature)
     with mock.patch("litellm.completion"):
         program(input1="Test input")
@@ -109,7 +133,8 @@ def test_json_adapter_sync_call():
     adapter = dspy.JSONAdapter()
     lm = dspy.utils.DummyLM([{"answer": "Paris"}], adapter=adapter)
     with dspy.context(adapter=adapter):
-        result = adapter(lm, {}, signature, [], {"question": "What is the capital of France?"})
+        result = adapter(lm, {}, signature, [], {
+                         "question": "What is the capital of France?"})
     assert result == [{"answer": "Paris"}]
 
 
@@ -142,7 +167,8 @@ def test_json_adapter_on_pydantic_model():
 
     program = dspy.Predict(TestSignature)
 
-    dspy.configure(lm=dspy.LM(model="openai/gpt4o", cache=False), adapter=dspy.JSONAdapter())
+    dspy.configure(lm=dspy.LM(model="openai/gpt4o", cache=False),
+                   adapter=dspy.JSONAdapter())
 
     with mock.patch("litellm.completion") as mock_completion:
         mock_completion.return_value = ModelResponse(
@@ -156,7 +182,8 @@ def test_json_adapter_on_pydantic_model():
             model="openai/gpt4o",
         )
         result = program(
-            user={"id": 5, "name": "name_test", "email": "email_test"}, question="What is the capital of France?"
+            user={"id": 5, "name": "name_test", "email": "email_test"},
+            question="What is the capital of France?",
         )
 
         # Check that litellm.completion was called exactly once
@@ -222,7 +249,8 @@ def test_json_adapter_parse_raise_error_on_mismatch_fields():
         )
         lm = dspy.LM(model="openai/gpt-4o-mini")
         with pytest.raises(dspy.utils.exceptions.AdapterParseError) as e:
-            adapter(lm, {}, signature, [], {"question": "What is the capital of France?"})
+            adapter(lm, {}, signature, [], {
+                    "question": "What is the capital of France?"})
 
     assert e.value.adapter_name == "JSONAdapter"
     assert e.value.signature == signature
@@ -258,7 +286,10 @@ def test_json_adapter_formats_image():
     assert user_message_content[2]["type"] == "text"
 
     # Assert that the image is formatted correctly
-    expected_image_content = {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}
+    expected_image_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image.jpg"},
+    }
     assert expected_image_content in user_message_content
 
 
@@ -279,14 +310,24 @@ def test_json_adapter_formats_image_with_few_shot_examples():
             text="This is another test image",
         ),
     ]
-    messages = adapter.format(MySignature, demos, {"image": dspy.Image(url="https://example.com/image3.jpg")})
+    messages = adapter.format(MySignature, demos, {
+                              "image": dspy.Image(url="https://example.com/image3.jpg")})
 
     # 1 system message, 2 few shot examples (1 user and assistant message for each example), 1 user message
     assert len(messages) == 6
 
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}} in messages[1]["content"]
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}} in messages[3]["content"]
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image3.jpg"}} in messages[5]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image1.jpg"},
+    } in messages[1]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image2.jpg"},
+    } in messages[3]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image3.jpg"},
+    } in messages[5]["content"]
 
 
 def test_json_adapter_formats_image_with_nested_images():
@@ -302,14 +343,24 @@ def test_json_adapter_formats_image_with_nested_images():
     image2 = dspy.Image(url="https://example.com/image2.jpg")
     image3 = dspy.Image(url="https://example.com/image3.jpg")
 
-    image_wrapper = ImageWrapper(images=[image1, image2, image3], tag=["test", "example"])
+    image_wrapper = ImageWrapper(
+        images=[image1, image2, image3], tag=["test", "example"])
 
     adapter = dspy.JSONAdapter()
     messages = adapter.format(MySignature, [], {"image": image_wrapper})
 
-    expected_image1_content = {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}}
-    expected_image2_content = {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}}
-    expected_image3_content = {"type": "image_url", "image_url": {"url": "https://example.com/image3.jpg"}}
+    expected_image1_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image1.jpg"},
+    }
+    expected_image2_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image2.jpg"},
+    }
+    expected_image3_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image3.jpg"},
+    }
 
     assert expected_image1_content in messages[1]["content"]
     assert expected_image2_content in messages[1]["content"]
@@ -332,8 +383,20 @@ def test_json_adapter_formats_with_nested_documents():
     adapter = dspy.JSONAdapter()
     messages = adapter.format(MySignature, [], {"document": document_wrapper})
 
-    expected_doc1_content = {"type": "document", "source": {"type": "text", "media_type": "text/plain", "data": "Hello, world!"}, "citations": {"enabled": True}}
-    expected_doc2_content = {"type": "document", "source": {"type": "text", "media_type": "text/plain", "data": "Hello, world 2!"}, "citations": {"enabled": True}}
+    expected_doc1_content = {
+        "type": "document",
+        "source": {"type": "text", "media_type": "text/plain", "data": "Hello, world!"},
+        "citations": {"enabled": True},
+    }
+    expected_doc2_content = {
+        "type": "document",
+        "source": {
+            "type": "text",
+            "media_type": "text/plain",
+            "data": "Hello, world 2!",
+        },
+        "citations": {"enabled": True},
+    }
 
     assert expected_doc1_content in messages[1]["content"]
     assert expected_doc2_content in messages[1]["content"]
@@ -352,7 +415,8 @@ def test_json_adapter_formats_image_with_few_shot_examples_with_nested_images():
     image2 = dspy.Image(url="https://example.com/image2.jpg")
     image3 = dspy.Image(url="https://example.com/image3.jpg")
 
-    image_wrapper = ImageWrapper(images=[image1, image2, image3], tag=["test", "example"])
+    image_wrapper = ImageWrapper(
+        images=[image1, image2, image3], tag=["test", "example"])
     demos = [
         dspy.Example(
             image=image_wrapper,
@@ -360,22 +424,37 @@ def test_json_adapter_formats_image_with_few_shot_examples_with_nested_images():
         ),
     ]
 
-    image_wrapper_2 = ImageWrapper(images=[dspy.Image(url="https://example.com/image4.jpg")], tag=["test", "example"])
+    image_wrapper_2 = ImageWrapper(
+        images=[dspy.Image(url="https://example.com/image4.jpg")],
+        tag=["test", "example"],
+    )
     adapter = dspy.JSONAdapter()
     messages = adapter.format(MySignature, demos, {"image": image_wrapper_2})
 
     assert len(messages) == 4
 
     # Image information in the few-shot example's user message
-    expected_image1_content = {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}}
-    expected_image2_content = {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}}
-    expected_image3_content = {"type": "image_url", "image_url": {"url": "https://example.com/image3.jpg"}}
+    expected_image1_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image1.jpg"},
+    }
+    expected_image2_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image2.jpg"},
+    }
+    expected_image3_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image3.jpg"},
+    }
     assert expected_image1_content in messages[1]["content"]
     assert expected_image2_content in messages[1]["content"]
     assert expected_image3_content in messages[1]["content"]
 
     # The query image is formatted in the last user message
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image4.jpg"}} in messages[-1]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image4.jpg"},
+    } in messages[-1]["content"]
 
 
 def test_json_adapter_with_tool():
@@ -398,7 +477,8 @@ def test_json_adapter_with_tool():
     tools = [dspy.Tool(get_weather), dspy.Tool(get_population)]
 
     adapter = dspy.JSONAdapter()
-    messages = adapter.format(MySignature, [], {"question": "What is the weather in Tokyo?", "tools": tools})
+    messages = adapter.format(
+        MySignature, [], {"question": "What is the weather in Tokyo?", "tools": tools})
 
     assert len(messages) == 2
 
@@ -412,11 +492,18 @@ def test_json_adapter_with_tool():
 
     # Tool arguments format should be included in the user message
     assert "{'city': {'type': 'string'}}" in messages[1]["content"]
-    assert "{'country': {'type': 'string'}, 'year': {'type': 'integer'}}" in messages[1]["content"]
+    assert "{'country': {'type': 'string'}, 'year': {'type': 'integer'}}" in messages[
+        1]["content"]
 
     with mock.patch("litellm.completion") as mock_completion:
         lm = dspy.LM(model="openai/gpt-4o-mini")
-        adapter(lm, {}, MySignature, [], {"question": "What is the weather in Tokyo?", "tools": tools})
+        adapter(
+            lm,
+            {},
+            MySignature,
+            [],
+            {"question": "What is the weather in Tokyo?", "tools": tools},
+        )
 
     mock_completion.assert_called_once()
     _, call_kwargs = mock_completion.call_args
@@ -469,7 +556,8 @@ def test_json_adapter_with_code():
         result: str = dspy.OutputField()
 
     adapter = dspy.JSONAdapter()
-    messages = adapter.format(CodeAnalysis, [], {"code": "print('Hello, world!')"})
+    messages = adapter.format(
+        CodeAnalysis, [], {"code": "print('Hello, world!')"})
 
     assert len(messages) == 2
 
@@ -489,7 +577,8 @@ def test_json_adapter_with_code():
     adapter = dspy.JSONAdapter()
     with mock.patch("litellm.completion") as mock_completion:
         mock_completion.return_value = ModelResponse(
-            choices=[Choices(message=Message(content="{'code': 'print(\"Hello, world!\")'}"))],
+            choices=[Choices(message=Message(
+                content="{'code': 'print(\"Hello, world!\")'}"))],
             model="openai/gpt-4o-mini",
         )
         result = adapter(
@@ -516,7 +605,11 @@ def test_json_adapter_formats_conversation_history():
     )
 
     adapter = dspy.JSONAdapter()
-    messages = adapter.format(MySignature, [], {"question": "What is the capital of France?", "history": history})
+    messages = adapter.format(
+        MySignature,
+        [],
+        {"question": "What is the capital of France?", "history": history},
+    )
 
     assert len(messages) == 6
     assert messages[1]["content"] == "[[ ## question ## ]]\nWhat is the capital of France?"
@@ -559,7 +652,8 @@ async def test_json_adapter_on_pydantic_model_async():
 
         with dspy.context(lm=dspy.LM(model="openai/gpt4o", cache=False), adapter=dspy.JSONAdapter()):
             result = await program.acall(
-                user={"id": 5, "name": "name_test", "email": "email_test"}, question="What is the capital of France?"
+                user={"id": 5, "name": "name_test", "email": "email_test"},
+                question="What is the capital of France?",
             )
 
         # Check that litellm.acompletion was called exactly once
@@ -618,14 +712,16 @@ def test_json_adapter_fallback_to_json_mode_on_structured_output_failure():
         question: str = dspy.InputField()
         answer: str = dspy.OutputField(desc="String output field")
 
-    dspy.configure(lm=dspy.LM(model="openai/gpt-4o-mini", cache=False), adapter=dspy.JSONAdapter())
+    dspy.configure(lm=dspy.LM(model="openai/gpt-4o-mini",
+                   cache=False), adapter=dspy.JSONAdapter())
     program = dspy.Predict(TestSignature)
 
     with mock.patch("litellm.completion") as mock_completion:
         # First call raises error to simulate structured output failure, second call returns a valid response
         mock_completion.side_effect = [
             RuntimeError("Structured output failed!"),
-            ModelResponse(choices=[Choices(message=Message(content="{'answer': 'Test output'}"))]),
+            ModelResponse(
+                choices=[Choices(message=Message(content="{'answer': 'Test output'}"))]),
         ]
 
         result = program(question="Dummy question!")
@@ -635,11 +731,13 @@ def test_json_adapter_fallback_to_json_mode_on_structured_output_failure():
 
         # The first call should have tried structured output
         _, first_call_kwargs = mock_completion.call_args_list[0]
-        assert issubclass(first_call_kwargs.get("response_format"), pydantic.BaseModel)
+        assert issubclass(first_call_kwargs.get(
+            "response_format"), pydantic.BaseModel)
 
         # The second call should have used JSON mode
         _, second_call_kwargs = mock_completion.call_args_list[1]
-        assert second_call_kwargs.get("response_format") == {"type": "json_object"}
+        assert second_call_kwargs.get("response_format") == {
+            "type": "json_object"}
 
 
 @pytest.mark.asyncio
@@ -654,10 +752,14 @@ async def test_json_adapter_fallback_to_json_mode_on_structured_output_failure_a
         # First call raises error to simulate structured output failure, second call returns a valid response
         mock_acompletion.side_effect = [
             RuntimeError("Structured output failed!"),
-            ModelResponse(choices=[Choices(message=Message(content="{'answer': 'Test output'}"))]),
+            ModelResponse(
+                choices=[Choices(message=Message(content="{'answer': 'Test output'}"))]),
         ]
 
-        with dspy.context(lm=dspy.LM(model="openai/gpt-4o-mini", cache=False), adapter=dspy.JSONAdapter()):
+        with dspy.context(
+            lm=dspy.LM(model="openai/gpt-4o-mini", cache=False),
+            adapter=dspy.JSONAdapter(),
+        ):
             result = await program.acall(question="Dummy question!")
         # The parse should succeed on the second call
         assert mock_acompletion.call_count == 2
@@ -665,11 +767,13 @@ async def test_json_adapter_fallback_to_json_mode_on_structured_output_failure_a
 
         # The first call should have tried structured output
         _, first_call_kwargs = mock_acompletion.call_args_list[0]
-        assert issubclass(first_call_kwargs.get("response_format"), pydantic.BaseModel)
+        assert issubclass(first_call_kwargs.get(
+            "response_format"), pydantic.BaseModel)
 
         # The second call should have used JSON mode
         _, second_call_kwargs = mock_acompletion.call_args_list[1]
-        assert second_call_kwargs.get("response_format") == {"type": "json_object"}
+        assert second_call_kwargs.get("response_format") == {
+            "type": "json_object"}
 
 
 def test_error_message_on_json_adapter_failure():
@@ -679,7 +783,8 @@ def test_error_message_on_json_adapter_failure():
 
     program = dspy.Predict(TestSignature)
 
-    dspy.configure(lm=dspy.LM(model="openai/gpt-4o-mini", cache=False), adapter=dspy.JSONAdapter())
+    dspy.configure(lm=dspy.LM(model="openai/gpt-4o-mini",
+                   cache=False), adapter=dspy.JSONAdapter())
 
     with mock.patch("litellm.completion") as mock_completion:
         mock_completion.side_effect = RuntimeError("RuntimeError!")
@@ -705,7 +810,10 @@ async def test_error_message_on_json_adapter_failure_async():
     program = dspy.Predict(TestSignature)
 
     with mock.patch("litellm.acompletion") as mock_acompletion:
-        with dspy.context(lm=dspy.LM(model="openai/gpt-4o-mini", cache=False), adapter=dspy.JSONAdapter()):
+        with dspy.context(
+            lm=dspy.LM(model="openai/gpt-4o-mini", cache=False),
+            adapter=dspy.JSONAdapter(),
+        ):
             mock_acompletion.side_effect = RuntimeError("RuntimeError!")
             with pytest.raises(RuntimeError) as error:
                 await program.acall(question="Dummy question!")
@@ -745,7 +853,8 @@ def test_json_adapter_toolcalls_native_function_calling():
                         role="assistant",
                         tool_calls=[
                             ChatCompletionMessageToolCall(
-                                function=Function(arguments='{"city":"Paris"}', name="get_weather"),
+                                function=Function(
+                                    arguments='{"city":"Paris"}', name="get_weather"),
                                 id="call_pQm8ajtSMxgA0nrzK2ivFmxG",
                                 type="function",
                             )
@@ -764,7 +873,8 @@ def test_json_adapter_toolcalls_native_function_calling():
         )
 
         assert result[0]["tool_calls"] == dspy.ToolCalls(
-            tool_calls=[dspy.ToolCalls.ToolCall(name="get_weather", args={"city": "Paris"})]
+            tool_calls=[dspy.ToolCalls.ToolCall(
+                name="get_weather", args={"city": "Paris"})]
         )
         # `answer` is not present, so we set it to None
         assert result[0]["answer"] is None
@@ -803,12 +913,19 @@ def test_json_adapter_toolcalls_no_native_function_calling():
         # Patch litellm.completion to return a dummy response
         with mock.patch("litellm.completion") as mock_completion:
             mock_completion.return_value = ModelResponse(
-                choices=[Choices(message=Message(content="{'answer': 'sunny', 'tool_calls': {'tool_calls': []}}"))],
+                choices=[Choices(message=Message(
+                    content="{'answer': 'sunny', 'tool_calls': {'tool_calls': []}}"))],
                 model="openai/gpt-4o-mini",
             )
             adapter = dspy.JSONAdapter(use_native_function_calling=False)
             lm = dspy.LM(model="openai/gpt-4o-mini", cache=False)
-            adapter(lm, {}, MySignature, [], {"question": "What is the weather in Tokyo?", "tools": tools})
+            adapter(
+                lm,
+                {},
+                MySignature,
+                [],
+                {"question": "What is the weather in Tokyo?", "tools": tools},
+            )
 
         # _get_structured_outputs_response_format is not called because without using native function calling,
         # JSONAdapter falls back to json mode for stable quality.

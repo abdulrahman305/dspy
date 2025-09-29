@@ -26,7 +26,7 @@ def make_response(output_blocks):
         model="openai/dspy-test-model",
         object="response",
         output=output_blocks,
-        metadata = {},
+        metadata={},
         parallel_tool_calls=False,
         temperature=1.0,
         tool_choice="auto",
@@ -38,7 +38,8 @@ def make_response(output_blocks):
         status="completed",
         text=None,
         truncation="disabled",
-        usage=ResponseAPIUsage(input_tokens=1, output_tokens=1, total_tokens=2),
+        usage=ResponseAPIUsage(
+            input_tokens=1, output_tokens=1, total_tokens=2),
         user=None,
     )
 
@@ -103,14 +104,21 @@ def test_disabled_cache_skips_cache_key(monkeypatch):
     cache = dspy.cache
 
     try:
-        with mock.patch.object(cache, "cache_key", wraps=cache.cache_key) as cache_key_spy, \
-             mock.patch.object(cache, "get", wraps=cache.get) as cache_get_spy, \
-             mock.patch.object(cache, "put", wraps=cache.put) as cache_put_spy:
+        with (
+            mock.patch.object(cache, "cache_key", wraps=cache.cache_key) as cache_key_spy,
+            mock.patch.object(cache, "get", wraps=cache.get) as cache_get_spy,
+            mock.patch.object(cache, "put", wraps=cache.put) as cache_put_spy,
+        ):
 
             def fake_completion(*, cache, num_retries, retry_strategy, **request):
                 return ModelResponse(
-                    choices=[Choices(message=Message(role="assistant", content="Hi!"))],
-                    usage={"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+                    choices=[Choices(message=Message(
+                        role="assistant", content="Hi!"))],
+                    usage={
+                        "prompt_tokens": 1,
+                        "completion_tokens": 1,
+                        "total_tokens": 2,
+                    },
                     model="dummy",
                 )
 
@@ -133,7 +141,8 @@ def test_rollout_id_bypasses_cache(monkeypatch, tmp_path):
     def fake_completion(*, cache, num_retries, retry_strategy, **request):
         calls.append(request)
         return ModelResponse(
-            choices=[Choices(message=Message(role="assistant", content="Hi!"))],
+            choices=[Choices(message=Message(
+                role="assistant", content="Hi!"))],
             usage={"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
             model="openai/dspy-test-model",
         )
@@ -177,7 +186,8 @@ def test_rollout_id_bypasses_cache(monkeypatch, tmp_path):
 def test_zero_temperature_rollout_warns_once(monkeypatch):
     def fake_completion(*, cache, num_retries, retry_strategy, **request):
         return ModelResponse(
-            choices=[Choices(message=Message(role="assistant", content="Hi!"))],
+            choices=[Choices(message=Message(
+                role="assistant", content="Hi!"))],
             usage={"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
             model="openai/dspy-test-model",
         )
@@ -272,7 +282,8 @@ def test_retry_made_on_system_errors():
         mock_response = mock.Mock()
         mock_response.headers = {}
         mock_response.status_code = 429
-        raise RateLimitError(response=mock_response, message="message", body="error")
+        raise RateLimitError(response=mock_response,
+                             message="message", body="error")
 
     lm = dspy.LM(model="openai/gpt-4o-mini", max_tokens=250, num_retries=3)
     with mock.patch.object(litellm.OpenAIChatCompletion, "completion", side_effect=mock_create):
@@ -310,6 +321,7 @@ def test_reasoning_model_token_parameter():
             assert "max_completion_tokens" not in lm.kwargs
             assert "max_tokens" in lm.kwargs
             assert lm.kwargs["max_tokens"] == 1000
+
 
 @pytest.mark.parametrize("model_name", ["openai/o1", "openai/gpt-5-nano"])
 def test_reasoning_model_requirements(model_name):
@@ -366,7 +378,8 @@ def test_exponential_backoff_retry():
         mock_response = mock.Mock()
         mock_response.headers = {}
         mock_response.status_code = 429
-        raise RateLimitError(response=mock_response, message="message", body="error")
+        raise RateLimitError(response=mock_response,
+                             message="message", body="error")
 
     lm = dspy.LM(model="openai/gpt-3.5-turbo", max_tokens=250, num_retries=3)
     with mock.patch.object(litellm.OpenAIChatCompletion, "completion", side_effect=mock_create):
@@ -387,8 +400,16 @@ def test_logprobs_included_when_requested():
                     message=Message(content="test answer"),
                     logprobs={
                         "content": [
-                            {"token": "test", "logprob": 0.1, "top_logprobs": [{"token": "test", "logprob": 0.1}]},
-                            {"token": "answer", "logprob": 0.2, "top_logprobs": [{"token": "answer", "logprob": 0.2}]},
+                            {
+                                "token": "test",
+                                "logprob": 0.1,
+                                "top_logprobs": [{"token": "test", "logprob": 0.1}],
+                            },
+                            {
+                                "token": "answer",
+                                "logprob": 0.2,
+                                "top_logprobs": [{"token": "answer", "logprob": 0.2}],
+                            },
                         ]
                     },
                 )
@@ -420,7 +441,8 @@ def test_logprobs_included_when_requested():
 async def test_async_lm_call():
     from litellm.utils import Choices, Message, ModelResponse
 
-    mock_response = ModelResponse(choices=[Choices(message=Message(content="answer"))], model="openai/gpt-4o-mini")
+    mock_response = ModelResponse(choices=[Choices(
+        message=Message(content="answer"))], model="openai/gpt-4o-mini")
 
     with patch("litellm.acompletion") as mock_acompletion:
         mock_acompletion.return_value = mock_response
@@ -447,7 +469,8 @@ async def test_async_lm_call_with_cache(tmp_path):
 
     with mock.patch("dspy.clients.lm.alitellm_completion") as mock_alitellm_completion:
         mock_alitellm_completion.return_value = ModelResponse(
-            choices=[Choices(message=Message(content="answer"))], model="openai/gpt-4o-mini"
+            choices=[Choices(message=Message(content="answer"))],
+            model="openai/gpt-4o-mini",
         )
         mock_alitellm_completion.__qualname__ = "alitellm_completion"
         await lm.acall("Query")
@@ -505,6 +528,7 @@ def test_disable_history():
                 model="openai/gpt-4o-mini",
             )
 
+
 def test_responses_api(litellm_test_server):
     api_base, _ = litellm_test_server
     expected_text = "This is a test answer from responses API."
@@ -516,9 +540,7 @@ def test_responses_api(litellm_test_server):
                 "type": "message",
                 "role": "assistant",
                 "status": "completed",
-                "content": [
-                    {"type": "output_text", "text": expected_text, "annotations": []}
-                ],
+                "content": [{"type": "output_text", "text": expected_text, "annotations": []}],
             }
         ]
     )
@@ -538,9 +560,7 @@ def test_responses_api(litellm_test_server):
 
 
 def test_lm_replaces_system_with_developer_role():
-    with mock.patch(
-        "dspy.clients.lm.litellm_responses_completion", return_value={"choices": []}
-    ) as mock_completion:
+    with mock.patch("dspy.clients.lm.litellm_responses_completion", return_value={"choices": []}) as mock_completion:
         lm = dspy.LM(
             "openai/gpt-4o-mini",
             cache=False,
@@ -548,10 +568,7 @@ def test_lm_replaces_system_with_developer_role():
             use_developer_role=True,
         )
         lm.forward(messages=[{"role": "system", "content": "hi"}])
-        assert (
-            mock_completion.call_args.kwargs["request"]["messages"][0]["role"]
-            == "developer"
-        )
+        assert mock_completion.call_args.kwargs["request"]["messages"][0]["role"] == "developer"
 
 
 def test_responses_api_tool_calls(litellm_test_server):
