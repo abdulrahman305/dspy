@@ -131,7 +131,8 @@ def find_enum_member(enum, identifier):
     if identifier in enum.__members__:
         return enum[identifier]
 
-    raise ValueError(f"{identifier} is not a valid name or value for the enum {enum.__name__}")
+    raise ValueError(
+        f"{identifier} is not a valid name or value for the enum {enum.__name__}")
 
 
 def parse_value(value, annotation):
@@ -151,7 +152,7 @@ def parse_value(value, annotation):
         if isinstance(value, str):
             v = value.strip()
             if v.startswith(("Literal[", "str[")) and v.endswith("]"):
-                v = v[v.find("[") + 1 : -1]
+                v = v[v.find("[") + 1: -1]
             if len(v) > 1 and v[0] == v[-1] and v[0] in "\"'":
                 v = v[1:-1]
 
@@ -167,7 +168,8 @@ def parse_value(value, annotation):
         # Handle union annotations, e.g., `str | None`, `Optional[str]`, `Union[str, int, None]`, etc.
         return TypeAdapter(annotation).validate_python(value)
 
-    candidate = json_repair.loads(value)  # json_repair.loads returns "" on failure.
+    # json_repair.loads returns "" on failure.
+    candidate = json_repair.loads(value)
     if candidate == "" and value != "":
         try:
             candidate = ast.literal_eval(value)
@@ -197,7 +199,8 @@ def get_annotation_name(annotation):
 
     if origin is Literal:
         args_str = ", ".join(
-            _quoted_string_for_literal_type_annotation(a) if isinstance(a, str) else get_annotation_name(a)
+            (_quoted_string_for_literal_type_annotation(a)
+             if isinstance(a, str) else get_annotation_name(a))
             for a in args
         )
         return f"{get_annotation_name(origin)}[{args_str}]"
@@ -211,16 +214,19 @@ def get_field_description_string(fields: dict) -> str:
     for idx, (k, v) in enumerate(fields.items()):
         field_message = f"{idx + 1}. `{k}`"
         field_message += f" ({get_annotation_name(v.annotation)})"
-        desc = v.json_schema_extra["desc"] if v.json_schema_extra["desc"] != f"${{{k}}}" else ""
+        desc = v.json_schema_extra["desc"] if v.json_schema_extra[
+            "desc"] != f"${{{k}}}" else ""
 
-        custom_types = DspyType.extract_custom_type_from_annotation(v.annotation)
+        custom_types = DspyType.extract_custom_type_from_annotation(
+            v.annotation)
         for custom_type in custom_types:
             if len(custom_type.description()) > 0:
                 desc += f"\n    Type description of {get_annotation_name(custom_type)}: {custom_type.description()}"
 
         field_message += f": {desc}"
         field_message += (
-            f"\nConstraints: {v.json_schema_extra['constraints']}" if v.json_schema_extra.get("constraints") else ""
+            f"\nConstraints: {v.json_schema_extra['constraints']}" if v.json_schema_extra.get(
+                "constraints") else ""
         )
         field_descriptions.append(field_message)
     return "\n".join(field_descriptions).strip()

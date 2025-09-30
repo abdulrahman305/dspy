@@ -6,11 +6,15 @@ from typing import Callable, ParamSpec, TypeVar, overload
 P = ParamSpec("P")
 R = TypeVar("R")
 
-@overload
-def experimental(f: Callable[P, R], version: str | None = None) -> Callable[P, R]: ...
 
 @overload
-def experimental(f: None = None, version: str | None = None) -> Callable[[Callable[P, R]], Callable[P, R]]: ...
+def experimental(f: Callable[P, R], version: str |
+                 None = None) -> Callable[P, R]: ...
+
+
+@overload
+def experimental(f: None = None, version: str | None = None) -> Callable[[
+    Callable[P, R]], Callable[P, R]]: ...
 
 
 def experimental(
@@ -31,8 +35,10 @@ def experimental(
     if f:
         return _experimental(f, version)
     else:
+
         def decorator(f: Callable[P, R]) -> Callable[P, R]:
             return _experimental(f, version)
+
         return decorator
 
 

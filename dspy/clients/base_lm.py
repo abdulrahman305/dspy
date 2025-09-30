@@ -41,11 +41,20 @@ class BaseLM:
     ```
     """
 
-    def __init__(self, model, model_type="chat", temperature=0.0, max_tokens=1000, cache=True, **kwargs):
+    def __init__(
+        self,
+        model,
+        model_type="chat",
+        temperature=0.0,
+        max_tokens=1000,
+        cache=True,
+        **kwargs,
+    ):
         self.model = model
         self.model_type = model_type
         self.cache = cache
-        self.kwargs = dict(temperature=temperature, max_tokens=max_tokens, **kwargs)
+        self.kwargs = dict(temperature=temperature,
+                           max_tokens=max_tokens, **kwargs)
         self.history = []
 
     def _process_lm_response(self, response, prompt, messages, **kwargs):
@@ -83,14 +92,16 @@ class BaseLM:
     @with_callbacks
     def __call__(self, prompt=None, messages=None, **kwargs):
         response = self.forward(prompt=prompt, messages=messages, **kwargs)
-        outputs = self._process_lm_response(response, prompt, messages, **kwargs)
+        outputs = self._process_lm_response(
+            response, prompt, messages, **kwargs)
 
         return outputs
 
     @with_callbacks
     async def acall(self, prompt=None, messages=None, **kwargs):
         response = await self.aforward(prompt=prompt, messages=messages, **kwargs)
-        outputs = self._process_lm_response(response, prompt, messages, **kwargs)
+        outputs = self._process_lm_response(
+            response, prompt, messages, **kwargs)
         return outputs
 
     def forward(self, prompt=None, messages=None, **kwargs):
@@ -166,21 +177,23 @@ class BaseLM:
 
     def _process_completion(self, response, merged_kwargs):
         """Process the response of OpenAI chat completion API and extract outputs.
-        
+
         Args:
             response: The OpenAI chat completion response
                 https://platform.openai.com/docs/api-reference/chat/object
             merged_kwargs: Merged kwargs from self.kwargs and method kwargs
-            
+
         Returns:
             List of processed outputs
         """
         outputs = []
         for c in response.choices:
             output = {}
-            output["text"] = c.message.content if hasattr(c, "message") else c["text"]
+            output["text"] = c.message.content if hasattr(
+                c, "message") else c["text"]
             if merged_kwargs.get("logprobs"):
-                output["logprobs"] = c.logprobs if hasattr(c, "logprobs") else c["logprobs"]
+                output["logprobs"] = c.logprobs if hasattr(
+                    c, "logprobs") else c["logprobs"]
             if hasattr(c, "message") and getattr(c.message, "tool_calls", None):
                 output["tool_calls"] = c.message.tool_calls
 
@@ -200,16 +213,17 @@ class BaseLM:
     def _extract_citations_from_response(self, choice):
         """Extract citations from LiteLLM response if available.
         Reference: https://docs.litellm.ai/docs/providers/anthropic#beta-citations-api
-        
+
         Args:
             choice: The choice object from response.choices
-            
+
         Returns:
             A list of citation dictionaries or None if no citations found
         """
         try:
             # Check for citations in LiteLLM provider_specific_fields
-            citations_data = choice.message.provider_specific_fields.get("citations")
+            citations_data = choice.message.provider_specific_fields.get(
+                "citations")
             if isinstance(citations_data, list):
                 return [citation for citations in citations_data for citation in citations]
         except Exception:
@@ -217,11 +231,11 @@ class BaseLM:
 
     def _process_response(self, response):
         """Process the response of OpenAI Response API and extract outputs.
-        
+
         Args:
             response: OpenAI Response API response
                 https://platform.openai.com/docs/api-reference/responses/object
-            
+
         Returns:
             List of processed outputs
         """
