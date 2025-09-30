@@ -111,7 +111,9 @@ class Evaluate:
         self.save_as_json = save_as_json
 
         if "return_outputs" in kwargs:
-            raise ValueError("`return_outputs` is no longer supported. Results are always returned inside the `results` field of the `EvaluationResult` object.")
+            raise ValueError(
+                "`return_outputs` is no longer supported. Results are always returned inside the `results` field of the `EvaluationResult` object."
+            )
 
     @with_callbacks
     def __call__(
@@ -155,14 +157,16 @@ class Evaluate:
         save_as_json = save_as_json if save_as_json is not None else self.save_as_json
 
         if callback_metadata:
-            logger.debug(f"Evaluate is called with callback metadata: {callback_metadata}")
+            logger.debug(
+                f"Evaluate is called with callback metadata: {callback_metadata}")
 
         tqdm.tqdm._instances.clear()
 
         executor = ParallelExecutor(
             num_threads=num_threads,
             disable_progress_bar=not display_progress,
-            max_errors=(self.max_errors if self.max_errors is not None else dspy.settings.max_errors),
+            max_errors=(
+                self.max_errors if self.max_errors is not None else dspy.settings.max_errors),
             provide_traceback=self.provide_traceback,
             compare_results=True,
         )
@@ -175,29 +179,32 @@ class Evaluate:
         results = executor.execute(process_item, devset)
         assert len(devset) == len(results)
 
-        results = [((dspy.Prediction(), self.failure_score) if r is None else r) for r in results]
-        results = [(example, prediction, score) for example, (prediction, score) in zip(devset, results, strict=False)]
+        results = [((dspy.Prediction(), self.failure_score)
+                    if r is None else r) for r in results]
+        results = [(example, prediction, score) for example,
+                   (prediction, score) in zip(devset, results, strict=False)]
         ncorrect, ntotal = sum(score for *_, score in results), len(devset)
 
-        logger.info(f"Average Metric: {ncorrect} / {ntotal} ({round(100 * ncorrect / ntotal, 1)}%)")
+        logger.info(
+            f"Average Metric: {ncorrect} / {ntotal} ({round(100 * ncorrect / ntotal, 1)}%)")
 
         if display_table:
             if importlib.util.find_spec("pandas") is not None:
                 # Rename the 'correct' column to the name of the metric object
-                metric_name = metric.__name__ if isinstance(metric, types.FunctionType) else metric.__class__.__name__
+                metric_name = metric.__name__ if isinstance(
+                    metric, types.FunctionType) else metric.__class__.__name__
                 # Construct a pandas DataFrame from the results
                 result_df = self._construct_result_table(results, metric_name)
 
-                self._display_result_table(result_df, display_table, metric_name)
+                self._display_result_table(
+                    result_df, display_table, metric_name)
             else:
-                logger.warning("Skipping table display since `pandas` is not installed.")
+                logger.warning(
+                    "Skipping table display since `pandas` is not installed.")
 
         if save_as_csv:
-            metric_name = (
-                metric.__name__
-                if isinstance(metric, types.FunctionType)
-                else metric.__class__.__name__
-            )
+            metric_name = metric.__name__ if isinstance(
+                metric, types.FunctionType) else metric.__class__.__name__
             data = self._prepare_results_output(results, metric_name)
 
             with open(save_as_csv, "w", newline="") as csvfile:
@@ -208,15 +215,12 @@ class Evaluate:
                 for row in data:
                     writer.writerow(row)
         if save_as_json:
-            metric_name = (
-                metric.__name__
-                if isinstance(metric, types.FunctionType)
-                else metric.__class__.__name__
-            )
+            metric_name = metric.__name__ if isinstance(
+                metric, types.FunctionType) else metric.__class__.__name__
             data = self._prepare_results_output(results, metric_name)
             with open(
-                    save_as_json,
-                    "w",
+                save_as_json,
+                "w",
             ) as f:
                 json.dump(data, f)
 
@@ -226,9 +230,7 @@ class Evaluate:
         )
 
     @staticmethod
-    def _prepare_results_output(
-            results: list[tuple["dspy.Example", "dspy.Example", Any]], metric_name: str
-    ):
+    def _prepare_results_output(results: list[tuple["dspy.Example", "dspy.Example", Any]], metric_name: str):
         return [
             (
                 merge_dicts(example, prediction) | {metric_name: score}
@@ -239,7 +241,9 @@ class Evaluate:
         ]
 
     def _construct_result_table(
-        self, results: list[tuple["dspy.Example", "dspy.Example", Any]], metric_name: str
+        self,
+        results: list[tuple["dspy.Example", "dspy.Example", Any]],
+        metric_name: str,
     ) -> "pd.DataFrame":
         """
         Construct a pandas DataFrame from the specified result list.
@@ -258,7 +262,8 @@ class Evaluate:
 
         # Truncate every cell in the DataFrame (DataFrame.applymap was renamed to DataFrame.map in Pandas 2.1.0)
         result_df = pd.DataFrame(data)
-        result_df = result_df.map(truncate_cell) if hasattr(result_df, "map") else result_df.applymap(truncate_cell)
+        result_df = result_df.map(truncate_cell) if hasattr(
+            result_df, "map") else result_df.applymap(truncate_cell)
 
         return result_df.rename(columns={"correct": metric_name})
 
@@ -336,6 +341,7 @@ def stylize_metric_name(df: "pd.DataFrame", metric_name: str) -> "pd.DataFrame":
     :param df: The pandas DataFrame for which to stylize cell contents.
     :param metric_name: The name of the metric for which to stylize DataFrame cell contents.
     """
+
     def format_metric(x):
         if isinstance(x, float):
             return f"✔️ [{x:.3f}]"
@@ -343,6 +349,7 @@ def stylize_metric_name(df: "pd.DataFrame", metric_name: str) -> "pd.DataFrame":
             return f"✔️ [{x}]"
         else:
             return ""
+
     df[metric_name] = df[metric_name].apply(format_metric)
     return df
 
@@ -365,7 +372,9 @@ def display_dataframe(df: "pd.DataFrame"):
             print(df)
 
 
-def configure_dataframe_for_ipython_notebook_display(df: "pd.DataFrame") -> "pd.DataFrame":
+def configure_dataframe_for_ipython_notebook_display(
+    df: "pd.DataFrame",
+) -> "pd.DataFrame":
     """Set various pandas display options for DataFrame in an IPython notebook environment."""
     import pandas as pd
 

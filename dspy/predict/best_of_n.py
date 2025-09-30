@@ -47,7 +47,8 @@ class BestOfN(Module):
             ```
         """
         self.module = module
-        self.reward_fn = lambda *args: reward_fn(*args)  # to prevent this from becoming a parameter
+        # to prevent this from becoming a parameter
+        self.reward_fn = lambda *args: reward_fn(*args)
         self.threshold = threshold
         self.N = N
         self.fail_count = fail_count or N  # default to N if fail_count is not provided
@@ -78,7 +79,8 @@ class BestOfN(Module):
                     break
 
             except Exception as e:
-                print(f"BestOfN: Attempt {idx + 1} failed with rollout id {rid}: {e}")
+                print(
+                    f"BestOfN: Attempt {idx + 1} failed with rollout id {rid}: {e}")
                 if idx > self.fail_count:
                     raise e
                 self.fail_count -= 1
