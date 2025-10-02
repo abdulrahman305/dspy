@@ -223,7 +223,6 @@ class StreamListener:
             return None
 
 
-
 def find_predictor_for_stream_listeners(program: "Module", stream_listeners: list[StreamListener]):
     """Find the predictor for each stream listener.
 
@@ -272,6 +271,7 @@ def find_predictor_for_stream_listeners(program: "Module", stream_listeners: lis
         listener.predict_name, listener.predict = field_name_to_named_predictor[listener.signature_field_name]
         predict_id_to_listener[id(listener.predict)].append(listener)
     return predict_id_to_listener
+
 
 def _is_streamable(field_type: type | None) -> bool:
     if field_type is None:
