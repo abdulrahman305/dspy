@@ -109,21 +109,17 @@ class MIPROv2(Teleprompter):
         view_data_batch_size: int = 10,
         tip_aware_proposer: bool = True,
         fewshot_aware_proposer: bool = True,
-        requires_permission_to_run: bool | None = None, # deprecated
+        requires_permission_to_run: bool | None = None,  # deprecated
         provide_traceback: bool | None = None,
     ) -> Any:
         if requires_permission_to_run == False:
-            logger.warning(
-                "'requires_permission_to_run' is deprecated and will be removed in a future version."
-            )
+            logger.warning("'requires_permission_to_run' is deprecated and will be removed in a future version.")
         elif requires_permission_to_run == True:
-            raise ValueError("User confirmation is removed from MIPROv2. Please remove the 'requires_permission_to_run' argument.")
+            raise ValueError(
+                "User confirmation is removed from MIPROv2. Please remove the 'requires_permission_to_run' argument."
+            )
 
-        effective_max_errors = (
-            self.max_errors
-            if self.max_errors is not None
-            else dspy.settings.max_errors
-        )
+        effective_max_errors = self.max_errors if self.max_errors is not None else dspy.settings.max_errors
         zeroshot_opt = (self.max_bootstrapped_demos == 0) and (self.max_labeled_demos == 0)
 
         # If auto is None, and num_trials is not provided (but num_candidates is), raise an error that suggests a good num_trials value
@@ -340,9 +336,7 @@ class MIPROv2(Teleprompter):
         zeroshot = self.max_bootstrapped_demos == 0 and self.max_labeled_demos == 0
 
         # try:
-        effective_max_errors = (
-            self.max_errors if self.max_errors is not None else dspy.settings.max_errors
-        )
+        effective_max_errors = self.max_errors if self.max_errors is not None else dspy.settings.max_errors
 
         demo_candidates = create_n_fewshot_demo_sets(
             student=program,
@@ -513,7 +507,11 @@ class MIPROv2(Teleprompter):
 
             # Log evaluation results
             score_data.append(
-                {"score": score, "program": candidate_program, "full_eval": batch_size >= len(valset)}
+                {
+                    "score": score,
+                    "program": candidate_program,
+                    "full_eval": batch_size >= len(valset),
+                }
             )  # score, prog, full_eval
             if minibatch:
                 self._log_minibatch_eval(
@@ -740,7 +738,13 @@ class MIPROv2(Teleprompter):
         )
         logger.info(f"Doing full eval on next top averaging program (Avg Score: {mean_score}) from minibatch trials...")
         full_eval_score = eval_candidate_program(len(valset), valset, highest_mean_program, evaluate, self.rng).score
-        score_data.append({"score": full_eval_score, "program": highest_mean_program, "full_eval": True})
+        score_data.append(
+            {
+                "score": full_eval_score,
+                "program": highest_mean_program,
+                "full_eval": True,
+            }
+        )
 
         # Log full eval as a trial so that optuna can learn from the new results
         trial = optuna.trial.create_trial(

@@ -14,7 +14,14 @@ if TYPE_CHECKING:
     import mcp
     from langchain.tools import BaseTool
 
-_TYPE_MAPPING = {"string": str, "integer": int, "number": float, "boolean": bool, "array": list, "object": dict}
+_TYPE_MAPPING = {
+    "string": str,
+    "integer": int,
+    "number": float,
+    "boolean": bool,
+    "array": list,
+    "object": dict,
+}
 
 
 class Tool(Type):
@@ -69,7 +76,14 @@ class Tool(Type):
         # Expected output: {'x': {'type': 'integer'}, 'y': {'type': 'string', 'default': 'hello'}}
         ```
         """
-        super().__init__(func=func, name=name, desc=desc, args=args, arg_types=arg_types, arg_desc=arg_desc)
+        super().__init__(
+            func=func,
+            name=name,
+            desc=desc,
+            args=args,
+            arg_types=arg_types,
+            arg_desc=arg_desc,
+        )
         self._parse_function(func, arg_desc)
 
     def _parse_function(self, func: Callable, arg_desc: dict[str, str] | None = None):
@@ -306,7 +320,9 @@ class ToolCalls(Type):
                         break
 
             if func is None:
-                raise ValueError(f"Tool function '{self.name}' not found. Please pass the tool functions to the `execute` method.")
+                raise ValueError(
+                    f"Tool function '{self.name}' not found. Please pass the tool functions to the `execute` method."
+                )
 
             try:
                 args = self.args or {}
