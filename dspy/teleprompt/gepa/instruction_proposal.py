@@ -28,7 +28,8 @@ class GenerateEnhancedMultimodalInstructionFromFeedback(dspy.Signature):
     - **Error prevention guidance** for common visual analysis mistakes shown in the feedback
     - **Precise, actionable language** for both visual and textual processing
 
-    Focus on creating an instruction that helps the assistant properly analyze visual content, integrate it with textual information, and avoid the specific visual analysis mistakes shown in the examples."""
+    Focus on creating an instruction that helps the assistant properly analyze visual content, integrate it with textual information, and avoid the specific visual analysis mistakes shown in the examples.
+    """
 
     current_instruction = dspy.InputField(
         desc="The current instruction that was provided to the assistant to perform the multimodal task"
@@ -135,14 +136,27 @@ class SingleComponentMultiModalProposer(dspy.Module):
 
             # Identify success patterns
             if any(
-                success_word in feedback for success_word in ["correct", "good", "accurate", "well", "successfully"]
+                success_word in feedback
+                for success_word in [
+                    "correct",
+                    "good",
+                    "accurate",
+                    "well",
+                    "successfully",
+                ]
             ):
                 analysis["success_patterns"].append(feedback)
 
             # Identify domain knowledge needs
             if any(
                 knowledge_word in feedback
-                for knowledge_word in ["should know", "domain", "specific", "context", "background"]
+                for knowledge_word in [
+                    "should know",
+                    "domain",
+                    "specific",
+                    "context",
+                    "background",
+                ]
             ):
                 analysis["domain_knowledge_gaps"].append(feedback)
 
@@ -304,7 +318,8 @@ class MultiModalInstructionProposer(ProposalFn):
                 # In the future, proposals could consider multiple components instructions,
                 # instead of just the current instruction, for more holistic instruction proposals.
                 new_instruction = self.single_proposer(
-                    current_instruction=current_instruction, reflective_dataset=component_reflective_data
+                    current_instruction=current_instruction,
+                    reflective_dataset=component_reflective_data,
                 )
 
                 updated_components[component_name] = new_instruction
