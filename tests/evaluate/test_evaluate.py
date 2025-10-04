@@ -57,6 +57,7 @@ def test_evaluate_call():
 @pytest.mark.extra
 def test_construct_result_df():
     import pandas as pd
+
     devset = [
         new_example("What is 1+1?", "2"),
         new_example("What is 2+2?", "4"),
@@ -163,9 +164,10 @@ def test_evaluate_call_wrong_answer():
         ),
         (
             lambda text: Predict("text: str -> entities: list[dict[str, str]]")(text=text).entities,
-            dspy.Example(text="United States", entities=[{"name": "United States", "type": "location"}]).with_inputs(
-                "text"
-            ),
+            dspy.Example(
+                text="United States",
+                entities=[{"name": "United States", "type": "location"}],
+            ).with_inputs("text"),
         ),
         (
             lambda text: Predict("text: str -> first_word: Tuple[str, int]")(text=text).words,
@@ -196,7 +198,8 @@ def test_evaluate_display_table(program_with_example, display_table, is_in_ipyth
     assert ev.display_table == display_table
 
     with patch(
-        "dspy.evaluate.evaluate.is_in_ipython_notebook_environment", return_value=is_in_ipython_notebook_environment
+        "dspy.evaluate.evaluate.is_in_ipython_notebook_environment",
+        return_value=is_in_ipython_notebook_environment,
     ):
         ev(program)
         out, _ = capfd.readouterr()
@@ -258,6 +261,10 @@ def test_evaluate_callback():
     assert callback.end_call_outputs.score == 100.0
     assert callback.end_call_count == 1
 
+
 def test_evaluation_result_repr():
-    result = EvaluationResult(score=100.0, results=[(new_example("What is 1+1?", "2"), {"answer": "2"}, 100.0)])
+    result = EvaluationResult(
+        score=100.0,
+        results=[(new_example("What is 1+1?", "2"), {"answer": "2"}, 100.0)],
+    )
     assert repr(result) == "EvaluationResult(score=100.0, results=<list of 1 results>)"

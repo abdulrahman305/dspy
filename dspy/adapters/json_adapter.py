@@ -39,7 +39,11 @@ def _has_open_ended_mapping(signature: SignatureMeta) -> bool:
 
 
 class JSONAdapter(ChatAdapter):
-    def __init__(self, callbacks: list[BaseCallback] | None = None, use_native_function_calling: bool = True):
+    def __init__(
+        self,
+        callbacks: list[BaseCallback] | None = None,
+        use_native_function_calling: bool = True,
+    ):
         # JSONAdapter uses native function calling by default.
         super().__init__(callbacks=callbacks, use_native_function_calling=use_native_function_calling)
 
@@ -56,7 +60,11 @@ class JSONAdapter(ChatAdapter):
         # Follows guidance from: https://docs.litellm.ai/docs/completion/json_mode#check-model-support
         supports_structured_outputs = litellm.supports_response_schema(model=lm.model, custom_llm_provider=provider)
 
-        if _has_open_ended_mapping(signature) or (not self.use_native_function_calling and has_tool_calls) or not supports_structured_outputs:
+        if (
+            _has_open_ended_mapping(signature)
+            or (not self.use_native_function_calling and has_tool_calls)
+            or not supports_structured_outputs
+        ):
             # We found that structured output mode doesn't work well with dspy.ToolCalls as output field.
             # So we fall back to json mode if native function calling is disabled and ToolCalls is present.
             lm_kwargs["response_format"] = {"type": "json_object"}
@@ -205,7 +213,11 @@ class JSONAdapter(ChatAdapter):
             return json.dumps(serialize_for_json(d), indent=2)
 
     def format_finetune_data(
-        self, signature: type[Signature], demos: list[dict[str, Any]], inputs: dict[str, Any], outputs: dict[str, Any]
+        self,
+        signature: type[Signature],
+        demos: list[dict[str, Any]],
+        inputs: dict[str, Any],
+        outputs: dict[str, Any],
     ) -> dict[str, list[Any]]:
         # TODO: implement format_finetune_data method in JSONAdapter
         raise NotImplementedError
