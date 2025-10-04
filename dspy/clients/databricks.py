@@ -62,7 +62,10 @@ class DatabricksProvider(Provider):
         databricks_host = databricks_host or workspace_client.config.host
         databricks_token = databricks_token or workspace_client.config.token
 
-        headers = {"Context-Type": "text/json", "Authorization": f"Bearer {databricks_token}"}
+        headers = {
+            "Context-Type": "text/json",
+            "Authorization": f"Bearer {databricks_token}",
+        }
 
         optimizable_info = requests.get(
             url=f"{databricks_host}/api/2.0/serving-endpoints/get-model-optimization-info/{model}/{model_version}",
@@ -84,7 +87,9 @@ class DatabricksProvider(Provider):
         model_name = model.replace(".", "_")
 
         get_endpoint_response = requests.get(
-            url=f"{databricks_host}/api/2.0/serving-endpoints/{model_name}", json={"name": model_name}, headers=headers
+            url=f"{databricks_host}/api/2.0/serving-endpoints/{model_name}",
+            json={"name": model_name},
+            headers=headers,
         )
 
         if get_endpoint_response.status_code == 200:
@@ -125,7 +130,11 @@ class DatabricksProvider(Provider):
                 },
             }
 
-            response = requests.post(url=f"{databricks_host}/api/2.0/serving-endpoints", json=data, headers=headers)
+            response = requests.post(
+                url=f"{databricks_host}/api/2.0/serving-endpoints",
+                json=data,
+                headers=headers,
+            )
 
         if response.status_code == 200:
             logger.info(
@@ -150,7 +159,9 @@ class DatabricksProvider(Provider):
             try:
                 if data_format == TrainDataFormat.CHAT:
                     client.chat.completions.create(
-                        messages=[{"role": "user", "content": "hi"}], model=model_name, max_tokens=1
+                        messages=[{"role": "user", "content": "hi"}],
+                        model=model_name,
+                        max_tokens=1,
                     )
                 elif data_format == TrainDataFormat.COMPLETION:
                     client.completions.create(prompt="hi", model=model_name, max_tokens=1)
@@ -236,14 +247,22 @@ class DatabricksProvider(Provider):
         model_to_deploy = train_kwargs.get("register_to")
         job.endpoint_name = model_to_deploy.replace(".", "_")
         DatabricksProvider.deploy_finetuned_model(
-            model_to_deploy, train_data_format, databricks_host, databricks_token, deploy_timeout
+            model_to_deploy,
+            train_data_format,
+            databricks_host,
+            databricks_token,
+            deploy_timeout,
         )
         job.launch_completed = True
         # The finetuned model name should be in the format: "databricks/<endpoint_name>".
         return f"databricks/{job.endpoint_name}"
 
     @staticmethod
-    def upload_data(train_data: list[dict[str, Any]], databricks_unity_catalog_path: str, data_format: TrainDataFormat):
+    def upload_data(
+        train_data: list[dict[str, Any]],
+        databricks_unity_catalog_path: str,
+        data_format: TrainDataFormat,
+    ):
         logger.info("Uploading finetuning data to Databricks Unity Catalog...")
         file_path = _save_data_to_local_file(train_data, data_format)
 

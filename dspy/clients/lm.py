@@ -228,7 +228,9 @@ class LM(BaseLM):
         return job
 
     def reinforce(
-        self, train_kwargs, gpu_config: MultiGPUConfig = MultiGPUConfig(num_inference_gpus=1, num_training_gpus=1)
+        self,
+        train_kwargs,
+        gpu_config: MultiGPUConfig = MultiGPUConfig(num_inference_gpus=1, num_training_gpus=1),
     ) -> ReinforceJob:
         # TODO(GRPO Team): Should we return an initialized job here?
         from dspy import settings as settings
@@ -471,6 +473,7 @@ def _convert_chat_request_to_responses_request(request: dict[str, Any]):
                 content_blocks.extend(c)
         request["input"] = [{"role": msg.get("role", "user"), "content": content_blocks}]
     return request
+
 
 def _get_headers(headers: dict[str, Any] | None = None):
     headers = headers or {}

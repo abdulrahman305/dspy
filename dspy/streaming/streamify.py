@@ -14,8 +14,15 @@ from litellm import ModelResponseStream
 
 from dspy.dsp.utils.settings import settings
 from dspy.primitives.prediction import Prediction
-from dspy.streaming.messages import StatusMessage, StatusMessageProvider, StatusStreamingCallback
-from dspy.streaming.streaming_listener import StreamListener, find_predictor_for_stream_listeners
+from dspy.streaming.messages import (
+    StatusMessage,
+    StatusMessageProvider,
+    StatusStreamingCallback,
+)
+from dspy.streaming.streaming_listener import (
+    StreamListener,
+    find_predictor_for_stream_listeners,
+)
 from dspy.utils.asyncify import asyncify
 
 logger = logging.getLogger(__name__)
