@@ -240,19 +240,25 @@ async def test_stream_listener_json_adapter(lm_for_test):
 async def test_streaming_handles_space_correctly():
     my_program = dspy.Predict("question->answer")
     program = dspy.streamify(
-        my_program, stream_listeners=[dspy.streaming.StreamListener(signature_field_name="answer")]
+        my_program,
+        stream_listeners=[dspy.streaming.StreamListener(signature_field_name="answer")],
     )
 
     async def gpt_4o_mini_stream(*args, **kwargs):
         yield ModelResponseStream(
-            model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="[[ ## answer ## ]]\n"))]
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="[[ ## answer ## ]]\n"))],
         )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="How "))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="are "))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="you "))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="doing?"))])
         yield ModelResponseStream(
-            model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="\n\n[[ ## completed ## ]]"))]
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="doing?"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="\n\n[[ ## completed ## ]]"))],
         )
 
     with mock.patch("litellm.acompletion", side_effect=gpt_4o_mini_stream):
@@ -347,46 +353,103 @@ async def test_stream_listener_returns_correct_chunk_chat_adapter():
         # Recorded streaming from openai/gpt-4o-mini
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="[["))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ##"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" answer"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" answer"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ##"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ]]\n\n"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" ]]\n\n"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="To"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" get"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" to"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" the"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" other"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" side"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" other"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" side"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" of"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" the"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" dinner"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" plate"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" dinner"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" plate"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="!"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="\n\n"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="[[ ##"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" completed"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="[[ ##"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" completed"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ##"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ]]"))])
 
     async def gpt_4o_mini_stream_2():
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="[[ ##"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" judgement"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="[[ ##"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" judgement"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ##"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ]]\n\n"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" ]]\n\n"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="The"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" answer"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" answer"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" is"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" humorous"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" humorous"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" and"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" plays"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" plays"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" on"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" the"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" classic"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" joke"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" format"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" classic"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" joke"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" format"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="."))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="\n\n"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="[[ ##"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" completed"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="[[ ##"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" completed"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ##"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ]]"))])
 
@@ -449,17 +512,29 @@ async def test_stream_listener_returns_correct_chunk_json_adapter():
 
     async def gpt_4o_mini_stream_1(*args, **kwargs):
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content='{"'))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="answer"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="answer"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content='":'))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="To"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" get"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" to"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" the"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" other"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" side"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" other"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" side"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" of"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" the"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" frying"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" frying"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" pan"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content='!"'))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="}\n"))])
@@ -470,22 +545,49 @@ async def test_stream_listener_returns_correct_chunk_json_adapter():
     async def gpt_4o_mini_stream_2(*args, **kwargs):
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content='{"'))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="jud"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="gement"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="gement"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content='":"'))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="The"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" answer"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" answer"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" is"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" humorous"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" humorous"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" and"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" plays"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" plays"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" on"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" the"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" very"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" funny"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" very"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" funny"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" and"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" classic"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" joke"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" format"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" classic"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" joke"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" format"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content='."'))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="}"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="None"))])
@@ -493,7 +595,9 @@ async def test_stream_listener_returns_correct_chunk_json_adapter():
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="None"))])
 
     with mock.patch(
-        "litellm.acompletion", new_callable=AsyncMock, side_effect=[gpt_4o_mini_stream_1(), gpt_4o_mini_stream_2()]
+        "litellm.acompletion",
+        new_callable=AsyncMock,
+        side_effect=[gpt_4o_mini_stream_1(), gpt_4o_mini_stream_2()],
     ):
         program = dspy.streamify(
             MyProgram(),
@@ -541,17 +645,23 @@ async def test_stream_listener_returns_correct_chunk_chat_adapter_untokenized_st
 
     async def gemini_stream_1(*args, **kwargs):
         yield ModelResponseStream(model="gemini", choices=[StreamingChoices(delta=Delta(content="[[ ##"))])
-        yield ModelResponseStream(model="gemini", choices=[StreamingChoices(delta=Delta(content=" answer ## ]]"))])
         yield ModelResponseStream(
-            model="gemini", choices=[StreamingChoices(delta=Delta(content="To get to the other side."))]
+            model="gemini",
+            choices=[StreamingChoices(delta=Delta(content=" answer ## ]]"))],
         )
         yield ModelResponseStream(
-            model="gemini", choices=[StreamingChoices(delta=Delta(content="\n\n[[ ## completed ## ]]"))]
+            model="gemini",
+            choices=[StreamingChoices(delta=Delta(content="To get to the other side."))],
+        )
+        yield ModelResponseStream(
+            model="gemini",
+            choices=[StreamingChoices(delta=Delta(content="\n\n[[ ## completed ## ]]"))],
         )
 
     async def gemini_stream_2(*args, **kwargs):
         yield ModelResponseStream(
-            model="gemini", choices=[StreamingChoices(delta=Delta(content="[[ ## judgement ## ]]\n\n"))]
+            model="gemini",
+            choices=[StreamingChoices(delta=Delta(content="[[ ## judgement ## ]]\n\n"))],
         )
         yield ModelResponseStream(
             model="gemini",
@@ -572,7 +682,11 @@ async def test_stream_listener_returns_correct_chunk_chat_adapter_untokenized_st
         )
         yield ModelResponseStream(model="gemini", choices=[StreamingChoices(delta=Delta(content="}\n"))])
 
-    with mock.patch("litellm.acompletion", new_callable=AsyncMock, side_effect=[gemini_stream_1(), gemini_stream_2()]):
+    with mock.patch(
+        "litellm.acompletion",
+        new_callable=AsyncMock,
+        side_effect=[gemini_stream_1(), gemini_stream_2()],
+    ):
         program = dspy.streamify(
             MyProgram(),
             stream_listeners=[
@@ -580,7 +694,10 @@ async def test_stream_listener_returns_correct_chunk_chat_adapter_untokenized_st
                 dspy.streaming.StreamListener(signature_field_name="judgement"),
             ],
         )
-        with dspy.context(lm=dspy.LM("gemini/gemini-2.5-flash", cache=False), adapter=dspy.ChatAdapter()):
+        with dspy.context(
+            lm=dspy.LM("gemini/gemini-2.5-flash", cache=False),
+            adapter=dspy.ChatAdapter(),
+        ):
             output = program(question="why did a chicken cross the kitchen?")
             all_chunks = []
             async for value in output:
@@ -615,17 +732,20 @@ async def test_stream_listener_returns_correct_chunk_json_adapter_untokenized_st
     async def gemini_stream_1(*args, **kwargs):
         yield ModelResponseStream(model="gemini", choices=[StreamingChoices(delta=Delta(content="{\n"))])
         yield ModelResponseStream(
-            model="gemini", choices=[StreamingChoices(delta=Delta(content='  "answer": "To get to'))]
+            model="gemini",
+            choices=[StreamingChoices(delta=Delta(content='  "answer": "To get to'))],
         )
         yield ModelResponseStream(
-            model="gemini", choices=[StreamingChoices(delta=Delta(content=' the other side... of the cutting board!"'))]
+            model="gemini",
+            choices=[StreamingChoices(delta=Delta(content=' the other side... of the cutting board!"'))],
         )
         yield ModelResponseStream(model="gemini", choices=[StreamingChoices(delta=Delta(content="}\n"))])
 
     async def gemini_stream_2(*args, **kwargs):
         yield ModelResponseStream(model="gemini", choices=[StreamingChoices(delta=Delta(content="{\n"))])
         yield ModelResponseStream(
-            model="gemini", choices=[StreamingChoices(delta=Delta(content='  "judgement": "The'))]
+            model="gemini",
+            choices=[StreamingChoices(delta=Delta(content='  "judgement": "The'))],
         )
         yield ModelResponseStream(
             model="gemini",
@@ -639,7 +759,11 @@ async def test_stream_listener_returns_correct_chunk_json_adapter_untokenized_st
         )
         yield ModelResponseStream(model="gemini", choices=[StreamingChoices(delta=Delta(content="}\n"))])
 
-    with mock.patch("litellm.acompletion", new_callable=AsyncMock, side_effect=[gemini_stream_1(), gemini_stream_2()]):
+    with mock.patch(
+        "litellm.acompletion",
+        new_callable=AsyncMock,
+        side_effect=[gemini_stream_1(), gemini_stream_2()],
+    ):
         program = dspy.streamify(
             MyProgram(),
             stream_listeners=[
@@ -647,7 +771,10 @@ async def test_stream_listener_returns_correct_chunk_json_adapter_untokenized_st
                 dspy.streaming.StreamListener(signature_field_name="judgement"),
             ],
         )
-        with dspy.context(lm=dspy.LM("gemini/gemini-2.5-flash", cache=False), adapter=dspy.JSONAdapter()):
+        with dspy.context(
+            lm=dspy.LM("gemini/gemini-2.5-flash", cache=False),
+            adapter=dspy.JSONAdapter(),
+        ):
             output = program(question="why did a chicken cross the kitchen?")
             all_chunks = []
             async for value in output:
@@ -702,7 +829,11 @@ async def test_status_message_non_blocking_async_program():
             await dspy.Tool(dummy_tool).acall()
             return dspy.Prediction(answer="dummy_tool_output")
 
-    program = dspy.streamify(MyProgram(), status_message_provider=StatusMessageProvider(), is_async_program=True)
+    program = dspy.streamify(
+        MyProgram(),
+        status_message_provider=StatusMessageProvider(),
+        is_async_program=True,
+    )
 
     with mock.patch("litellm.acompletion", new_callable=AsyncMock, side_effect=[dummy_tool]):
         with dspy.context(lm=dspy.LM("openai/gpt-4o-mini", cache=False)):
@@ -741,19 +872,37 @@ async def test_stream_listener_allow_reuse():
         # Recorded streaming from openai/gpt-4o-mini
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="[["))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ##"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" answer"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" answer"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ##"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ]]\n\n"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" ]]\n\n"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="To"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" get"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" to"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" the"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" other"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" side"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" other"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" side"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="!"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="\n\n"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="[[ ##"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" completed"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="[[ ##"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" completed"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ##"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ]]"))])
 
@@ -790,36 +939,66 @@ async def test_stream_listener_returns_correct_chunk_xml_adapter():
 
     async def xml_stream_1(*args, **kwargs):
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="<"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="answer"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="answer"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=">"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="To"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" get"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" to"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" the"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" other"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" side"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" other"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" side"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="!"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="<"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="/answer"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="/answer"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=">"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="<"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="completed"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="completed"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=">"))])
 
     async def xml_stream_2(*args, **kwargs):
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="<"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="judgement"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="judgement"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=">"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="The"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" answer"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" answer"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" is"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" humorous"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" humorous"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="."))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="<"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="/judgement"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="/judgement"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=">"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="<"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="completed"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="completed"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=">"))])
 
     stream_generators = [xml_stream_1, xml_stream_2]
@@ -907,17 +1086,31 @@ async def test_streaming_allows_custom_streamable_type():
     )
 
     async def stream(*args, **kwargs):
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="Hello"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="World"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="Hello"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="World"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="\n\n"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content="[[ ##"))])
-        yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" completed"))])
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content="[[ ##"))],
+        )
+        yield ModelResponseStream(
+            model="gpt-4o-mini",
+            choices=[StreamingChoices(delta=Delta(content=" completed"))],
+        )
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ##"))])
         yield ModelResponseStream(model="gpt-4o-mini", choices=[StreamingChoices(delta=Delta(content=" ]]"))])
 
-
     with mock.patch("litellm.acompletion", side_effect=stream):
-        with dspy.context(lm=dspy.LM("openai/gpt-4o-mini", cache=False), adapter=dspy.ChatAdapter(native_response_types=[CustomType])):
+        with dspy.context(
+            lm=dspy.LM("openai/gpt-4o-mini", cache=False),
+            adapter=dspy.ChatAdapter(native_response_types=[CustomType]),
+        ):
             output = program(question="why did a chicken cross the kitchen?")
             all_chunks = []
             async for value in output:
@@ -934,6 +1127,7 @@ async def test_streaming_allows_custom_streamable_type():
 async def test_streaming_with_citations():
     class AnswerWithSources(dspy.Signature):
         """Answer questions using provided documents with citations."""
+
         documents: list[Document] = dspy.InputField()
         question: str = dspy.InputField()
         answer: str = dspy.OutputField()
@@ -952,7 +1146,10 @@ async def test_streaming_with_citations():
         # To verify the realistic scenario with more than 10 chunks in the stream, include more than 10 chunks before the citation.
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content="[[ ##"))])
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content=" answer"))])
-        yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content=" ## ]]\n\n"))])
+        yield ModelResponseStream(
+            model="claude",
+            choices=[StreamingChoices(delta=Delta(content=" ## ]]\n\n"))],
+        )
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content="A"))])
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content="c"))])
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content="c"))])
@@ -963,20 +1160,30 @@ async def test_streaming_with_citations():
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content="n"))])
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content="g"))])
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content=" to "))])
-        yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content="the references,"))])
-        yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(
-            content="",
-            provider_specific_fields={
-                "citation": {
-                    "type": "char_location",
-                    "cited_text": "water boils at 100°C",
-                    "document_index": 0,
-                    "document_title": "Physics Facts",
-                    "start_char_index": 0,
-                    "end_char_index": 19
-                }
-            }
-        ))])
+        yield ModelResponseStream(
+            model="claude",
+            choices=[StreamingChoices(delta=Delta(content="the references,"))],
+        )
+        yield ModelResponseStream(
+            model="claude",
+            choices=[
+                StreamingChoices(
+                    delta=Delta(
+                        content="",
+                        provider_specific_fields={
+                            "citation": {
+                                "type": "char_location",
+                                "cited_text": "water boils at 100°C",
+                                "document_index": 0,
+                                "document_title": "Physics Facts",
+                                "start_char_index": 0,
+                                "end_char_index": 19,
+                            }
+                        },
+                    )
+                )
+            ],
+        )
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content=" water"))])
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content=" boils"))])
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content=" at"))])
@@ -984,7 +1191,10 @@ async def test_streaming_with_citations():
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content="."))])
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content="\n\n"))])
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content="[[ ##"))])
-        yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content=" completed"))])
+        yield ModelResponseStream(
+            model="claude",
+            choices=[StreamingChoices(delta=Delta(content=" completed"))],
+        )
         yield ModelResponseStream(model="claude", choices=[StreamingChoices(delta=Delta(content=" ## ]]"))])
 
     # Mock the final response choice to include provider_specific_fields with citations
@@ -1000,7 +1210,10 @@ async def test_streaming_with_citations():
         # Create test documents
         docs = [Document(data="Water boils at 100°C at standard pressure.", title="Physics Facts")]
 
-        with dspy.context(lm=dspy.LM("anthropic/claude-3-5-sonnet-20241022", cache=False), adapter=dspy.ChatAdapter(native_response_types=[Citations])):
+        with dspy.context(
+            lm=dspy.LM("anthropic/claude-3-5-sonnet-20241022", cache=False),
+            adapter=dspy.ChatAdapter(native_response_types=[Citations]),
+        ):
             output = program(documents=docs, question="What temperature does water boil?")
             citation_chunks = []
             answer_chunks = []
