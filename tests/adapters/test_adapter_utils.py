@@ -69,8 +69,10 @@ def test_parse_value_literal():
     # Test Literal with quotes and prefixes
     assert parse_value("'option1'", Literal["option1", "option2"]) == "option1"
     assert parse_value('"option1"', Literal["option1", "option2"]) == "option1"
-    assert parse_value("Literal[option1]", Literal["option1", "option2"]) == "option1"
-    assert parse_value("str[option1]", Literal["option1", "option2"]) == "option1"
+    assert parse_value("Literal[option1]",
+                       Literal["option1", "option2"]) == "option1"
+    assert parse_value(
+        "str[option1]", Literal["option1", "option2"]) == "option1"
 
     # Test invalid literal
     with pytest.raises(ValueError):
@@ -83,15 +85,18 @@ def test_parse_value_union():
     assert parse_value("test", str | None) == "test"
     assert parse_value("5", int | None) == 5
     assert parse_value(None, Optional[str]) is None
-    assert parse_value("text with [placeholder]", Optional[str]) == "text with [placeholder]"
-    assert parse_value("text with [placeholder]", str | None) == "text with [placeholder]"
+    assert parse_value("text with [placeholder]",
+                       Optional[str]) == "text with [placeholder]"
+    assert parse_value("text with [placeholder]",
+                       str | None) == "text with [placeholder]"
 
     # Test Union fallback to str
     assert parse_value("fallback", Union[int, str, None]) == "fallback"
     assert parse_value(5, Union[int, str, None]) == 5
     assert parse_value("fallback", int | str | None) == "fallback"
     assert parse_value(5, int | str | None) == 5
-    assert parse_value("text with [placeholder]", Union[int, str, None]) == "text with [placeholder]"
+    assert parse_value(
+        "text with [placeholder]", Union[int, str, None]) == "text with [placeholder]"
 
 
 def test_parse_value_json_repair():

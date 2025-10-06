@@ -42,7 +42,8 @@ def test_evaluate_call():
             }
         )
     )
-    devset = [new_example("What is 1+1?", "2"), new_example("What is 2+2?", "4")]
+    devset = [new_example("What is 1+1?", "2"),
+              new_example("What is 2+2?", "4")]
     program = Predict("question -> answer")
     assert program(question="What is 1+1?").answer == "2"
     ev = Evaluate(
@@ -57,6 +58,7 @@ def test_evaluate_call():
 @pytest.mark.extra
 def test_construct_result_df():
     import pandas as pd
+
     devset = [
         new_example("What is 1+1?", "2"),
         new_example("What is 2+2?", "4"),
@@ -71,7 +73,8 @@ def test_construct_result_df():
         (devset[1], {"answer": "4"}, 100.0),
         (devset[2], {"answer": "-1"}, 0.0),
     ]
-    result_df = ev._construct_result_table(results, answer_exact_match.__name__)
+    result_df = ev._construct_result_table(
+        results, answer_exact_match.__name__)
     pd.testing.assert_frame_equal(
         result_df,
         pd.DataFrame(
@@ -86,8 +89,10 @@ def test_construct_result_df():
 
 
 def test_multithread_evaluate_call():
-    dspy.settings.configure(lm=DummyLM({"What is 1+1?": {"answer": "2"}, "What is 2+2?": {"answer": "4"}}))
-    devset = [new_example("What is 1+1?", "2"), new_example("What is 2+2?", "4")]
+    dspy.settings.configure(lm=DummyLM(
+        {"What is 1+1?": {"answer": "2"}, "What is 2+2?": {"answer": "4"}}))
+    devset = [new_example("What is 1+1?", "2"),
+              new_example("What is 2+2?", "4")]
     program = Predict("question -> answer")
     assert program(question="What is 1+1?").answer == "2"
     ev = Evaluate(
@@ -109,9 +114,11 @@ def test_multi_thread_evaluate_call_cancelled(monkeypatch):
             time.sleep(1)
             return super().__call__(*args, **kwargs)
 
-    dspy.settings.configure(lm=SlowLM({"What is 1+1?": {"answer": "2"}, "What is 2+2?": {"answer": "4"}}))
+    dspy.settings.configure(
+        lm=SlowLM({"What is 1+1?": {"answer": "2"}, "What is 2+2?": {"answer": "4"}}))
 
-    devset = [new_example("What is 1+1?", "2"), new_example("What is 2+2?", "4")]
+    devset = [new_example("What is 1+1?", "2"),
+              new_example("What is 2+2?", "4")]
     program = Predict("question -> answer")
     assert program(question="What is 1+1?").answer == "2"
 
@@ -138,8 +145,10 @@ def test_multi_thread_evaluate_call_cancelled(monkeypatch):
 
 
 def test_evaluate_call_wrong_answer():
-    dspy.settings.configure(lm=DummyLM({"What is 1+1?": {"answer": "0"}, "What is 2+2?": {"answer": "0"}}))
-    devset = [new_example("What is 1+1?", "2"), new_example("What is 2+2?", "4")]
+    dspy.settings.configure(lm=DummyLM(
+        {"What is 1+1?": {"answer": "0"}, "What is 2+2?": {"answer": "0"}}))
+    devset = [new_example("What is 1+1?", "2"),
+              new_example("What is 2+2?", "4")]
     program = Predict("question -> answer")
     ev = Evaluate(
         devset=devset,
@@ -158,18 +167,24 @@ def test_evaluate_call_wrong_answer():
         # Create programs that do not return dictionary-like objects because Evaluate()
         # has failed for such cases in the past
         (
-            lambda text: Predict("text: str -> entities: list[str]")(text=text).entities,
-            dspy.Example(text="United States", entities=["United States"]).with_inputs("text"),
+            lambda text: Predict(
+                "text: str -> entities: list[str]")(text=text).entities,
+            dspy.Example(text="United States", entities=[
+                         "United States"]).with_inputs("text"),
         ),
         (
-            lambda text: Predict("text: str -> entities: list[dict[str, str]]")(text=text).entities,
-            dspy.Example(text="United States", entities=[{"name": "United States", "type": "location"}]).with_inputs(
-                "text"
-            ),
+            lambda text: Predict(
+                "text: str -> entities: list[dict[str, str]]")(text=text).entities,
+            dspy.Example(
+                text="United States",
+                entities=[{"name": "United States", "type": "location"}],
+            ).with_inputs("text"),
         ),
         (
-            lambda text: Predict("text: str -> first_word: Tuple[str, int]")(text=text).words,
-            dspy.Example(text="United States", first_word=("United", 6)).with_inputs("text"),
+            lambda text: Predict(
+                "text: str -> first_word: Tuple[str, int]")(text=text).words,
+            dspy.Example(text="United States", first_word=(
+                "United", 6)).with_inputs("text"),
         ),
     ],
 )
@@ -178,7 +193,8 @@ def test_evaluate_call_wrong_answer():
 def test_evaluate_display_table(program_with_example, display_table, is_in_ipython_notebook_environment, capfd):
     program, example = program_with_example
     example_input = next(iter(example.inputs().values()))
-    example_output = {key: value for key, value in example.toDict().items() if key not in example.inputs()}
+    example_output = {key: value for key, value in example.toDict(
+    ).items() if key not in example.inputs()}
 
     dspy.settings.configure(
         lm=DummyLM(
@@ -196,7 +212,8 @@ def test_evaluate_display_table(program_with_example, display_table, is_in_ipyth
     assert ev.display_table == display_table
 
     with patch(
-        "dspy.evaluate.evaluate.is_in_ipython_notebook_environment", return_value=is_in_ipython_notebook_environment
+        "dspy.evaluate.evaluate.is_in_ipython_notebook_environment",
+        return_value=is_in_ipython_notebook_environment,
     ):
         ev(program)
         out, _ = capfd.readouterr()
@@ -243,7 +260,8 @@ def test_evaluate_callback():
         ),
         callbacks=[callback],
     )
-    devset = [new_example("What is 1+1?", "2"), new_example("What is 2+2?", "4")]
+    devset = [new_example("What is 1+1?", "2"),
+              new_example("What is 2+2?", "4")]
     program = Predict("question -> answer")
     assert program(question="What is 1+1?").answer == "2"
     ev = Evaluate(
@@ -258,6 +276,11 @@ def test_evaluate_callback():
     assert callback.end_call_outputs.score == 100.0
     assert callback.end_call_count == 1
 
+
 def test_evaluation_result_repr():
-    result = EvaluationResult(score=100.0, results=[(new_example("What is 1+1?", "2"), {"answer": "2"}, 100.0)])
-    assert repr(result) == "EvaluationResult(score=100.0, results=<list of 1 results>)"
+    result = EvaluationResult(
+        score=100.0,
+        results=[(new_example("What is 1+1?", "2"), {"answer": "2"}, 100.0)],
+    )
+    assert repr(
+        result) == "EvaluationResult(score=100.0, results=<list of 1 results>)"
