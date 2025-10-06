@@ -16,7 +16,8 @@ def test_xml_adapter_format_and_parse_basic():
 
     adapter = XMLAdapter()
     # Format output fields as XML
-    fields_with_values = {FieldInfoWithName(name="answer", info=TestSignature.output_fields["answer"]): "Paris"}
+    fields_with_values = {FieldInfoWithName(
+        name="answer", info=TestSignature.output_fields["answer"]): "Paris"}
     xml = adapter.format_field_with_value(fields_with_values)
     assert xml.strip() == "<answer>\nParis\n</answer>"
 
@@ -38,7 +39,10 @@ def test_xml_adapter_parse_multiple_fields():
 <explanation>The capital of France is Paris.</explanation>
 """
     parsed = adapter.parse(TestSignature, completion)
-    assert parsed == {"answer": "Paris", "explanation": "The capital of France is Paris."}
+    assert parsed == {
+        "answer": "Paris",
+        "explanation": "The capital of France is Paris.",
+    }
 
 
 def test_xml_adapter_parse_raises_on_missing_field():
@@ -122,7 +126,8 @@ def test_xml_adapter_format_and_parse_list_of_models():
 
     adapter = XMLAdapter()
     items = [Item(name="a", score=1.1), Item(name="b", score=2.2)]
-    fields_with_values = {FieldInfoWithName(name="items", info=TestSignature.output_fields["items"]): items}
+    fields_with_values = {FieldInfoWithName(
+        name="items", info=TestSignature.output_fields["items"]): items}
     xml = adapter.format_field_with_value(fields_with_values)
     assert xml.strip().startswith("<items>")
     assert '"name": "a"' in xml
@@ -155,7 +160,11 @@ def test_xml_adapter_with_tool_like_output():
     adapter = XMLAdapter()
     tool_calls = [
         ToolCall(name="get_weather", args={"city": "Tokyo"}, result="Sunny"),
-        ToolCall(name="get_population", args={"country": "Japan", "year": 2023}, result="125M"),
+        ToolCall(
+            name="get_population",
+            args={"country": "Japan", "year": 2023},
+            result="125M",
+        ),
     ]
     fields_with_values = {
         FieldInfoWithName(name="tool_calls", info=TestSignature.output_fields["tool_calls"]): tool_calls,
@@ -195,7 +204,8 @@ def test_xml_adapter_formats_nested_images():
     image2 = dspy.Image(url="https://example.com/image2.jpg")
     image3 = dspy.Image(url="https://example.com/image3.jpg")
 
-    image_wrapper = ImageWrapper(images=[image1, image2, image3], tag=["test", "example"])
+    image_wrapper = ImageWrapper(
+        images=[image1, image2, image3], tag=["test", "example"])
     demos = [
         dspy.Example(
             image=image_wrapper,
@@ -203,22 +213,37 @@ def test_xml_adapter_formats_nested_images():
         ),
     ]
 
-    image_wrapper_2 = ImageWrapper(images=[dspy.Image(url="https://example.com/image4.jpg")], tag=["test", "example"])
+    image_wrapper_2 = ImageWrapper(
+        images=[dspy.Image(url="https://example.com/image4.jpg")],
+        tag=["test", "example"],
+    )
     adapter = dspy.XMLAdapter()
     messages = adapter.format(MySignature, demos, {"image": image_wrapper_2})
 
     assert len(messages) == 4
 
     # Image information in the few-shot example's user message
-    expected_image1_content = {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}}
-    expected_image2_content = {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}}
-    expected_image3_content = {"type": "image_url", "image_url": {"url": "https://example.com/image3.jpg"}}
+    expected_image1_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image1.jpg"},
+    }
+    expected_image2_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image2.jpg"},
+    }
+    expected_image3_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image3.jpg"},
+    }
     assert expected_image1_content in messages[1]["content"]
     assert expected_image2_content in messages[1]["content"]
     assert expected_image3_content in messages[1]["content"]
 
     # The query image is formatted in the last user message
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image4.jpg"}} in messages[-1]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image4.jpg"},
+    } in messages[-1]["content"]
 
 
 def test_xml_adapter_with_code():
@@ -230,7 +255,8 @@ def test_xml_adapter_with_code():
         result: str = dspy.OutputField()
 
     adapter = dspy.XMLAdapter()
-    messages = adapter.format(CodeAnalysis, [], {"code": "print('Hello, world!')"})
+    messages = adapter.format(
+        CodeAnalysis, [], {"code": "print('Hello, world!')"})
 
     assert len(messages) == 2
 
@@ -250,7 +276,8 @@ def test_xml_adapter_with_code():
     adapter = dspy.XMLAdapter()
     with mock.patch("litellm.completion") as mock_completion:
         mock_completion.return_value = ModelResponse(
-            choices=[Choices(message=Message(content='<code>print("Hello, world!")</code>'))],
+            choices=[Choices(message=Message(
+                content='<code>print("Hello, world!")</code>'))],
             model="openai/gpt-4o-mini",
         )
         result = adapter(
