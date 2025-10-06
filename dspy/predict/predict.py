@@ -31,7 +31,12 @@ class Predict(Module, Parameter):
                 predict(q="What is 1 + 52?", config={"rollout_id": 2, "temperature": 1.0})
     """
 
-    def __init__(self, signature: str | type[Signature], callbacks: list[BaseCallback] | None = None, **config):
+    def __init__(
+        self,
+        signature: str | type[Signature],
+        callbacks: list[BaseCallback] | None = None,
+        **config,
+    ):
         super().__init__(callbacks=callbacks)
         self.stage = random.randbytes(8).hex()
         self.signature = ensure_signature(signature)
@@ -84,7 +89,8 @@ class Predict(Module, Parameter):
         self.lm = LM(**state["lm"]) if state["lm"] else None
 
         if "extended_signature" in state:  # legacy, up to and including 2.5, for CoT.
-            raise NotImplementedError("Loading extended_signature is no longer supported in DSPy 2.6+")
+            raise NotImplementedError(
+                "Loading extended_signature is no longer supported in DSPy 2.6+")
 
         return self
 
@@ -132,11 +138,13 @@ class Predict(Module, Parameter):
                 f"'dspy.configure(lm=\"{lm}\")', please configure the LM like 'dspy.configure(lm=dspy.LM(\"{lm}\"))'"
             )
         elif not isinstance(lm, BaseLM):
-            raise ValueError(f"LM must be an instance of `dspy.BaseLM`, not {type(lm)}. Received `lm={lm}`.")
+            raise ValueError(
+                f"LM must be an instance of `dspy.BaseLM`, not {type(lm)}. Received `lm={lm}`.")
 
         # If temperature is unset or <=0.15, and n > 1, set temperature to 0.7 to keep randomness.
         temperature = config.get("temperature") or lm.kwargs.get("temperature")
-        num_generations = config.get("n") or lm.kwargs.get("n") or lm.kwargs.get("num_generations") or 1
+        num_generations = config.get("n") or lm.kwargs.get(
+            "n") or lm.kwargs.get("num_generations") or 1
 
         if (temperature is None or temperature <= 0.15) and num_generations > 1:
             config["temperature"] = 0.7
@@ -175,34 +183,61 @@ class Predict(Module, Parameter):
         stream_listeners = settings.stream_listeners or []
         should_stream = settings.send_stream is not None
         if should_stream and len(stream_listeners) > 0:
-            should_stream = any(stream_listener.predict == self for stream_listener in stream_listeners)
+            should_stream = any(stream_listener.predict ==
+                                self for stream_listener in stream_listeners)
 
         return should_stream
 
     def forward(self, **kwargs):
-        lm, config, signature, demos, kwargs = self._forward_preprocess(**kwargs)
+        lm, config, signature, demos, kwargs = self._forward_preprocess(
+            **kwargs)
 
         adapter = settings.adapter or ChatAdapter()
 
         if self._should_stream():
             with settings.context(caller_predict=self):
-                completions = adapter(lm, lm_kwargs=config, signature=signature, demos=demos, inputs=kwargs)
+                completions = adapter(
+                    lm,
+                    lm_kwargs=config,
+                    signature=signature,
+                    demos=demos,
+                    inputs=kwargs,
+                )
         else:
             with settings.context(send_stream=None):
-                completions = adapter(lm, lm_kwargs=config, signature=signature, demos=demos, inputs=kwargs)
+                completions = adapter(
+                    lm,
+                    lm_kwargs=config,
+                    signature=signature,
+                    demos=demos,
+                    inputs=kwargs,
+                )
 
         return self._forward_postprocess(completions, signature, **kwargs)
 
     async def aforward(self, **kwargs):
-        lm, config, signature, demos, kwargs = self._forward_preprocess(**kwargs)
+        lm, config, signature, demos, kwargs = self._forward_preprocess(
+            **kwargs)
 
         adapter = settings.adapter or ChatAdapter()
         if self._should_stream():
             with settings.context(caller_predict=self):
-                completions = await adapter.acall(lm, lm_kwargs=config, signature=signature, demos=demos, inputs=kwargs)
+                completions = await adapter.acall(
+                    lm,
+                    lm_kwargs=config,
+                    signature=signature,
+                    demos=demos,
+                    inputs=kwargs,
+                )
         else:
             with settings.context(send_stream=None):
-                completions = await adapter.acall(lm, lm_kwargs=config, signature=signature, demos=demos, inputs=kwargs)
+                completions = await adapter.acall(
+                    lm,
+                    lm_kwargs=config,
+                    signature=signature,
+                    demos=demos,
+                    inputs=kwargs,
+                )
 
         return self._forward_postprocess(completions, signature, **kwargs)
 
