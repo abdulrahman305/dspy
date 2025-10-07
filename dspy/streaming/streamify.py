@@ -14,8 +14,15 @@ from litellm import ModelResponseStream
 
 from dspy.dsp.utils.settings import settings
 from dspy.primitives.prediction import Prediction
-from dspy.streaming.messages import StatusMessage, StatusMessageProvider, StatusStreamingCallback
-from dspy.streaming.streaming_listener import StreamListener, find_predictor_for_stream_listeners
+from dspy.streaming.messages import (
+    StatusMessage,
+    StatusMessageProvider,
+    StatusStreamingCallback,
+)
+from dspy.streaming.streaming_listener import (
+    StreamListener,
+    find_predictor_for_stream_listeners,
+)
 from dspy.utils.asyncify import asyncify
 
 logger = logging.getLogger(__name__)
@@ -152,7 +159,8 @@ def streamify(
     """
     stream_listeners = stream_listeners or []
     if len(stream_listeners) > 0:
-        predict_id_to_listener = find_predictor_for_stream_listeners(program, stream_listeners)
+        predict_id_to_listener = find_predictor_for_stream_listeners(
+            program, stream_listeners)
     else:
         predict_id_to_listener = {}
 
@@ -162,7 +170,8 @@ def streamify(
         program = asyncify(program)
 
     callbacks = settings.callbacks
-    status_streaming_callback = StatusStreamingCallback(status_message_provider)
+    status_streaming_callback = StatusStreamingCallback(
+        status_message_provider)
     if not any(isinstance(c, StatusStreamingCallback) for c in callbacks):
         callbacks.append(status_streaming_callback)
 
