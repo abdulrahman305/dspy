@@ -12,7 +12,6 @@ from dspy.utils.saving import get_dependency_versions
 # NOTE: Note: It's important (temporary decision) to maintain named_parameters that's different in behavior from
 # named_sub_modules for the time being.
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -225,7 +224,12 @@ class BaseModule:
             state["metadata"] = metadata
             try:
                 with open(path, "wb") as f:
-                    f.write(orjson.dumps(state, option=orjson.OPT_INDENT_2 | orjson.OPT_APPEND_NEWLINE))
+                    f.write(
+                        orjson.dumps(
+                            state,
+                            option=orjson.OPT_INDENT_2 | orjson.OPT_APPEND_NEWLINE,
+                        )
+                    )
             except Exception as e:
                 raise RuntimeError(
                     f"Failed to save state to {path} with error: {e}. Your DSPy program may contain non "

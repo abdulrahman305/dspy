@@ -7,7 +7,10 @@ def test_experimental_decorator_on_function():
         """A test function."""
         return "test"
 
-    assert "Experimental: This function may change or be removed in a future release without warning." in test_function.__doc__
+    assert (
+        "Experimental: This function may change or be removed in a future release without warning."
+        in test_function.__doc__
+    )
     assert "A test function." in test_function.__doc__
     assert test_function() == "test"
 
@@ -19,7 +22,10 @@ def test_experimental_decorator_on_function_with_version():
         return "versioned"
 
     assert "introduced in v3.1.0" in test_function.__doc__
-    assert "Experimental: This function may change or be removed in a future release without warning (introduced in v3.1.0)." in test_function.__doc__
+    assert (
+        "Experimental: This function may change or be removed in a future release without warning (introduced in v3.1.0)."
+        in test_function.__doc__
+    )
     assert "A test function with version." in test_function.__doc__
     assert test_function() == "versioned"
 
@@ -43,10 +49,14 @@ def test_experimental_decorator_on_class_with_version():
     @experimental(version="2.5.0")
     class TestClass:
         """A test class with version."""
+
         pass
 
     assert "introduced in v2.5.0" in TestClass.__doc__
-    assert "Experimental: This class may change or be removed in a future release without warning (introduced in v2.5.0)." in TestClass.__doc__
+    assert (
+        "Experimental: This class may change or be removed in a future release without warning (introduced in v2.5.0)."
+        in TestClass.__doc__
+    )
     assert "A test class with version." in TestClass.__doc__
 
 
@@ -55,7 +65,10 @@ def test_experimental_decorator_without_docstring():
     def test_function():
         return "no_doc"
 
-    assert test_function.__doc__ == "Experimental: This function may change or be removed in a future release without warning."
+    assert (
+        test_function.__doc__
+        == "Experimental: This function may change or be removed in a future release without warning."
+    )
     assert test_function() == "no_doc"
 
 
@@ -64,7 +77,10 @@ def test_experimental_decorator_without_docstring_with_version():
     def test_function():
         return "no_doc_version"
 
-    assert test_function.__doc__ == "Experimental: This function may change or be removed in a future release without warning (introduced in v1.0.0)."
+    assert (
+        test_function.__doc__
+        == "Experimental: This function may change or be removed in a future release without warning (introduced in v1.0.0)."
+    )
     assert test_function() == "no_doc_version"
 
 
