@@ -111,7 +111,9 @@ class Evaluate:
         self.save_as_json = save_as_json
 
         if "return_outputs" in kwargs:
-            raise ValueError("`return_outputs` is no longer supported. Results are always returned inside the `results` field of the `EvaluationResult` object.")
+            raise ValueError(
+                "`return_outputs` is no longer supported. Results are always returned inside the `results` field of the `EvaluationResult` object."
+            )
 
     @with_callbacks
     def __call__(
@@ -193,11 +195,7 @@ class Evaluate:
                 logger.warning("Skipping table display since `pandas` is not installed.")
 
         if save_as_csv:
-            metric_name = (
-                metric.__name__
-                if isinstance(metric, types.FunctionType)
-                else metric.__class__.__name__
-            )
+            metric_name = metric.__name__ if isinstance(metric, types.FunctionType) else metric.__class__.__name__
             data = self._prepare_results_output(results, metric_name)
 
             with open(save_as_csv, "w", newline="") as csvfile:
@@ -208,15 +206,11 @@ class Evaluate:
                 for row in data:
                     writer.writerow(row)
         if save_as_json:
-            metric_name = (
-                metric.__name__
-                if isinstance(metric, types.FunctionType)
-                else metric.__class__.__name__
-            )
+            metric_name = metric.__name__ if isinstance(metric, types.FunctionType) else metric.__class__.__name__
             data = self._prepare_results_output(results, metric_name)
             with open(
-                    save_as_json,
-                    "w",
+                save_as_json,
+                "w",
             ) as f:
                 json.dump(data, f)
 
@@ -226,9 +220,7 @@ class Evaluate:
         )
 
     @staticmethod
-    def _prepare_results_output(
-            results: list[tuple["dspy.Example", "dspy.Example", Any]], metric_name: str
-    ):
+    def _prepare_results_output(results: list[tuple["dspy.Example", "dspy.Example", Any]], metric_name: str):
         return [
             (
                 merge_dicts(example, prediction) | {metric_name: score}
@@ -239,7 +231,9 @@ class Evaluate:
         ]
 
     def _construct_result_table(
-        self, results: list[tuple["dspy.Example", "dspy.Example", Any]], metric_name: str
+        self,
+        results: list[tuple["dspy.Example", "dspy.Example", Any]],
+        metric_name: str,
     ) -> "pd.DataFrame":
         """
         Construct a pandas DataFrame from the specified result list.
@@ -336,6 +330,7 @@ def stylize_metric_name(df: "pd.DataFrame", metric_name: str) -> "pd.DataFrame":
     :param df: The pandas DataFrame for which to stylize cell contents.
     :param metric_name: The name of the metric for which to stylize DataFrame cell contents.
     """
+
     def format_metric(x):
         if isinstance(x, float):
             return f"✔️ [{x:.3f}]"
@@ -343,6 +338,7 @@ def stylize_metric_name(df: "pd.DataFrame", metric_name: str) -> "pd.DataFrame":
             return f"✔️ [{x}]"
         else:
             return ""
+
     df[metric_name] = df[metric_name].apply(format_metric)
     return df
 
@@ -365,7 +361,9 @@ def display_dataframe(df: "pd.DataFrame"):
             print(df)
 
 
-def configure_dataframe_for_ipython_notebook_display(df: "pd.DataFrame") -> "pd.DataFrame":
+def configure_dataframe_for_ipython_notebook_display(
+    df: "pd.DataFrame",
+) -> "pd.DataFrame":
     """Set various pandas display options for DataFrame in an IPython notebook environment."""
     import pandas as pd
 
