@@ -79,7 +79,13 @@ def test_embeddings_save_load():
     corpus = dummy_corpus()
     embedder = dummy_embedder
 
-    original_retriever = Embeddings(corpus=corpus, embedder=embedder, k=2, normalize=False, brute_force_threshold=1000)
+    original_retriever = Embeddings(
+        corpus=corpus,
+        embedder=embedder,
+        k=2,
+        normalize=False,
+        brute_force_threshold=1000,
+    )
 
     with tempfile.TemporaryDirectory() as temp_dir:
         save_path = os.path.join(temp_dir, "test_embeddings")
@@ -93,7 +99,13 @@ def test_embeddings_save_load():
         assert not os.path.exists(os.path.join(save_path, "faiss_index.bin"))  # No FAISS for small corpus
 
         # Load into new instance
-        new_retriever = Embeddings(corpus=["dummy"], embedder=embedder, k=1, normalize=True, brute_force_threshold=500)
+        new_retriever = Embeddings(
+            corpus=["dummy"],
+            embedder=embedder,
+            k=1,
+            normalize=True,
+            brute_force_threshold=500,
+        )
         new_retriever.load(save_path, embedder)
 
         # Verify configuration was loaded correctly
@@ -115,7 +127,13 @@ def test_embeddings_from_saved():
     corpus = dummy_corpus()
     embedder = dummy_embedder
 
-    original_retriever = Embeddings(corpus=corpus, embedder=embedder, k=3, normalize=True, brute_force_threshold=1000)
+    original_retriever = Embeddings(
+        corpus=corpus,
+        embedder=embedder,
+        k=3,
+        normalize=True,
+        brute_force_threshold=1000,
+    )
 
     with tempfile.TemporaryDirectory() as temp_dir:
         save_path = os.path.join(temp_dir, "test_embeddings")
@@ -126,7 +144,6 @@ def test_embeddings_from_saved():
         assert loaded_retriever.k == original_retriever.k
         assert loaded_retriever.normalize == original_retriever.normalize
         assert loaded_retriever.corpus == original_retriever.corpus
-
 
 
 def test_embeddings_load_nonexistent_path():
