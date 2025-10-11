@@ -115,7 +115,8 @@ class Module(BaseModule, metaclass=ProgramMeta):
         if len(set(all_used_lms)) == 1:
             return all_used_lms[0]
 
-        raise ValueError("Multiple LMs are being used in the module. There's no unique LM to return.")
+        raise ValueError(
+            "Multiple LMs are being used in the module. There's no unique LM to return.")
 
     def __repr__(self):
         s = []
@@ -172,7 +173,8 @@ class Module(BaseModule, metaclass=ProgramMeta):
 
         # Execute the forward method of Parallel
         if return_failed_examples:
-            results, failed_examples, exceptions = parallel_executor.forward(exec_pairs)
+            results, failed_examples, exceptions = parallel_executor.forward(
+                exec_pairs)
             return results, failed_examples, exceptions
         else:
             results = parallel_executor.forward(exec_pairs)
@@ -191,8 +193,9 @@ class Module(BaseModule, metaclass=ProgramMeta):
         if prediction_in_output:
             prediction_in_output.set_lm_usage(tokens)
         else:
-            logger.warning("Failed to set LM usage. Please return `dspy.Prediction` object from dspy.Module to enable usage tracking.")
-
+            logger.warning(
+                "Failed to set LM usage. Please return `dspy.Prediction` object from dspy.Module to enable usage tracking."
+            )
 
     def __getattribute__(self, name):
         attr = super().__getattribute__(name)
@@ -200,7 +203,8 @@ class Module(BaseModule, metaclass=ProgramMeta):
         if name == "forward" and callable(attr):
             # Check if forward is called through __call__ or directly
             stack = inspect.stack()
-            forward_called_directly = len(stack) <= 1 or stack[1].function != "__call__"
+            forward_called_directly = len(
+                stack) <= 1 or stack[1].function != "__call__"
 
             if forward_called_directly:
                 logger.warning(

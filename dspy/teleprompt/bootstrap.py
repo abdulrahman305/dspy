@@ -96,11 +96,13 @@ class BootstrapFewShot(Teleprompter):
         # NOTE: behavior change on Oct 28, 2024. Deep copy instead of reset copy for the student-as-teacher.
         self.teacher = teacher.deepcopy() if teacher is not None else student.deepcopy()
 
-        assert getattr(self.student, "_compiled", False) is False, "Student must be uncompiled."
+        assert getattr(self.student, "_compiled",
+                       False) is False, "Student must be uncompiled."
 
         if self.max_labeled_demos and getattr(self.teacher, "_compiled", False) is False:
             teleprompter = LabeledFewShot(k=self.max_labeled_demos)
-            self.teacher = teleprompter.compile(self.teacher.reset_copy(), trainset=self.trainset)
+            self.teacher = teleprompter.compile(
+                self.teacher.reset_copy(), trainset=self.trainset)
 
     def _prepare_predictor_mappings(self):
         name2predictor, predictor2name = {}, {}
@@ -127,9 +129,11 @@ class BootstrapFewShot(Teleprompter):
                     f"Student and teacher must have the same signatures. "
                     f"{type(predictor1.signature)} != {type(predictor2.signature)}"
                 )
-            assert id(predictor1) != id(predictor2), "Student and teacher must be different objects."
+            assert id(predictor1) != id(
+                predictor2), "Student and teacher must be different objects."
 
-            name2predictor[name1] = None  # dict(student=predictor1, teacher=predictor2)
+            # dict(student=predictor1, teacher=predictor2)
+            name2predictor[name1] = None
             predictor2name[id(predictor1)] = name1
 
             # FIXME(shangyint): This is an ugly hack to bind traces of
@@ -167,7 +171,8 @@ class BootstrapFewShot(Teleprompter):
 
         # Unbootstrapped training examples
 
-        self.validation = [x for idx, x in enumerate(self.trainset) if idx not in bootstrapped]
+        self.validation = [x for idx, x in enumerate(
+            self.trainset) if idx not in bootstrapped]
         random.Random(0).shuffle(self.validation)
 
         self.validation = self.validation
@@ -185,13 +190,15 @@ class BootstrapFewShot(Teleprompter):
             with dspy.settings.context(trace=[], **self.teacher_settings):
                 lm = dspy.settings.lm
                 # Use a fresh rollout with temperature=1.0 to bypass caches.
-                lm = lm.copy(rollout_id=round_idx, temperature=1.0) if round_idx > 0 else lm
+                lm = lm.copy(rollout_id=round_idx,
+                             temperature=1.0) if round_idx > 0 else lm
                 new_settings = {"lm": lm} if round_idx > 0 else {}
 
                 with dspy.settings.context(**new_settings):
                     for name, predictor in teacher.named_predictors():
                         predictor_cache[name] = predictor.demos
-                        predictor.demos = [x for x in predictor.demos if x != example]
+                        predictor.demos = [
+                            x for x in predictor.demos if x != example]
 
                     prediction = teacher(**example.inputs())
                     trace = dspy.settings.trace
@@ -215,7 +222,8 @@ class BootstrapFewShot(Teleprompter):
             effective_max_errors = self.max_errors if self.max_errors is not None else dspy.settings.max_errors
             if current_error_count >= effective_max_errors:
                 raise e
-            logger.error(f"Failed to run or to evaluate example {example} with {self.metric} due to {e}.")
+            logger.error(
+                f"Failed to run or to evaluate example {example} with {self.metric} due to {e}.")
 
         if success:
             for step in trace:
@@ -237,7 +245,8 @@ class BootstrapFewShot(Teleprompter):
                     #     f"Failed to find predictor {id(predictor)} {predictor} in {self.predictor2name}.",
                     # ) from e
 
-                name2traces[predictor_name] = name2traces.get(predictor_name, [])
+                name2traces[predictor_name] = name2traces.get(
+                    predictor_name, [])
                 name2traces[predictor_name].append(demo)
 
             # Update the traces
@@ -248,7 +257,8 @@ class BootstrapFewShot(Teleprompter):
                     from dspy.utils.hasher import Hasher
 
                     rng = random.Random(Hasher.hash(tuple(demos)))
-                    demos = [rng.choice(demos[:-1]) if rng.random() < 0.5 else demos[-1]]
+                    demos = [rng.choice(demos[:-1])
+                             if rng.random() < 0.5 else demos[-1]]
                 self.name2traces[name].extend(demos)
 
         return success
@@ -260,7 +270,8 @@ class BootstrapFewShot(Teleprompter):
         for name, predictor in self.student.named_predictors():
             augmented_demos = self.name2traces[name][: self.max_bootstrapped_demos]
 
-            sample_size = min(self.max_labeled_demos - len(augmented_demos), len(raw_demos))
+            sample_size = min(self.max_labeled_demos -
+                              len(augmented_demos), len(raw_demos))
             sample_size = max(0, sample_size)
 
             raw_demos = rng.sample(raw_demos, sample_size)
