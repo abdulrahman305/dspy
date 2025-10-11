@@ -39,24 +39,36 @@ def _has_open_ended_mapping(signature: SignatureMeta) -> bool:
 
 
 class JSONAdapter(ChatAdapter):
-    def __init__(self, callbacks: list[BaseCallback] | None = None, use_native_function_calling: bool = True):
+    def __init__(
+        self,
+        callbacks: list[BaseCallback] | None = None,
+        use_native_function_calling: bool = True,
+    ):
         # JSONAdapter uses native function calling by default.
-        super().__init__(callbacks=callbacks, use_native_function_calling=use_native_function_calling)
+        super().__init__(callbacks=callbacks,
+                         use_native_function_calling=use_native_function_calling)
 
     def _json_adapter_call_common(self, lm, lm_kwargs, signature, demos, inputs, call_fn):
         """Common call logic to be used for both sync and async calls."""
         provider = lm.model.split("/", 1)[0] or "openai"
-        params = litellm.get_supported_openai_params(model=lm.model, custom_llm_provider=provider)
+        params = litellm.get_supported_openai_params(
+            model=lm.model, custom_llm_provider=provider)
 
         if not params or "response_format" not in params:
             return call_fn(lm, lm_kwargs, signature, demos, inputs)
 
-        has_tool_calls = any(field.annotation == ToolCalls for field in signature.output_fields.values())
+        has_tool_calls = any(
+            field.annotation == ToolCalls for field in signature.output_fields.values())
         # Some models support json mode but not structured outputs
         # Follows guidance from: https://docs.litellm.ai/docs/completion/json_mode#check-model-support
-        supports_structured_outputs = litellm.supports_response_schema(model=lm.model, custom_llm_provider=provider)
+        supports_structured_outputs = litellm.supports_response_schema(
+            model=lm.model, custom_llm_provider=provider)
 
-        if _has_open_ended_mapping(signature) or (not self.use_native_function_calling and has_tool_calls) or not supports_structured_outputs:
+        if (
+            _has_open_ended_mapping(signature)
+            or (not self.use_native_function_calling and has_tool_calls)
+            or not supports_structured_outputs
+        ):
             # We found that structured output mode doesn't work well with dspy.ToolCalls as output field.
             # So we fall back to json mode if native function calling is disabled and ToolCalls is present.
             lm_kwargs["response_format"] = {"type": "json_object"}
@@ -70,7 +82,8 @@ class JSONAdapter(ChatAdapter):
         demos: list[dict[str, Any]],
         inputs: dict[str, Any],
     ) -> list[dict[str, Any]]:
-        result = self._json_adapter_call_common(lm, lm_kwargs, signature, demos, inputs, super().__call__)
+        result = self._json_adapter_call_common(
+            lm, lm_kwargs, signature, demos, inputs, super().__call__)
         if result:
             return result
 
@@ -81,7 +94,8 @@ class JSONAdapter(ChatAdapter):
             lm_kwargs["response_format"] = structured_output_model
             return super().__call__(lm, lm_kwargs, signature, demos, inputs)
         except Exception:
-            logger.warning("Failed to use structured output format, falling back to JSON mode.")
+            logger.warning(
+                "Failed to use structured output format, falling back to JSON mode.")
             lm_kwargs["response_format"] = {"type": "json_object"}
             return super().__call__(lm, lm_kwargs, signature, demos, inputs)
 
@@ -93,22 +107,26 @@ class JSONAdapter(ChatAdapter):
         demos: list[dict[str, Any]],
         inputs: dict[str, Any],
     ) -> list[dict[str, Any]]:
-        result = self._json_adapter_call_common(lm, lm_kwargs, signature, demos, inputs, super().acall)
+        result = self._json_adapter_call_common(
+            lm, lm_kwargs, signature, demos, inputs, super().acall)
         if result:
             return await result
 
         try:
-            structured_output_model = _get_structured_outputs_response_format(signature)
+            structured_output_model = _get_structured_outputs_response_format(
+                signature)
             lm_kwargs["response_format"] = structured_output_model
             return await super().acall(lm, lm_kwargs, signature, demos, inputs)
         except Exception:
-            logger.warning("Failed to use structured output format, falling back to JSON mode.")
+            logger.warning(
+                "Failed to use structured output format, falling back to JSON mode.")
             lm_kwargs["response_format"] = {"type": "json_object"}
             return await super().acall(lm, lm_kwargs, signature, demos, inputs)
 
     def format_field_structure(self, signature: type[Signature]) -> str:
         parts = []
-        parts.append("All interactions will be structured in the following way, with the appropriate values filled in.")
+        parts.append(
+            "All interactions will be structured in the following way, with the appropriate values filled in.")
 
         def format_signature_fields_for_instructions(fields: dict[str, FieldInfo], role: str):
             return self.format_field_with_value(
@@ -120,9 +138,12 @@ class JSONAdapter(ChatAdapter):
             )
 
         parts.append("Inputs will have the following structure:")
-        parts.append(format_signature_fields_for_instructions(signature.input_fields, role="user"))
-        parts.append("Outputs will be a JSON object with the following fields.")
-        parts.append(format_signature_fields_for_instructions(signature.output_fields, role="assistant"))
+        parts.append(format_signature_fields_for_instructions(
+            signature.input_fields, role="user"))
+        parts.append(
+            "Outputs will be a JSON object with the following fields.")
+        parts.append(format_signature_fields_for_instructions(
+            signature.output_fields, role="assistant"))
         return "\n\n".join(parts).strip()
 
     def user_message_output_requirements(self, signature: type[Signature]) -> str:
@@ -134,7 +155,8 @@ class JSONAdapter(ChatAdapter):
             )
 
         message = "Respond with a JSON object in the following order of fields: "
-        message += ", then ".join(f"`{f}`{type_info(v)}" for f, v in signature.output_fields.items())
+        message += ", then ".join(f"`{f}`{type_info(v)}" for f,
+                                  v in signature.output_fields.items())
         message += "."
         return message
 
@@ -165,12 +187,14 @@ class JSONAdapter(ChatAdapter):
                 message="LM response cannot be serialized to a JSON object.",
             )
 
-        fields = {k: v for k, v in fields.items() if k in signature.output_fields}
+        fields = {k: v for k, v in fields.items(
+        ) if k in signature.output_fields}
 
         # Attempt to cast each value to type signature.output_fields[k].annotation.
         for k, v in fields.items():
             if k in signature.output_fields:
-                fields[k] = parse_value(v, signature.output_fields[k].annotation)
+                fields[k] = parse_value(
+                    v, signature.output_fields[k].annotation)
 
         if fields.keys() != signature.output_fields.keys():
             raise AdapterParseError(
@@ -196,8 +220,10 @@ class JSONAdapter(ChatAdapter):
         if role == "user":
             output = []
             for field, field_value in fields_with_values.items():
-                formatted_field_value = format_field_value(field_info=field.info, value=field_value)
-                output.append(f"[[ ## {field.name} ## ]]\n{formatted_field_value}")
+                formatted_field_value = format_field_value(
+                    field_info=field.info, value=field_value)
+                output.append(
+                    f"[[ ## {field.name} ## ]]\n{formatted_field_value}")
             return "\n\n".join(output).strip()
         else:
             d = fields_with_values.items()
@@ -205,7 +231,11 @@ class JSONAdapter(ChatAdapter):
             return json.dumps(serialize_for_json(d), indent=2)
 
     def format_finetune_data(
-        self, signature: type[Signature], demos: list[dict[str, Any]], inputs: dict[str, Any], outputs: dict[str, Any]
+        self,
+        signature: type[Signature],
+        demos: list[dict[str, Any]],
+        inputs: dict[str, Any],
+        outputs: dict[str, Any],
     ) -> dict[str, list[Any]]:
         # TODO: implement format_finetune_data method in JSONAdapter
         raise NotImplementedError
