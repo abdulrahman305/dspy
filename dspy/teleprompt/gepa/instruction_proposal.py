@@ -28,7 +28,8 @@ class GenerateEnhancedMultimodalInstructionFromFeedback(dspy.Signature):
     - **Error prevention guidance** for common visual analysis mistakes shown in the feedback
     - **Precise, actionable language** for both visual and textual processing
 
-    Focus on creating an instruction that helps the assistant properly analyze visual content, integrate it with textual information, and avoid the specific visual analysis mistakes shown in the examples."""
+    Focus on creating an instruction that helps the assistant properly analyze visual content, integrate it with textual information, and avoid the specific visual analysis mistakes shown in the examples.
+    """
 
     current_instruction = dspy.InputField(
         desc="The current instruction that was provided to the assistant to perform the multimodal task"
@@ -53,7 +54,8 @@ class SingleComponentMultiModalProposer(dspy.Module):
 
     def __init__(self):
         super().__init__()
-        self.propose_instruction = dspy.Predict(GenerateEnhancedMultimodalInstructionFromFeedback)
+        self.propose_instruction = dspy.Predict(
+            GenerateEnhancedMultimodalInstructionFromFeedback)
 
     def forward(self, current_instruction: str, reflective_dataset: list[ReflectiveExample]) -> str:
         """
@@ -68,7 +70,8 @@ class SingleComponentMultiModalProposer(dspy.Module):
             str: Improved instruction text
         """
         # Format examples with enhanced pattern recognition
-        formatted_examples, image_map = self._format_examples_with_pattern_analysis(reflective_dataset)
+        formatted_examples, image_map = self._format_examples_with_pattern_analysis(
+            reflective_dataset)
 
         # Build kwargs for the prediction call
         predict_kwargs = {
@@ -77,7 +80,8 @@ class SingleComponentMultiModalProposer(dspy.Module):
         }
 
         # Create a rich multimodal examples_with_feedback that includes both text and images
-        predict_kwargs["examples_with_feedback"] = self._create_multimodal_examples(formatted_examples, image_map)
+        predict_kwargs["examples_with_feedback"] = self._create_multimodal_examples(
+            formatted_examples, image_map)
 
         # Use current dspy LM settings (GEPA will pass reflection_lm via context)
         result = self.propose_instruction(**predict_kwargs)
@@ -94,7 +98,8 @@ class SingleComponentMultiModalProposer(dspy.Module):
             tuple: (formatted_text_with_patterns, image_map)
         """
         # First, use the existing proven formatting approach
-        formatted_examples, image_map = self._format_examples_for_instruction_generation(reflective_dataset)
+        formatted_examples, image_map = self._format_examples_for_instruction_generation(
+            reflective_dataset)
 
         # Enhanced analysis: categorize feedback patterns
         feedback_analysis = self._analyze_feedback_patterns(reflective_dataset)
@@ -135,14 +140,27 @@ class SingleComponentMultiModalProposer(dspy.Module):
 
             # Identify success patterns
             if any(
-                success_word in feedback for success_word in ["correct", "good", "accurate", "well", "successfully"]
+                success_word in feedback
+                for success_word in [
+                    "correct",
+                    "good",
+                    "accurate",
+                    "well",
+                    "successfully",
+                ]
             ):
                 analysis["success_patterns"].append(feedback)
 
             # Identify domain knowledge needs
             if any(
                 knowledge_word in feedback
-                for knowledge_word in ["should know", "domain", "specific", "context", "background"]
+                for knowledge_word in [
+                    "should know",
+                    "domain",
+                    "specific",
+                    "context",
+                    "background",
+                ]
             ):
                 analysis["domain_knowledge_gaps"].append(feedback)
 
@@ -160,20 +178,24 @@ class SingleComponentMultiModalProposer(dspy.Module):
         summary_parts = ["## Feedback Pattern Analysis\n"]
 
         if feedback_analysis["error_patterns"]:
-            summary_parts.append(f"**Common Issues Found ({len(feedback_analysis['error_patterns'])} examples):**")
-            summary_parts.append("Focus on preventing these types of mistakes in the new instruction.\n")
+            summary_parts.append(
+                f"**Common Issues Found ({len(feedback_analysis['error_patterns'])} examples):**")
+            summary_parts.append(
+                "Focus on preventing these types of mistakes in the new instruction.\n")
 
         if feedback_analysis["success_patterns"]:
             summary_parts.append(
                 f"**Successful Approaches Found ({len(feedback_analysis['success_patterns'])} examples):**"
             )
-            summary_parts.append("Build on these successful strategies in the new instruction.\n")
+            summary_parts.append(
+                "Build on these successful strategies in the new instruction.\n")
 
         if feedback_analysis["domain_knowledge_gaps"]:
             summary_parts.append(
                 f"**Domain Knowledge Needs Identified ({len(feedback_analysis['domain_knowledge_gaps'])} examples):**"
             )
-            summary_parts.append("Include this specialized knowledge in the new instruction.\n")
+            summary_parts.append(
+                "Include this specialized knowledge in the new instruction.\n")
 
         return "\n".join(summary_parts)
 
@@ -199,7 +221,8 @@ class SingleComponentMultiModalProposer(dspy.Module):
                 s = ""
                 for k, v in value.items():
                     s += f"{'#' * level} {k}\n"
-                    s += render_value_with_images(v, min(level + 1, 6), example_images)
+                    s += render_value_with_images(v,
+                                                  min(level + 1, 6), example_images)
                 if not value:
                     s += "\n"
                 return s
@@ -207,7 +230,8 @@ class SingleComponentMultiModalProposer(dspy.Module):
                 s = ""
                 for i, item in enumerate(value):
                     s += f"{'#' * level} Item {i + 1}\n"
-                    s += render_value_with_images(item, min(level + 1, 6), example_images)
+                    s += render_value_with_images(item,
+                                                  min(level + 1, 6), example_images)
                 if not value:
                     s += "\n"
                 return s
@@ -220,7 +244,8 @@ class SingleComponentMultiModalProposer(dspy.Module):
 
             for key, val in sample.items():
                 s += f"## {key}\n"
-                s += render_value_with_images(val, level=3, example_images=example_images)
+                s += render_value_with_images(val, level=3,
+                                              example_images=example_images)
 
             return s, example_images
 
@@ -228,7 +253,8 @@ class SingleComponentMultiModalProposer(dspy.Module):
         image_map = {}
 
         for i, example_data in enumerate(reflective_dataset):
-            formatted_example, example_images = convert_sample_to_markdown_with_images(example_data, i + 1)
+            formatted_example, example_images = convert_sample_to_markdown_with_images(
+                example_data, i + 1)
             formatted_parts.append(formatted_example)
 
             if example_images:
@@ -304,7 +330,8 @@ class MultiModalInstructionProposer(ProposalFn):
                 # In the future, proposals could consider multiple components instructions,
                 # instead of just the current instruction, for more holistic instruction proposals.
                 new_instruction = self.single_proposer(
-                    current_instruction=current_instruction, reflective_dataset=component_reflective_data
+                    current_instruction=current_instruction,
+                    reflective_dataset=component_reflective_data,
                 )
 
                 updated_components[component_name] = new_instruction
