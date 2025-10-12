@@ -72,8 +72,10 @@ class Adapter:
         inputs: dict[str, Any],
     ) -> type[Signature]:
         if self.use_native_function_calling:
-            tool_call_input_field_name = self._get_tool_call_input_field_name(signature)
-            tool_call_output_field_name = self._get_tool_call_output_field_name(signature)
+            tool_call_input_field_name = self._get_tool_call_input_field_name(
+                signature)
+            tool_call_output_field_name = self._get_tool_call_output_field_name(
+                signature)
 
             if tool_call_output_field_name and tool_call_input_field_name is None:
                 raise ValueError(
@@ -88,11 +90,13 @@ class Adapter:
 
                 litellm_tools = []
                 for tool in tools:
-                    litellm_tools.append(tool.format_as_litellm_function_call())
+                    litellm_tools.append(
+                        tool.format_as_litellm_function_call())
 
                 lm_kwargs["tools"] = litellm_tools
 
-                signature_for_native_function_calling = signature.delete(tool_call_output_field_name)
+                signature_for_native_function_calling = signature.delete(
+                    tool_call_output_field_name)
                 signature_for_native_function_calling = signature_for_native_function_calling.delete(
                     tool_call_input_field_name
                 )
@@ -119,7 +123,8 @@ class Adapter:
     ) -> list[dict[str, Any]]:
         values = []
 
-        tool_call_output_field_name = self._get_tool_call_output_field_name(original_signature)
+        tool_call_output_field_name = self._get_tool_call_output_field_name(
+            original_signature)
 
         for output in outputs:
             output_logprobs = None
@@ -150,7 +155,8 @@ class Adapter:
                     }
                     for v in tool_calls
                 ]
-                value[tool_call_output_field_name] = ToolCalls.from_dict_list(tool_calls)
+                value[tool_call_output_field_name] = ToolCalls.from_dict_list(
+                    tool_calls)
 
             # Parse custom types that does not rely on the adapter parsing
             for name, field in original_signature.output_fields.items():
@@ -192,7 +198,8 @@ class Adapter:
             List of dictionaries representing parsed LM responses. Each dictionary contains keys matching the
             signature's output field names. For multiple generations (n > 1), returns multiple dictionaries.
         """
-        processed_signature = self._call_preprocess(lm, lm_kwargs, signature, inputs)
+        processed_signature = self._call_preprocess(
+            lm, lm_kwargs, signature, inputs)
         inputs = self.format(processed_signature, demos, inputs)
 
         outputs = lm(messages=inputs, **lm_kwargs)
@@ -206,7 +213,8 @@ class Adapter:
         demos: list[dict[str, Any]],
         inputs: dict[str, Any],
     ) -> list[dict[str, Any]]:
-        processed_signature = self._call_preprocess(lm, lm_kwargs, signature, inputs)
+        processed_signature = self._call_preprocess(
+            lm, lm_kwargs, signature, inputs)
         inputs = self.format(processed_signature, demos, inputs)
 
         outputs = await lm.acall(messages=inputs, **lm_kwargs)
@@ -281,12 +289,14 @@ class Adapter:
         messages.extend(self.format_demos(signature, demos))
         if history_field_name:
             # Conversation history and current input
-            content = self.format_user_message_content(signature_without_history, inputs_copy, main_request=True)
+            content = self.format_user_message_content(
+                signature_without_history, inputs_copy, main_request=True)
             messages.extend(conversation_history)
             messages.append({"role": "user", "content": content})
         else:
             # Only current input
-            content = self.format_user_message_content(signature, inputs_copy, main_request=True)
+            content = self.format_user_message_content(
+                signature, inputs_copy, main_request=True)
             messages.append({"role": "user", "content": content})
 
         messages = split_message_content_for_custom_types(messages)
@@ -395,7 +405,8 @@ class Adapter:
 
         for demo in demos:
             # Check if all fields are present and not None
-            is_complete = all(k in demo and demo[k] is not None for k in signature.fields)
+            is_complete = all(
+                k in demo and demo[k] is not None for k in signature.fields)
 
             # Check if demo has at least one input and one output field
             has_input = any(k in demo for k in signature.input_fields)
@@ -421,18 +432,27 @@ class Adapter:
                 {
                     "role": "assistant",
                     "content": self.format_assistant_message_content(
-                        signature, demo, missing_field_message="Not supplied for this particular example. "
+                        signature,
+                        demo,
+                        missing_field_message="Not supplied for this particular example. ",
                     ),
                 }
             )
 
         for demo in complete_demos:
-            messages.append({"role": "user", "content": self.format_user_message_content(signature, demo)})
+            messages.append(
+                {
+                    "role": "user",
+                    "content": self.format_user_message_content(signature, demo),
+                }
+            )
             messages.append(
                 {
                     "role": "assistant",
                     "content": self.format_assistant_message_content(
-                        signature, demo, missing_field_message="Not supplied for this conversation history message. "
+                        signature,
+                        demo,
+                        missing_field_message="Not supplied for this conversation history message. ",
                     ),
                 }
             )
