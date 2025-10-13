@@ -36,7 +36,13 @@ class TrainingJob(Future):
 
 
 class ReinforceJob:
-    def __init__(self, lm: "LM", train_kwargs: dict[str, Any] | None = None, gpu_config: MultiGPUConfig = MultiGPUConfig(num_inference_gpus=1, num_training_gpus=1)):
+    def __init__(
+        self,
+        lm: "LM",
+        train_kwargs: dict[str, Any] | None = None,
+        gpu_config: MultiGPUConfig = MultiGPUConfig(
+            num_inference_gpus=1, num_training_gpus=1),
+    ):
         self.lm = lm
         self.train_kwargs = train_kwargs or {}
         self.gpu_config = gpu_config
@@ -44,13 +50,16 @@ class ReinforceJob:
         self.last_checkpoint = None
         self.gpu_config = gpu_config
 
-
     @abstractmethod
     def initialize(self):
         raise NotImplementedError
 
     @abstractmethod
-    def step(self, train_data: list[dict[str, Any]], train_data_format: TrainDataFormat | str | None = None):
+    def step(
+        self,
+        train_data: list[dict[str, Any]],
+        train_data_format: TrainDataFormat | str | None = None,
+    ):
         raise NotImplementedError
 
     @abstractmethod

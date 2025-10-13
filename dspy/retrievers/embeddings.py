@@ -26,9 +26,11 @@ class Embeddings:
         self.normalize = normalize
 
         self.corpus_embeddings = self.embedder(self.corpus)
-        self.corpus_embeddings = self._normalize(self.corpus_embeddings) if self.normalize else self.corpus_embeddings
+        self.corpus_embeddings = self._normalize(
+            self.corpus_embeddings) if self.normalize else self.corpus_embeddings
 
-        self.index = self._build_faiss() if len(corpus) >= brute_force_threshold else None
+        self.index = self._build_faiss() if len(
+            corpus) >= brute_force_threshold else None
         self.search_fn = Unbatchify(self._batch_forward)
 
     def __call__(self, query: str):
@@ -44,8 +46,10 @@ class Embeddings:
         q_embeds = self.embedder(queries)
         q_embeds = self._normalize(q_embeds) if self.normalize else q_embeds
 
-        pids = self._faiss_search(q_embeds, self.k * 10) if self.index else None
-        pids = np.tile(np.arange(len(self.corpus)), (len(queries), 1)) if pids is None else pids
+        pids = self._faiss_search(
+            q_embeds, self.k * 10) if self.index else None
+        pids = np.tile(np.arange(len(self.corpus)),
+                       (len(queries), 1)) if pids is None else pids
 
         return self._rerank_and_predict(q_embeds, pids)
 
@@ -57,7 +61,8 @@ class Embeddings:
         try:
             import faiss
         except ImportError:
-            raise ImportError("Please `pip install faiss-cpu` or increase `brute_force_threshold` to avoid FAISS.")
+            raise ImportError(
+                "Please `pip install faiss-cpu` or increase `brute_force_threshold` to avoid FAISS.")
 
         quantizer = faiss.IndexFlatL2(dim)
         index = faiss.IndexIVFPQ(quantizer, dim, partitions, nbytes, 8)
@@ -80,7 +85,8 @@ class Embeddings:
         scores = np.einsum("qd,qkd->qk", q_embeds, candidate_embeddings)
 
         top_k_indices = np.argsort(-scores, axis=1)[:, : self.k]
-        top_indices = candidate_indices[np.arange(len(q_embeds))[:, None], top_k_indices]
+        top_indices = candidate_indices[np.arange(
+            len(q_embeds))[:, None], top_k_indices]
 
         return [([self.corpus[idx] for idx in indices], [idx for idx in indices]) for indices in top_indices]  # noqa: C416
 
@@ -112,13 +118,16 @@ class Embeddings:
             json.dump(config, f, indent=2)
 
         # Save embeddings
-        np.save(os.path.join(path, "corpus_embeddings.npy"), self.corpus_embeddings)
+        np.save(os.path.join(path, "corpus_embeddings.npy"),
+                self.corpus_embeddings)
 
         # Save FAISS index if it exists
         if self.index is not None:
             try:
                 import faiss
-                faiss.write_index(self.index, os.path.join(path, "faiss_index.bin"))
+
+                faiss.write_index(self.index, os.path.join(
+                    path, "faiss_index.bin"))
             except ImportError:
                 # If FAISS is not available, we can't save the index
                 # but we can still save the embeddings for brute force search
@@ -148,7 +157,8 @@ class Embeddings:
         if not os.path.exists(config_path):
             raise FileNotFoundError(f"Config file not found: {config_path}")
         if not os.path.exists(embeddings_path):
-            raise FileNotFoundError(f"Embeddings file not found: {embeddings_path}")
+            raise FileNotFoundError(
+                f"Embeddings file not found: {embeddings_path}")
 
         # Load configuration and corpus
         with open(config_path) as f:
@@ -158,7 +168,8 @@ class Embeddings:
         required_fields = ["k", "normalize", "corpus", "has_faiss_index"]
         for field in required_fields:
             if field not in config:
-                raise ValueError(f"Invalid config: missing required field '{field}'")
+                raise ValueError(
+                    f"Invalid config: missing required field '{field}'")
 
         # Restore configuration
         self.k = config["k"]
@@ -174,6 +185,7 @@ class Embeddings:
         if config["has_faiss_index"] and os.path.exists(faiss_index_path):
             try:
                 import faiss
+
                 self.index = faiss.read_index(faiss_index_path)
             except ImportError:
                 # If FAISS is not available, fall back to brute force
