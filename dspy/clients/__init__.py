@@ -12,8 +12,12 @@ from dspy.clients.provider import Provider, TrainingJob
 
 logger = logging.getLogger(__name__)
 
-DISK_CACHE_DIR = os.environ.get("DSPY_CACHEDIR") or os.path.join(Path.home(), ".dspy_cache")
-DISK_CACHE_LIMIT = int(os.environ.get("DSPY_CACHE_LIMIT", 3e10))  # 30 GB default
+DISK_CACHE_DIR = os.environ.get(
+    "DSPY_CACHEDIR") or os.path.join(Path.home(), ".dspy_cache")
+DISK_CACHE_LIMIT = int(os.environ.get(
+    "DSPY_CACHE_LIMIT", 3e10))  # 30 GB default
+
+
 def configure_cache(
     enable_disk_cache: bool | None = True,
     enable_memory_cache: bool | None = True,
@@ -40,15 +44,19 @@ def configure_cache(
     )
 
     import dspy
+
     # Update the reference to point to the new cache
     dspy.cache = DSPY_CACHE
 
 
 litellm.telemetry = False
-litellm.cache = None  # By default we disable LiteLLM cache and use DSPy on-disk cache.
+# By default we disable LiteLLM cache and use DSPy on-disk cache.
+litellm.cache = None
+
 
 def _get_dspy_cache():
-    disk_cache_dir = os.environ.get("DSPY_CACHEDIR") or os.path.join(Path.home(), ".dspy_cache")
+    disk_cache_dir = os.environ.get(
+        "DSPY_CACHEDIR") or os.path.join(Path.home(), ".dspy_cache")
     disk_cache_limit = int(os.environ.get("DSPY_CACHE_LIMIT", 3e10))
 
     try:
@@ -61,7 +69,8 @@ def _get_dspy_cache():
         )
     except Exception as e:
         # If cache creation fails (e.g., in AWS Lambda), create a memory-only cache
-        logger.warning("Failed to initialize disk cache, falling back to memory-only cache: %s", e)
+        logger.warning(
+            "Failed to initialize disk cache, falling back to memory-only cache: %s", e)
         _dspy_cache = Cache(
             enable_disk_cache=False,
             enable_memory_cache=True,
@@ -70,6 +79,7 @@ def _get_dspy_cache():
             memory_max_entries=1000000,
         )
     return _dspy_cache
+
 
 DSPY_CACHE = _get_dspy_cache()
 

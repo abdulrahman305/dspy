@@ -82,27 +82,31 @@ class LM(BaseLM):
         self._warned_zero_temp_rollout = False
 
         # Handle model-specific configuration for different model families
-        model_family = model.split("/")[-1].lower() if "/" in model else model.lower()
+        model_family = model.split(
+            "/")[-1].lower() if "/" in model else model.lower()
 
         # Recognize OpenAI reasoning models (o1, o3, o4, gpt-5 family)
-        model_pattern = re.match(r"^(?:o[1345]|gpt-5)(?:-(?:mini|nano))?", model_family)
+        model_pattern = re.match(
+            r"^(?:o[1345]|gpt-5)(?:-(?:mini|nano))?", model_family)
 
         if model_pattern:
-
             if (temperature and temperature != 1.0) or (max_tokens and max_tokens < 16000):
                 raise ValueError(
                     "OpenAI's reasoning models require passing temperature=1.0 or None and max_tokens >= 16000 or None to "
                     "`dspy.LM(...)`, e.g., dspy.LM('openai/gpt-5', temperature=1.0, max_tokens=16000)"
                 )
-            self.kwargs = dict(temperature=temperature, max_completion_tokens=max_tokens, **kwargs)
+            self.kwargs = dict(temperature=temperature,
+                               max_completion_tokens=max_tokens, **kwargs)
             if self.kwargs.get("rollout_id") is None:
                 self.kwargs.pop("rollout_id", None)
         else:
-            self.kwargs = dict(temperature=temperature, max_tokens=max_tokens, **kwargs)
+            self.kwargs = dict(temperature=temperature,
+                               max_tokens=max_tokens, **kwargs)
             if self.kwargs.get("rollout_id") is None:
                 self.kwargs.pop("rollout_id", None)
 
-        self._warn_zero_temp_rollout(self.kwargs.get("temperature"), self.kwargs.get("rollout_id"))
+        self._warn_zero_temp_rollout(self.kwargs.get(
+            "temperature"), self.kwargs.get("rollout_id"))
 
     def _warn_zero_temp_rollout(self, temperature: float | None, rollout_id):
         if not self._warned_zero_temp_rollout and rollout_id is not None and (temperature is None or temperature == 0):
@@ -131,9 +135,11 @@ class LM(BaseLM):
 
         messages = messages or [{"role": "user", "content": prompt}]
         if self.use_developer_role and self.model_type == "responses":
-            messages = [{**m, "role": "developer"} if m.get("role") == "system" else m for m in messages]
+            messages = [{**m, "role": "developer"}
+                        if m.get("role") == "system" else m for m in messages]
         kwargs = {**self.kwargs, **kwargs}
-        self._warn_zero_temp_rollout(kwargs.get("temperature"), kwargs.get("rollout_id"))
+        self._warn_zero_temp_rollout(kwargs.get(
+            "temperature"), kwargs.get("rollout_id"))
         if kwargs.get("rollout_id") is None:
             kwargs.pop("rollout_id", None)
 
@@ -143,7 +149,8 @@ class LM(BaseLM):
             completion = litellm_text_completion
         elif self.model_type == "responses":
             completion = litellm_responses_completion
-        completion, litellm_cache_args = self._get_cached_completion_fn(completion, cache)
+        completion, litellm_cache_args = self._get_cached_completion_fn(
+            completion, cache)
 
         results = completion(
             request=dict(model=self.model, messages=messages, **kwargs),
@@ -164,9 +171,11 @@ class LM(BaseLM):
 
         messages = messages or [{"role": "user", "content": prompt}]
         if self.use_developer_role and self.model_type == "responses":
-            messages = [{**m, "role": "developer"} if m.get("role") == "system" else m for m in messages]
+            messages = [{**m, "role": "developer"}
+                        if m.get("role") == "system" else m for m in messages]
         kwargs = {**self.kwargs, **kwargs}
-        self._warn_zero_temp_rollout(kwargs.get("temperature"), kwargs.get("rollout_id"))
+        self._warn_zero_temp_rollout(kwargs.get(
+            "temperature"), kwargs.get("rollout_id"))
         if kwargs.get("rollout_id") is None:
             kwargs.pop("rollout_id", None)
 
@@ -176,7 +185,8 @@ class LM(BaseLM):
             completion = alitellm_text_completion
         elif self.model_type == "responses":
             completion = alitellm_responses_completion
-        completion, litellm_cache_args = self._get_cached_completion_fn(completion, cache)
+        completion, litellm_cache_args = self._get_cached_completion_fn(
+            completion, cache)
 
         results = await completion(
             request=dict(model=self.model, messages=messages, **kwargs),
@@ -229,7 +239,10 @@ class LM(BaseLM):
         return job
 
     def reinforce(
-        self, train_kwargs, gpu_config: MultiGPUConfig = MultiGPUConfig(num_inference_gpus=1, num_training_gpus=1)
+        self,
+        train_kwargs,
+        gpu_config: MultiGPUConfig = MultiGPUConfig(
+            num_inference_gpus=1, num_training_gpus=1),
     ) -> ReinforceJob:
         # TODO(GRPO Team): Should we return an initialized job here?
         from dspy import settings as settings
@@ -237,7 +250,8 @@ class LM(BaseLM):
         err = f"Provider {self.provider} does not implement the reinforcement learning interface."
         assert self.provider.reinforceable, err
 
-        job = self.provider.ReinforceJob(lm=self, train_kwargs=train_kwargs, gpu_config=gpu_config)
+        job = self.provider.ReinforceJob(
+            lm=self, train_kwargs=train_kwargs, gpu_config=gpu_config)
         job.initialize()
         return job
 
@@ -364,10 +378,12 @@ def litellm_text_completion(request: dict[str, Any], num_retries: int, cache: di
 
     # Use the API key and base from the request, or from the environment.
     api_key = request.pop("api_key", None) or os.getenv(f"{provider}_API_KEY")
-    api_base = request.pop("api_base", None) or os.getenv(f"{provider}_API_BASE")
+    api_base = request.pop("api_base", None) or os.getenv(
+        f"{provider}_API_BASE")
 
     # Build the prompt from the messages.
-    prompt = "\n\n".join([x["content"] for x in request.pop("messages")] + ["BEGIN RESPONSE:"])
+    prompt = "\n\n".join([x["content"]
+                         for x in request.pop("messages")] + ["BEGIN RESPONSE:"])
 
     return litellm.text_completion(
         cache=cache,
@@ -410,10 +426,12 @@ async def alitellm_text_completion(request: dict[str, Any], num_retries: int, ca
 
     # Use the API key and base from the request, or from the environment.
     api_key = request.pop("api_key", None) or os.getenv(f"{provider}_API_KEY")
-    api_base = request.pop("api_base", None) or os.getenv(f"{provider}_API_BASE")
+    api_base = request.pop("api_base", None) or os.getenv(
+        f"{provider}_API_BASE")
 
     # Build the prompt from the messages.
-    prompt = "\n\n".join([x["content"] for x in request.pop("messages")] + ["BEGIN RESPONSE:"])
+    prompt = "\n\n".join([x["content"]
+                         for x in request.pop("messages")] + ["BEGIN RESPONSE:"])
 
     return await litellm.atext_completion(
         cache=cache,
@@ -470,7 +488,8 @@ def _convert_chat_request_to_responses_request(request: dict[str, Any]):
                 content_blocks.append({"type": "input_text", "text": c})
             elif isinstance(c, list):
                 content_blocks.extend(c)
-        request["input"] = [{"role": msg.get("role", "user"), "content": content_blocks}]
+        request["input"] = [
+            {"role": msg.get("role", "user"), "content": content_blocks}]
 
     # Convert `response_format` to `text.format` for Responses API
     if "response_format" in request:
@@ -479,6 +498,7 @@ def _convert_chat_request_to_responses_request(request: dict[str, Any]):
         request["text"] = {**text, "format": response_format}
 
     return request
+
 
 def _get_headers(headers: dict[str, Any] | None = None):
     headers = headers or {}
