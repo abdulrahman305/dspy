@@ -38,7 +38,10 @@ def test_xml_adapter_parse_multiple_fields():
 <explanation>The capital of France is Paris.</explanation>
 """
     parsed = adapter.parse(TestSignature, completion)
-    assert parsed == {"answer": "Paris", "explanation": "The capital of France is Paris."}
+    assert parsed == {
+        "answer": "Paris",
+        "explanation": "The capital of France is Paris.",
+    }
 
 
 def test_xml_adapter_parse_raises_on_missing_field():
@@ -155,7 +158,11 @@ def test_xml_adapter_with_tool_like_output():
     adapter = XMLAdapter()
     tool_calls = [
         ToolCall(name="get_weather", args={"city": "Tokyo"}, result="Sunny"),
-        ToolCall(name="get_population", args={"country": "Japan", "year": 2023}, result="125M"),
+        ToolCall(
+            name="get_population",
+            args={"country": "Japan", "year": 2023},
+            result="125M",
+        ),
     ]
     fields_with_values = {
         FieldInfoWithName(name="tool_calls", info=TestSignature.output_fields["tool_calls"]): tool_calls,
@@ -203,22 +210,37 @@ def test_xml_adapter_formats_nested_images():
         ),
     ]
 
-    image_wrapper_2 = ImageWrapper(images=[dspy.Image(url="https://example.com/image4.jpg")], tag=["test", "example"])
+    image_wrapper_2 = ImageWrapper(
+        images=[dspy.Image(url="https://example.com/image4.jpg")],
+        tag=["test", "example"],
+    )
     adapter = dspy.XMLAdapter()
     messages = adapter.format(MySignature, demos, {"image": image_wrapper_2})
 
     assert len(messages) == 4
 
     # Image information in the few-shot example's user message
-    expected_image1_content = {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}}
-    expected_image2_content = {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}}
-    expected_image3_content = {"type": "image_url", "image_url": {"url": "https://example.com/image3.jpg"}}
+    expected_image1_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image1.jpg"},
+    }
+    expected_image2_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image2.jpg"},
+    }
+    expected_image3_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image3.jpg"},
+    }
     assert expected_image1_content in messages[1]["content"]
     assert expected_image2_content in messages[1]["content"]
     assert expected_image3_content in messages[1]["content"]
 
     # The query image is formatted in the last user message
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image4.jpg"}} in messages[-1]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image4.jpg"},
+    } in messages[-1]["content"]
 
 
 def test_xml_adapter_with_code():
