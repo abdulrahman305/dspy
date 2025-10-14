@@ -15,12 +15,14 @@ from dspy.teleprompt.bootstrap_trace import TraceData
 
 logger = logging.getLogger(__name__)
 
+
 class LoggerAdapter:
     def __init__(self, logger: logging.Logger):
         self.logger = logger
 
     def log(self, x: str):
         self.logger.info(x)
+
 
 DSPyTrace = list[tuple[Any, dict[str, Any], Prediction]]
 
@@ -31,14 +33,16 @@ class ReflectiveExample(TypedDict):
 
     Each example contains the predictor inputs, generated outputs, and feedback from evaluation.
     """
-    Inputs: dict[str, Any]                              # Predictor inputs (may include str, dspy.Image, etc.)
-    Generated_Outputs: dict[str, Any] | str             # Success: dict with output fields, Failure: error message string
-    Feedback: str                                       # Always a string - from metric function or parsing error message
+
+    Inputs: dict[str, Any]  # Predictor inputs (may include str, dspy.Image, etc.)
+    Generated_Outputs: dict[str, Any] | str  # Success: dict with output fields, Failure: error message string
+    Feedback: str  # Always a string - from metric function or parsing error message
 
 
 class ScoreWithFeedback(Prediction):
     score: float
     feedback: str
+
 
 class PredictorFeedbackFn(Protocol):
     def __call__(
@@ -64,6 +68,7 @@ class PredictorFeedbackFn(Protocol):
         """
         ...
 
+
 class DspyAdapter(GEPAAdapter[Example, TraceData, Prediction]):
     def __init__(
         self,
@@ -76,7 +81,7 @@ class DspyAdapter(GEPAAdapter[Example, TraceData, Prediction]):
         rng: random.Random | None = None,
         reflection_lm=None,
         custom_instruction_proposer: "ProposalFn | None" = None,
-        warn_on_score_mismatch: bool = True
+        warn_on_score_mismatch: bool = True,
     ):
         self.student = student_module
         self.metric_fn = metric_fn
@@ -97,27 +102,26 @@ class DspyAdapter(GEPAAdapter[Example, TraceData, Prediction]):
             def custom_propose_new_texts(
                 candidate: dict[str, str],
                 reflective_dataset: dict[str, list[dict[str, Any]]],
-                components_to_update: list[str]
+                components_to_update: list[str],
             ) -> dict[str, str]:
                 if self.reflection_lm is not None:
                     with dspy.context(lm=self.reflection_lm):
                         return self.custom_instruction_proposer(
                             candidate=candidate,
                             reflective_dataset=reflective_dataset,
-                            components_to_update=components_to_update
+                            components_to_update=components_to_update,
                         )
                 else:
                     return self.custom_instruction_proposer(
                         candidate=candidate,
                         reflective_dataset=reflective_dataset,
-                        components_to_update=components_to_update
+                        components_to_update=components_to_update,
                     )
 
             self.propose_new_texts = custom_propose_new_texts
 
         # Cache predictor names/signatures
         self.named_predictors = list(self.student.named_predictors())
-
 
     def build_program(self, candidate: dict[str, str]):
         new_prog = self.student.deepcopy()
@@ -165,7 +169,7 @@ class DspyAdapter(GEPAAdapter[Example, TraceData, Prediction]):
                 return_all_scores=True,
                 failure_score=self.failure_score,
                 provide_traceback=True,
-                max_errors=len(batch) * 100
+                max_errors=len(batch) * 100,
             )
             res = evaluator(program)
             outputs = [r[1] for r in res.results]
@@ -173,8 +177,11 @@ class DspyAdapter(GEPAAdapter[Example, TraceData, Prediction]):
             scores = [s["score"] if hasattr(s, "score") else s for s in scores]
             return EvaluationBatch(outputs=outputs, scores=scores, trajectories=None)
 
-    def make_reflective_dataset(self, candidate, eval_batch, components_to_update) -> dict[str, list[ReflectiveExample]]:
+    def make_reflective_dataset(
+        self, candidate, eval_batch, components_to_update
+    ) -> dict[str, list[ReflectiveExample]]:
         from dspy.teleprompt.bootstrap_trace import FailedPrediction
+
         program = self.build_program(candidate)
 
         ret_d: dict[str, list[ReflectiveExample]] = {}
@@ -273,7 +280,9 @@ class DspyAdapter(GEPAAdapter[Example, TraceData, Prediction]):
                     d["Feedback"] = fb["feedback"]
                     if fb["score"] != module_score:
                         if self.warn_on_score_mismatch:
-                            logger.warning("The score returned by the metric with pred_name is different from the overall metric score. This can indicate 2 things: Either the metric is non-deterministic (e.g., LLM-as-judge, Semantic score, etc.) or the metric returned a score specific to pred_name that differs from the module level score. Currently, GEPA does not support predictor level scoring (support coming soon), and only requires a feedback text to be provided, which can be specific to the predictor or program level. GEPA will ignore the differing score returned, and instead use module level score. You can safely ignore this warning if using a semantic metric, however, if this mismatch is caused due to predictor scoring, please return module-level scores. To disable this warning, set warn_on_score_mismatch=False.")
+                            logger.warning(
+                                "The score returned by the metric with pred_name is different from the overall metric score. This can indicate 2 things: Either the metric is non-deterministic (e.g., LLM-as-judge, Semantic score, etc.) or the metric returned a score specific to pred_name that differs from the module level score. Currently, GEPA does not support predictor level scoring (support coming soon), and only requires a feedback text to be provided, which can be specific to the predictor or program level. GEPA will ignore the differing score returned, and instead use module level score. You can safely ignore this warning if using a semantic metric, however, if this mismatch is caused due to predictor scoring, please return module-level scores. To disable this warning, set warn_on_score_mismatch=False."
+                            )
                             self.warn_on_score_mismatch = False
                         fb["score"] = module_score
 
