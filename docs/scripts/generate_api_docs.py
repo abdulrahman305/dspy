@@ -94,6 +94,7 @@ LOCATION_OVERRIDES = {
     "docs/api/optimizers/GEPA.md": "docs/api/optimizers/GEPA/overview.md",
 }
 
+
 def should_document_method(obj):
     name = obj.__name__
     # Exclude methods not defined in dspy, such as `model_dump_json` from pydantic.
