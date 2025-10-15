@@ -42,13 +42,16 @@ class ReinforceJob:
         self.checkpoints = {}
         self.last_checkpoint = None
 
-
     @abstractmethod
     def initialize(self):
         raise NotImplementedError
 
     @abstractmethod
-    def step(self, train_data: list[dict[str, Any]], train_data_format: TrainDataFormat | str | None = None):
+    def step(
+        self,
+        train_data: list[dict[str, Any]],
+        train_data_format: TrainDataFormat | str | None = None,
+    ):
         raise NotImplementedError
 
     @abstractmethod
