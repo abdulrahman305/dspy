@@ -9,7 +9,13 @@ import requests
 
 import dspy
 from dspy.clients.provider import Provider, ReinforceJob, TrainingJob
-from dspy.clients.utils_finetune import GRPOGroup, GRPOStatus, TrainDataFormat, TrainingStatus, save_data
+from dspy.clients.utils_finetune import (
+    GRPOGroup,
+    GRPOStatus,
+    TrainDataFormat,
+    TrainingStatus,
+    save_data,
+)
 
 if TYPE_CHECKING:
     from dspy.clients.lm import LM
@@ -87,14 +93,17 @@ class ArborReinforceJob(ReinforceJob):
         beta = self.train_kwargs.get("beta", self.DEFAULT_TRAIN_KWARGS["beta"])
         num_iterations = self.train_kwargs.get("num_iterations", self.DEFAULT_TRAIN_KWARGS["num_iterations"])
         per_device_train_batch_size = self.train_kwargs.get(
-            "per_device_train_batch_size", self.DEFAULT_TRAIN_KWARGS["per_device_train_batch_size"]
+            "per_device_train_batch_size",
+            self.DEFAULT_TRAIN_KWARGS["per_device_train_batch_size"],
         )
         learning_rate = self.train_kwargs.get("learning_rate", self.DEFAULT_TRAIN_KWARGS["learning_rate"])
         gradient_accumulation_steps = self.train_kwargs.get(
-            "gradient_accumulation_steps", self.DEFAULT_TRAIN_KWARGS["gradient_accumulation_steps"]
+            "gradient_accumulation_steps",
+            self.DEFAULT_TRAIN_KWARGS["gradient_accumulation_steps"],
         )
         gradient_checkpointing = self.train_kwargs.get(
-            "gradient_checkpointing", self.DEFAULT_TRAIN_KWARGS["gradient_checkpointing"]
+            "gradient_checkpointing",
+            self.DEFAULT_TRAIN_KWARGS["gradient_checkpointing"],
         )
         lr_scheduler_type = self.train_kwargs.get("lr_scheduler_type", self.DEFAULT_TRAIN_KWARGS["lr_scheduler_type"])
         warmup_steps = self.train_kwargs.get("warmup_steps", self.DEFAULT_TRAIN_KWARGS["warmup_steps"])
@@ -105,7 +114,8 @@ class ArborReinforceJob(ReinforceJob):
         bf16 = self.train_kwargs.get("bf16", self.DEFAULT_TRAIN_KWARGS["bf16"])
         scale_rewards = self.train_kwargs.get("scale_rewards", self.DEFAULT_TRAIN_KWARGS["scale_rewards"])
         gradient_checkpointing_kwargs = self.train_kwargs.get(
-            "gradient_checkpointing_kwargs", self.DEFAULT_TRAIN_KWARGS["gradient_checkpointing_kwargs"]
+            "gradient_checkpointing_kwargs",
+            self.DEFAULT_TRAIN_KWARGS["gradient_checkpointing_kwargs"],
         )
         max_grad_norm = self.train_kwargs.get("max_grad_norm", self.DEFAULT_TRAIN_KWARGS["max_grad_norm"])
         report_to = self.train_kwargs.get("report_to", self.DEFAULT_TRAIN_KWARGS["report_to"])
@@ -114,7 +124,7 @@ class ArborReinforceJob(ReinforceJob):
         max_context_length = self.train_kwargs.get(
             "max_context_length", self.DEFAULT_TRAIN_KWARGS["max_context_length"]
         )
-        max_steps = self.train_kwargs.get("max_steps",500)
+        max_steps = self.train_kwargs.get("max_steps", 500)
         # lora = self.train_kwargs.get("lora", self.DEFAULT_TRAIN_KWARGS["lora"])
         api_base = self.lm.kwargs["api_base"]
 
@@ -140,7 +150,7 @@ class ArborReinforceJob(ReinforceJob):
                 "report_to": report_to,
                 "log_completions": log_completions,
                 "logging_steps": logging_steps,
-                 # "max_context_length": max_context_length,
+                # "max_context_length": max_context_length,
                 # "max_seq_len": max_context_length,
                 "max_steps": max_steps,
                 # "lora": lora,
@@ -167,14 +177,21 @@ class ArborReinforceJob(ReinforceJob):
         self.provider_job_id = response.get("job_id")
 
     def _run_grpo_step_one_group(
-        self, train_group: GRPOGroup, train_data_format: TrainDataFormat | str | None = None
+        self,
+        train_group: GRPOGroup,
+        train_data_format: TrainDataFormat | str | None = None,
     ):
         # TODO: Check that the data follows the intended format
         api_base = self.lm.kwargs["api_base"]
         # api_key = self.lm.kwargs["api_key"]
 
         finetune_model = ArborProvider._remove_provider_prefix(self.lm.model)
-        data = {"job_id": self.provider_job_id, "model": finetune_model, "batch": train_group["group"], "batch_id": train_group["batch_id"]}
+        data = {
+            "job_id": self.provider_job_id,
+            "model": finetune_model,
+            "batch": train_group["group"],
+            "batch_id": train_group["batch_id"],
+        }
         url = urljoin(api_base, "fine_tuning/grpo/step")
         headers = {"Content-Type": "application/json"}
         response = requests.post(url, headers=headers, json=data)
@@ -184,7 +201,11 @@ class ArborReinforceJob(ReinforceJob):
         current_model = response["current_model"]
         self.lm.model = ArborProvider._add_provider_prefix(current_model)
 
-    def step(self, train_data: list[GRPOGroup], train_data_format: TrainDataFormat | str | None):
+    def step(
+        self,
+        train_data: list[GRPOGroup],
+        train_data_format: TrainDataFormat | str | None,
+    ):
         # Note: TrainDataFormat specifies the format for the inner most dict.
         # Because we run GRPO at the group level, train_data will be a list of
         # groups, where each group is a list of GRPOChatData. Our teleprompters
@@ -193,9 +214,9 @@ class ArborReinforceJob(ReinforceJob):
         # different step methods or changing our smallets data format to be the
         # GRPO group.
         # TODO: Support step on the server side
-        assert (
-            train_data_format == TrainDataFormat.GRPO_CHAT
-        ), f"GRPO only supports the GRPO_CHAT data format. Got {train_data_format} instead."
+        assert train_data_format == TrainDataFormat.GRPO_CHAT, (
+            f"GRPO only supports the GRPO_CHAT data format. Got {train_data_format} instead."
+        )
         for group in train_data:
             self._run_grpo_step_one_group(group, train_data_format)
 
@@ -271,7 +292,10 @@ class ArborProvider(Provider):
         launch_kwargs = launch_kwargs or lm.launch_kwargs
 
         # Make request to launch endpoint
-        response = requests.post(urljoin(api_base, "chat/launch"), json={"model": model, "launch_kwargs": launch_kwargs})
+        response = requests.post(
+            urljoin(api_base, "chat/launch"),
+            json={"model": model, "launch_kwargs": launch_kwargs},
+        )
 
         if response.status_code != 200:
             raise Exception(f"Failed to launch model. Status code: {response.status_code}, Response: {response.text}")
