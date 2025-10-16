@@ -28,7 +28,7 @@ def make_response(output_blocks):
         model="openai/dspy-test-model",
         object="response",
         output=output_blocks,
-        metadata = {},
+        metadata={},
         parallel_tool_calls=False,
         temperature=1.0,
         tool_choice="auto",
@@ -105,14 +105,20 @@ def test_disabled_cache_skips_cache_key(monkeypatch):
     cache = dspy.cache
 
     try:
-        with mock.patch.object(cache, "cache_key", wraps=cache.cache_key) as cache_key_spy, \
-             mock.patch.object(cache, "get", wraps=cache.get) as cache_get_spy, \
-             mock.patch.object(cache, "put", wraps=cache.put) as cache_put_spy:
+        with (
+            mock.patch.object(cache, "cache_key", wraps=cache.cache_key) as cache_key_spy,
+            mock.patch.object(cache, "get", wraps=cache.get) as cache_get_spy,
+            mock.patch.object(cache, "put", wraps=cache.put) as cache_put_spy,
+        ):
 
             def fake_completion(*, cache, num_retries, retry_strategy, **request):
                 return ModelResponse(
                     choices=[Choices(message=Message(role="assistant", content="Hi!"))],
-                    usage={"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+                    usage={
+                        "prompt_tokens": 1,
+                        "completion_tokens": 1,
+                        "total_tokens": 2,
+                    },
                     model="dummy",
                 )
 
@@ -313,6 +319,7 @@ def test_reasoning_model_token_parameter():
             assert "max_tokens" in lm.kwargs
             assert lm.kwargs["max_tokens"] == 1000
 
+
 @pytest.mark.parametrize("model_name", ["openai/o1", "openai/gpt-5-nano"])
 def test_reasoning_model_requirements(model_name):
     # Should raise assertion error if temperature or max_tokens requirements not met
@@ -396,8 +403,16 @@ def test_logprobs_included_when_requested():
                     message=Message(content="test answer"),
                     logprobs={
                         "content": [
-                            {"token": "test", "logprob": 0.1, "top_logprobs": [{"token": "test", "logprob": 0.1}]},
-                            {"token": "answer", "logprob": 0.2, "top_logprobs": [{"token": "answer", "logprob": 0.2}]},
+                            {
+                                "token": "test",
+                                "logprob": 0.1,
+                                "top_logprobs": [{"token": "test", "logprob": 0.1}],
+                            },
+                            {
+                                "token": "answer",
+                                "logprob": 0.2,
+                                "top_logprobs": [{"token": "answer", "logprob": 0.2}],
+                            },
                         ]
                     },
                 )
@@ -456,7 +471,8 @@ async def test_async_lm_call_with_cache(tmp_path):
 
     with mock.patch("dspy.clients.lm.alitellm_completion") as mock_alitellm_completion:
         mock_alitellm_completion.return_value = ModelResponse(
-            choices=[Choices(message=Message(content="answer"))], model="openai/gpt-4o-mini"
+            choices=[Choices(message=Message(content="answer"))],
+            model="openai/gpt-4o-mini",
         )
         mock_alitellm_completion.__qualname__ = "alitellm_completion"
         await lm.acall("Query")
@@ -514,6 +530,7 @@ def test_disable_history():
                 model="openai/gpt-4o-mini",
             )
 
+
 def test_responses_api():
     api_response = make_response(
         output_blocks=[
@@ -524,7 +541,11 @@ def test_responses_api():
                     "role": "assistant",
                     "status": "completed",
                     "content": [
-                        {"type": "output_text", "text": "This is a test answer from responses API.", "annotations": []}
+                        {
+                            "type": "output_text",
+                            "text": "This is a test answer from responses API.",
+                            "annotations": [],
+                        }
                     ],
                 },
             ),
@@ -532,7 +553,14 @@ def test_responses_api():
                 **{
                     "id": "reasoning_1",
                     "type": "reasoning",
-                    "summary": [Summary(**{"type": "summary_text", "text": "This is a dummy reasoning."})],
+                    "summary": [
+                        Summary(
+                            **{
+                                "type": "summary_text",
+                                "text": "This is a dummy reasoning.",
+                            }
+                        )
+                    ],
                 },
             ),
         ]
@@ -560,9 +588,7 @@ def test_responses_api():
 
 
 def test_lm_replaces_system_with_developer_role():
-    with mock.patch(
-        "dspy.clients.lm.litellm_responses_completion", return_value={"choices": []}
-    ) as mock_completion:
+    with mock.patch("dspy.clients.lm.litellm_responses_completion", return_value={"choices": []}) as mock_completion:
         lm = dspy.LM(
             "openai/gpt-4o-mini",
             cache=False,
@@ -570,10 +596,7 @@ def test_lm_replaces_system_with_developer_role():
             use_developer_role=True,
         )
         lm.forward(messages=[{"role": "system", "content": "hi"}])
-        assert (
-            mock_completion.call_args.kwargs["request"]["messages"][0]["role"]
-            == "developer"
-        )
+        assert mock_completion.call_args.kwargs["request"]["messages"][0]["role"] == "developer"
 
 
 def test_responses_api_tool_calls(litellm_test_server):

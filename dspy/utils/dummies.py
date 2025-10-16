@@ -67,7 +67,12 @@ class DummyLM(LM):
 
     """
 
-    def __init__(self, answers: list[dict[str, Any]] | dict[str, dict[str, Any]], follow_examples: bool = False, adapter=None):
+    def __init__(
+        self,
+        answers: list[dict[str, Any]] | dict[str, dict[str, Any]],
+        follow_examples: bool = False,
+        adapter=None,
+    ):
         super().__init__("dummy", "chat", 0.0, 1000, True)
         self.answers = answers
         if isinstance(answers, list):
@@ -77,6 +82,7 @@ class DummyLM(LM):
         # Set adapter, defaulting to ChatAdapter
         if adapter is None:
             from dspy.adapters.chat_adapter import ChatAdapter
+
             adapter = ChatAdapter()
         self.adapter = adapter
 
