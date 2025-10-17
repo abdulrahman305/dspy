@@ -118,6 +118,7 @@ class Embeddings:
         if self.index is not None:
             try:
                 import faiss
+
                 faiss.write_index(self.index, os.path.join(path, "faiss_index.bin"))
             except ImportError:
                 # If FAISS is not available, we can't save the index
@@ -174,6 +175,7 @@ class Embeddings:
         if config["has_faiss_index"] and os.path.exists(faiss_index_path):
             try:
                 import faiss
+
                 self.index = faiss.read_index(faiss_index_path)
             except ImportError:
                 # If FAISS is not available, fall back to brute force

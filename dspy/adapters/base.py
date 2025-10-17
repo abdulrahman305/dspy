@@ -421,18 +421,27 @@ class Adapter:
                 {
                     "role": "assistant",
                     "content": self.format_assistant_message_content(
-                        signature, demo, missing_field_message="Not supplied for this particular example. "
+                        signature,
+                        demo,
+                        missing_field_message="Not supplied for this particular example. ",
                     ),
                 }
             )
 
         for demo in complete_demos:
-            messages.append({"role": "user", "content": self.format_user_message_content(signature, demo)})
+            messages.append(
+                {
+                    "role": "user",
+                    "content": self.format_user_message_content(signature, demo),
+                }
+            )
             messages.append(
                 {
                     "role": "assistant",
                     "content": self.format_assistant_message_content(
-                        signature, demo, missing_field_message="Not supplied for this conversation history message. "
+                        signature,
+                        demo,
+                        missing_field_message="Not supplied for this conversation history message. ",
                     ),
                 }
             )
