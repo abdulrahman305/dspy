@@ -62,7 +62,11 @@ class Cache:
         """Check if a key is in the cache."""
         return key in self.memory_cache or key in self.disk_cache
 
-    def cache_key(self, request: dict[str, Any], ignored_args_for_cache_key: list[str] | None = None) -> str:
+    def cache_key(
+        self,
+        request: dict[str, Any],
+        ignored_args_for_cache_key: list[str] | None = None,
+    ) -> str:
         """
         Obtain a unique cache key for the given request dictionary by hashing its JSON
         representation. For request fields having types that are known to be JSON-incompatible,
@@ -95,8 +99,11 @@ class Cache:
         params = {k: transform_value(v) for k, v in request.items() if k not in ignored_args_for_cache_key}
         return sha256(orjson.dumps(params, option=orjson.OPT_SORT_KEYS)).hexdigest()
 
-    def get(self, request: dict[str, Any], ignored_args_for_cache_key: list[str] | None = None) -> Any:
-
+    def get(
+        self,
+        request: dict[str, Any],
+        ignored_args_for_cache_key: list[str] | None = None,
+    ) -> Any:
         if not self.enable_memory_cache and not self.enable_disk_cache:
             return None
 
@@ -196,7 +203,11 @@ def request_cache(
         enable_memory_cache: Whether to enable in-memory cache at call time. If False, the memory cache will not be
             written to on new data.
     """
-    ignored_args_for_cache_key = ignored_args_for_cache_key or ["api_key", "api_base", "base_url"]
+    ignored_args_for_cache_key = ignored_args_for_cache_key or [
+        "api_key",
+        "api_base",
+        "base_url",
+    ]
     # Deprecation notice
     if maxsize is not None:
         logger.warning(
@@ -244,7 +255,12 @@ def request_cache(
             original_request = copy.deepcopy(modified_request)
             result = fn(*args, **kwargs)
             # `enable_memory_cache` can be provided at call time to avoid indefinite growth.
-            cache.put(original_request, result, ignored_args_for_cache_key, enable_memory_cache)
+            cache.put(
+                original_request,
+                result,
+                ignored_args_for_cache_key,
+                enable_memory_cache,
+            )
 
             return result
 
@@ -264,7 +280,12 @@ def request_cache(
             # Make a copy of the original request in case it's modified in place, e.g., deleting some fields
             original_request = copy.deepcopy(modified_request)
             result = await fn(*args, **kwargs)
-            cache.put(original_request, result, ignored_args_for_cache_key, enable_memory_cache)
+            cache.put(
+                original_request,
+                result,
+                ignored_args_for_cache_key,
+                enable_memory_cache,
+            )
 
             return result
 
