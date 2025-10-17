@@ -11,7 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 class InferRules(BootstrapFewShot):
-    def __init__(self, num_candidates=10, num_rules=10, num_threads=None, teacher_settings=None, **kwargs):
+    def __init__(
+        self,
+        num_candidates=10,
+        num_rules=10,
+        num_threads=None,
+        teacher_settings=None,
+        **kwargs,
+    ):
         super().__init__(teacher_settings=teacher_settings, **kwargs)
 
         self.num_candidates = num_candidates
@@ -109,9 +116,7 @@ class InferRules(BootstrapFewShot):
         ]
 
     def evaluate_program(self, program, dataset):
-        effective_max_errors = (
-            self.max_errors if self.max_errors is not None else dspy.settings.max_errors
-        )
+        effective_max_errors = self.max_errors if self.max_errors is not None else dspy.settings.max_errors
         evaluate = Evaluate(
             devset=dataset,
             metric=self.metric,
@@ -144,9 +149,7 @@ class RulesInductionProgram(dspy.Module):
     def forward(self, examples_text):
         with dspy.settings.context(**self.teacher_settings):
             # Generate rules with a fresh rollout and non-zero temperature.
-            lm = dspy.settings.lm.copy(
-                rollout_id=self.rng.randint(0, 10**9), temperature=1.0
-            )
+            lm = dspy.settings.lm.copy(rollout_id=self.rng.randint(0, 10**9), temperature=1.0)
             with dspy.settings.context(lm=lm):
                 rules = self.rules_induction(examples_text=examples_text).natural_language_rules
 
