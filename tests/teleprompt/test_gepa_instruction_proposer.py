@@ -227,7 +227,10 @@ def test_image_serialization_into_strings():
 
                 context_lm = dspy.settings.lm
                 messages = [
-                    {"role": "system", "content": "You are an instruction improvement assistant."},
+                    {
+                        "role": "system",
+                        "content": "You are an instruction improvement assistant.",
+                    },
                     {
                         "role": "user",
                         "content": f"Current instruction: {current_instruction}\n\nFeedback: {feedback_analysis}\n\nProvide an improved instruction:",
