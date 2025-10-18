@@ -162,7 +162,9 @@ def test_baml_adapter_formats_pydantic_inputs_as_clean_json():
 
     adapter = BAMLAdapter()
     patient = PatientDetails(
-        name="John Doe", age=45, address=PatientAddress(street="123 Main St", city="Anytown", country="US")
+        name="John Doe",
+        age=45,
+        address=PatientAddress(street="123 Main St", city="Anytown", country="US"),
     )
 
     messages = adapter.format(TestSignature, [], {"patient": patient, "question": "What is the diagnosis?"})
@@ -267,7 +269,10 @@ def test_baml_adapter_with_images():
     adapter = BAMLAdapter()
 
     image_wrapper = ImageWrapper(
-        images=[dspy.Image(url="https://example.com/image1.jpg"), dspy.Image(url="https://example.com/image2.jpg")],
+        images=[
+            dspy.Image(url="https://example.com/image1.jpg"),
+            dspy.Image(url="https://example.com/image2.jpg"),
+        ],
         tag=["test", "medical"],
     )
 
@@ -280,8 +285,14 @@ def test_baml_adapter_with_images():
     ]
 
     assert len(image_contents) == 2
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}} in user_message
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}} in user_message
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image1.jpg"},
+    } in user_message
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image2.jpg"},
+    } in user_message
 
 
 def test_baml_adapter_with_tools():
@@ -303,7 +314,11 @@ def test_baml_adapter_with_tools():
     tools = [dspy.Tool(get_patient_info), dspy.Tool(schedule_appointment)]
 
     adapter = BAMLAdapter()
-    messages = adapter.format(TestSignature, [], {"question": "Schedule an appointment for John", "tools": tools})
+    messages = adapter.format(
+        TestSignature,
+        [],
+        {"question": "Schedule an appointment for John", "tools": tools},
+    )
 
     user_message = messages[-1]["content"]
     assert "get_patient_info" in user_message
@@ -365,7 +380,11 @@ def test_baml_adapter_with_conversation_history():
     )
 
     adapter = BAMLAdapter()
-    messages = adapter.format(TestSignature, [], {"history": history, "question": "What medications should we avoid?"})
+    messages = adapter.format(
+        TestSignature,
+        [],
+        {"history": history, "question": "What medications should we avoid?"},
+    )
 
     # Should format history as separate messages
     assert len(messages) == 6  # system + 2 history pairs + user
@@ -435,7 +454,11 @@ async def test_baml_adapter_async_functionality():
 
         adapter = BAMLAdapter()
         result = await adapter.acall(
-            dspy.LM(model="openai/gpt-4o", cache=False), {}, TestSignature, [], {"question": "Extract patient info"}
+            dspy.LM(model="openai/gpt-4o", cache=False),
+            {},
+            TestSignature,
+            [],
+            {"question": "Extract patient info"},
         )
 
         assert result[0]["patient"].name == "John Doe"
@@ -509,10 +532,13 @@ def test_baml_adapter_multiple_pydantic_input_fields():
 
     # Test schema generation includes headers for ALL input fields
     schema = adapter.format_field_structure(TestSignature)
-    assert "[[ ## input_1 ## ]]" in schema  # Should include first input field header
-    assert "[[ ## input_2 ## ]]" in schema  # Should include second input field header
+    # Should include first input field header
+    assert "[[ ## input_1 ## ]]" in schema
+    # Should include second input field header
+    assert "[[ ## input_2 ## ]]" in schema
     assert "[[ ## result ## ]]" in schema  # Should include output field header
-    assert "[[ ## completed ## ]]" in schema  # Should include completed section
+    # Should include completed section
+    assert "[[ ## completed ## ]]" in schema
     assert "All interactions will be structured in the following way" in schema
     assert "{input_1}" in schema
     assert "{input_2}" in schema

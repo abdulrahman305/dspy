@@ -132,7 +132,10 @@ def test_typed_demos_after_dump_and_load_state():
         dspy.Example(
             items=[Item(name="apple", quantity=5), Item(name="banana", quantity=3)],
             language="SPANISH",
-            translated_items=[Item(name="manzana", quantity=5), Item(name="plátano", quantity=3)],
+            translated_items=[
+                Item(name="manzana", quantity=5),
+                Item(name="plátano", quantity=3),
+            ],
             total_quantity=8,
         ).with_inputs("items", "language"),
     ]
@@ -682,7 +685,10 @@ def test_predicted_outputs_piped_from_predict_to_lm_call():
     # format, it should not be passed to the LM.
     program = Predict("question, prediction -> judgement")
     with patch("litellm.completion") as mock_completion:
-        program(question="Why did a chicken cross the kitchen?", prediction="To get to the other side!")
+        program(
+            question="Why did a chicken cross the kitchen?",
+            prediction="To get to the other side!",
+        )
 
     assert "prediction" not in mock_completion.call_args[1]
 
