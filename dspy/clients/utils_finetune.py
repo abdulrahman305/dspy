@@ -44,6 +44,7 @@ class GRPOGroup(TypedDict):
     batch_id: int | None
     group: list[GRPOChatData]
 
+
 class GRPOStatus(TypedDict):
     job_id: str
     status: str | None = None
