@@ -21,16 +21,26 @@ class OfferFeedback(Signature):
     to avoid the same mistake on the same or similar inputs.
     """
 
-    program_code: str = InputField(desc="The code of the program that we are analyzing")
-    modules_defn: str = InputField(desc="The definition of each module in the program, including its I/O")
-    program_inputs: str = InputField(desc="The inputs to the program that we are analyzing")
-    program_trajectory: str = InputField(desc="The trajectory of the program's execution, showing each module's I/O")
-    program_outputs: str = InputField(desc="The outputs of the program that we are analyzing")
-    reward_code: str = InputField(desc="The code of the reward function that we are analyzing")
-    target_threshold: float = InputField(desc="The target threshold for the reward function")
-    reward_value: float = InputField(desc="The reward value assigned to the program's outputs")
-    module_names: list[str] = InputField(desc="The names of the modules in the program, for which we seek advice")
-    discussion: str = OutputField(desc="Discussing blame of where each module went wrong, if it did")
+    program_code: str = InputField(
+        desc="The code of the program that we are analyzing")
+    modules_defn: str = InputField(
+        desc="The definition of each module in the program, including its I/O")
+    program_inputs: str = InputField(
+        desc="The inputs to the program that we are analyzing")
+    program_trajectory: str = InputField(
+        desc="The trajectory of the program's execution, showing each module's I/O")
+    program_outputs: str = InputField(
+        desc="The outputs of the program that we are analyzing")
+    reward_code: str = InputField(
+        desc="The code of the reward function that we are analyzing")
+    target_threshold: float = InputField(
+        desc="The target threshold for the reward function")
+    reward_value: float = InputField(
+        desc="The reward value assigned to the program's outputs")
+    module_names: list[str] = InputField(
+        desc="The names of the modules in the program, for which we seek advice")
+    discussion: str = OutputField(
+        desc="Discussing blame of where each module went wrong, if it did")
     advice: dict[str, str] = OutputField(
         desc="For each module, describe very concretely, in this order: the specific scenarios in which it has made "
         "mistakes in the past and what each mistake was, followed by what it should do differently in that kind of"
@@ -85,7 +95,8 @@ class Refine(Module):
             ```
         """
         self.module = module
-        self.reward_fn = lambda *args: reward_fn(*args)  # to prevent this from becoming a parameter
+        # to prevent this from becoming a parameter
+        self.reward_fn = lambda *args: reward_fn(*args)
         self.threshold = threshold
         self.N = N
         self.fail_count = fail_count or N  # default to N if fail_count is not provided
@@ -108,8 +119,10 @@ class Refine(Module):
             mod = self.module.deepcopy()
             mod.set_lm(lm_)
 
-            predictor2name = {predictor: name for name, predictor in mod.named_predictors()}
-            signature2name = {predictor.signature: name for name, predictor in mod.named_predictors()}
+            predictor2name = {predictor: name for name,
+                              predictor in mod.named_predictors()}
+            signature2name = {predictor.signature: name for name,
+                              predictor in mod.named_predictors()}
             module_names = [name for name, _ in mod.named_predictors()]
 
             try:
@@ -122,7 +135,9 @@ class Refine(Module):
                             def __call__(self, lm, lm_kwargs, signature, demos, inputs):
                                 inputs["hint_"] = advice.get(signature2name[signature], "N/A")  # noqa: B023
                                 signature = signature.append(
-                                    "hint_", InputField(desc="A hint to the module from an earlier run")
+                                    "hint_",
+                                    InputField(
+                                        desc="A hint to the module from an earlier run"),
                                 )
                                 return adapter(lm, lm_kwargs, signature, demos, inputs)
 
@@ -145,8 +160,12 @@ class Refine(Module):
                 if idx == self.N - 1:
                     break
 
-                modules = {"program_code": self.module_code, "modules_defn": inspect_modules(mod)}
-                trajectory = [{"module_name": predictor2name[p], "inputs": i, "outputs": dict(o)} for p, i, o in trace]
+                modules = {
+                    "program_code": self.module_code,
+                    "modules_defn": inspect_modules(mod),
+                }
+                trajectory = [{"module_name": predictor2name[p],
+                               "inputs": i, "outputs": dict(o)} for p, i, o in trace]
                 trajectory = {
                     "program_inputs": kwargs,
                     "program_trajectory": trajectory,
@@ -158,10 +177,15 @@ class Refine(Module):
                     "reward_value": reward,
                 }
 
-                advise_kwargs = dict(**modules, **trajectory, **reward, module_names=module_names)
+                advise_kwargs = dict(
+                    **modules, **trajectory, **reward, module_names=module_names)
                 # only dumps if it's a list or dict
                 advise_kwargs = {
-                    k: v if isinstance(v, str) else orjson.dumps(recursive_mask(v), option=orjson.OPT_INDENT_2).decode()
+                    k: (
+                        v
+                        if isinstance(v, str)
+                        else orjson.dumps(recursive_mask(v), option=orjson.OPT_INDENT_2).decode()
+                    )
                     for k, v in advise_kwargs.items()
                 }
                 advice = dspy.Predict(OfferFeedback)(**advise_kwargs).advice
@@ -188,9 +212,11 @@ def inspect_modules(program):
 
         output.append(f"Module {name}")
         output.append("\n\tInput Fields:")
-        output.append(("\n" + "\t" * 2).join([""] + get_field_description_string(signature.input_fields).splitlines()))
+        output.append(
+            ("\n" + "\t" * 2).join([""] + get_field_description_string(signature.input_fields).splitlines()))
         output.append("\tOutput Fields:")
-        output.append(("\n" + "\t" * 2).join([""] + get_field_description_string(signature.output_fields).splitlines()))
+        output.append(("\n" + "\t" * 2).join(
+            [""] + get_field_description_string(signature.output_fields).splitlines()))
         output.append(f"\tOriginal Instructions: {instructions}")
         output.append(separator)
 
