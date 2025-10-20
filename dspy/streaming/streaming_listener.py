@@ -75,7 +75,7 @@ class StreamListener:
 
     def _buffered_message_end_with_start_identifier(self, concat_message: str, start_identifier: str) -> str:
         for i in range(len(concat_message)):
-            if start_identifier.startswith(concat_message[len(concat_message) - i - 1 :]):
+            if start_identifier.startswith(concat_message[len(concat_message) - i - 1:]):
                 return True
         return False
 
@@ -152,7 +152,7 @@ class StreamListener:
             # directly end the stream listening. In some models like gemini, each stream chunk can be multiple
             # tokens, so it's possible that response only has one chunk, we also fall back to this logic.
             message_after_start_identifier = chunk_message[
-                chunk_message.find(start_identifier) + len(start_identifier) :
+                chunk_message.find(start_identifier) + len(start_identifier):
             ]
             if re.search(end_identifier, message_after_start_identifier):
                 self.cache_hit = True
@@ -178,7 +178,8 @@ class StreamListener:
                 self.stream_start = True
                 self.field_start_queue = []
                 # Keep the part after the start_identifier from the concat_message, we need to write it to the buffer.
-                value_start_index = concat_message.find(start_identifier) + len(start_identifier)
+                value_start_index = concat_message.find(
+                    start_identifier) + len(start_identifier)
                 chunk_message = concat_message[value_start_index:].lstrip()
                 if isinstance(settings.adapter, JSONAdapter) and chunk_message.startswith('"'):
                     # For JSONAdapter, we need to remove the leading ". We cannot do this with the start_identifier
@@ -238,7 +239,8 @@ class StreamListener:
                 boundary_index = len(last_tokens)
             return last_tokens[:boundary_index]
         elif isinstance(settings.adapter, XMLAdapter):
-            boundary_index = last_tokens.find(f"</{self.signature_field_name}>")
+            boundary_index = last_tokens.find(
+                f"</{self.signature_field_name}>")
             if boundary_index == -1:
                 boundary_index = len(last_tokens)
             return last_tokens[:boundary_index]
@@ -287,8 +289,9 @@ class StreamListener:
             return None
 
 
-
-def find_predictor_for_stream_listeners(program: "Module", stream_listeners: list[StreamListener]) -> dict[int, list[StreamListener]]:
+def find_predictor_for_stream_listeners(
+    program: "Module", stream_listeners: list[StreamListener]
+) -> dict[int, list[StreamListener]]:
     """Find the predictor for each stream listener.
 
     This is a utility function to automatically find the predictor for each stream listener. It is used when some
@@ -333,9 +336,11 @@ def find_predictor_for_stream_listeners(program: "Module", stream_listeners: lis
                 "cannot automatically determine which predictor to use for streaming. Please verify your field name or "
                 "specify the predictor to listen to."
             )
-        listener.predict_name, listener.predict = field_name_to_named_predictor[listener.signature_field_name]
+        listener.predict_name, listener.predict = field_name_to_named_predictor[
+            listener.signature_field_name]
         predict_id_to_listener[id(listener.predict)].append(listener)
     return predict_id_to_listener
+
 
 def _is_streamable(field_type: type | None) -> bool:
     if field_type is None:

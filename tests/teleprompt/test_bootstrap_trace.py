@@ -35,25 +35,30 @@ def test_bootstrap_trace_data():
         return example.number == prediction.number
 
     # Configure dspy
-    dspy.configure(lm=dspy.LM(model="openai/gpt-4o-mini", cache=False), adapter=dspy.JSONAdapter())
+    dspy.configure(lm=dspy.LM(model="openai/gpt-4o-mini",
+                   cache=False), adapter=dspy.JSONAdapter())
 
     # Mock litellm completion responses
     # 4 successful responses and 1 that will trigger AdapterParseError
     successful_responses = [
         ModelResponse(
-            choices=[Choices(message=Message(content='```json\n{"number": 1}\n```'))],
+            choices=[Choices(message=Message(
+                content='```json\n{"number": 1}\n```'))],
             model="openai/gpt-4o-mini",
         ),
         ModelResponse(
-            choices=[Choices(message=Message(content='```json\n{"number": 2}\n```'))],
+            choices=[Choices(message=Message(
+                content='```json\n{"number": 2}\n```'))],
             model="openai/gpt-4o-mini",
         ),
         ModelResponse(
-            choices=[Choices(message=Message(content='```json\n{"number": 3}\n```'))],
+            choices=[Choices(message=Message(
+                content='```json\n{"number": 3}\n```'))],
             model="openai/gpt-4o-mini",
         ),
         ModelResponse(
-            choices=[Choices(message=Message(content='```json\n{"number": 4}\n```'))],
+            choices=[Choices(message=Message(
+                content='```json\n{"number": 4}\n```'))],
             model="openai/gpt-4o-mini",
         ),
     ]
@@ -66,7 +71,8 @@ def test_bootstrap_trace_data():
         if call_count == 5:  # Third call (0-indexed)
             # Return malformed response that will cause AdapterParseError
             return ModelResponse(
-                choices=[Choices(message=Message(content="This is an invalid JSON!"))],
+                choices=[Choices(message=Message(
+                    content="This is an invalid JSON!"))],
                 model="openai/gpt-4o-mini",
             )
         else:
