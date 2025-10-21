@@ -12,12 +12,14 @@ from dspy.utils.callback import BaseCallback
 class XMLAdapter(ChatAdapter):
     def __init__(self, callbacks: list[BaseCallback] | None = None):
         super().__init__(callbacks)
-        self.field_pattern = re.compile(r"<(?P<name>\w+)>((?P<content>.*?))</\1>", re.DOTALL)
+        self.field_pattern = re.compile(
+            r"<(?P<name>\w+)>((?P<content>.*?))</\1>", re.DOTALL)
 
     def format_field_with_value(self, fields_with_values: dict[FieldInfoWithName, Any]) -> str:
         output = []
         for field, field_value in fields_with_values.items():
-            formatted = format_field_value(field_info=field.info, value=field_value)
+            formatted = format_field_value(
+                field_info=field.info, value=field_value)
             output.append(f"<{field.name}>\n{formatted}\n</{field.name}>")
         return "\n\n".join(output).strip()
 
@@ -27,7 +29,8 @@ class XMLAdapter(ChatAdapter):
         """
 
         parts = []
-        parts.append("All interactions will be structured in the following way, with the appropriate values filled in.")
+        parts.append(
+            "All interactions will be structured in the following way, with the appropriate values filled in.")
 
         def format_signature_fields_for_instructions(fields: dict[str, FieldInfo]):
             return self.format_field_with_value(
@@ -37,8 +40,10 @@ class XMLAdapter(ChatAdapter):
                 },
             )
 
-        parts.append(format_signature_fields_for_instructions(signature.input_fields))
-        parts.append(format_signature_fields_for_instructions(signature.output_fields))
+        parts.append(format_signature_fields_for_instructions(
+            signature.input_fields))
+        parts.append(format_signature_fields_for_instructions(
+            signature.output_fields))
         return "\n\n".join(parts).strip()
 
     def format_assistant_message_content(
@@ -69,7 +74,8 @@ class XMLAdapter(ChatAdapter):
                 fields[name] = content
         # Cast values using base class parse_value helper
         for k, v in fields.items():
-            fields[k] = self._parse_field_value(signature.output_fields[k], v, completion, signature)
+            fields[k] = self._parse_field_value(
+                signature.output_fields[k], v, completion, signature)
         if fields.keys() != signature.output_fields.keys():
             from dspy.utils.exceptions import AdapterParseError
 

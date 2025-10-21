@@ -106,7 +106,8 @@ class Example:
             raise AttributeError
         if key in self._store:
             return self._store[key]
-        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{key}'")
+        raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{key}'")
 
     def __setattr__(self, key, value):
         if key.startswith("_") or key in dir(self.__class__):
@@ -162,19 +163,23 @@ class Example:
 
     def inputs(self):
         if self._input_keys is None:
-            raise ValueError("Inputs have not been set for this example. Use `example.with_inputs()` to set them.")
+            raise ValueError(
+                "Inputs have not been set for this example. Use `example.with_inputs()` to set them.")
 
         # return items that are in input_keys
-        d = {key: self._store[key] for key in self._store if key in self._input_keys}
+        d = {key: self._store[key]
+             for key in self._store if key in self._input_keys}
         # return type(self)(d)
         new_instance = type(self)(base=d)
-        new_instance._input_keys = self._input_keys  # Preserve input_keys in new instance
+        # Preserve input_keys in new instance
+        new_instance._input_keys = self._input_keys
         return new_instance
 
     def labels(self):
         # return items that are NOT in input_keys
         input_keys = self.inputs().keys()
-        d = {key: self._store[key] for key in self._store if key not in input_keys}
+        d = {key: self._store[key]
+             for key in self._store if key not in input_keys}
         return type(self)(d)
 
     def __iter__(self):
