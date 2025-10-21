@@ -20,14 +20,23 @@ class HotPotQA(Dataset):
 
         from datasets import load_dataset
 
-        hf_official_train = load_dataset("hotpot_qa", "fullwiki", split="train")
-        hf_official_dev = load_dataset("hotpot_qa", "fullwiki", split="validation")
+        hf_official_train = load_dataset(
+            "hotpot_qa", "fullwiki", split="train")
+        hf_official_dev = load_dataset(
+            "hotpot_qa", "fullwiki", split="validation")
 
         official_train = []
         for raw_example in hf_official_train:
             if raw_example["level"] == "hard":
                 if keep_details is True:
-                    keys = ["id", "question", "answer", "type", "supporting_facts", "context"]
+                    keys = [
+                        "id",
+                        "question",
+                        "answer",
+                        "type",
+                        "supporting_facts",
+                        "context",
+                    ]
                 elif keep_details == "dev_titles":
                     keys = ["question", "answer", "supporting_facts"]
                 else:
@@ -36,7 +45,8 @@ class HotPotQA(Dataset):
                 example = {k: raw_example[k] for k in keys}
 
                 if "supporting_facts" in example:
-                    example["gold_titles"] = set(example["supporting_facts"]["title"])
+                    example["gold_titles"] = set(
+                        example["supporting_facts"]["title"])
                     del example["supporting_facts"]
 
                 official_train.append(example)
@@ -47,7 +57,7 @@ class HotPotQA(Dataset):
         self._train = official_train[: len(official_train) * 75 // 100]
 
         if unofficial_dev:
-            self._dev = official_train[len(official_train) * 75 // 100 :]
+            self._dev = official_train[len(official_train) * 75 // 100:]
         else:
             self._dev = None
 
@@ -58,9 +68,11 @@ class HotPotQA(Dataset):
         test = []
         for raw_example in hf_official_dev:
             assert raw_example["level"] == "hard"
-            example = {k: raw_example[k] for k in ["id", "question", "answer", "type", "supporting_facts"]}
+            example = {k: raw_example[k] for k in [
+                "id", "question", "answer", "type", "supporting_facts"]}
             if "supporting_facts" in example:
-                example["gold_titles"] = set(example["supporting_facts"]["title"])
+                example["gold_titles"] = set(
+                    example["supporting_facts"]["title"])
                 del example["supporting_facts"]
             test.append(example)
 
@@ -70,7 +82,8 @@ class HotPotQA(Dataset):
 if __name__ == "__main__":
     from dspy.dsp.utils import dotdict
 
-    data_args = dotdict(train_seed=1, train_size=16, eval_seed=2023, dev_size=200 * 5, test_size=0)
+    data_args = dotdict(train_seed=1, train_size=16,
+                        eval_seed=2023, dev_size=200 * 5, test_size=0)
     dataset = HotPotQA(**data_args)
 
     print(dataset)
@@ -82,7 +95,6 @@ if __name__ == "__main__":
     print(dataset.dev[0].question)
     print(dataset.dev[340].question)
     print(dataset.dev[937].question)
-
 """
 What was the population of the city where Woodward Avenue ends in 2010?
 Where did the star , who is also an executive producer, of the Mick begin her carrer?

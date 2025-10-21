@@ -19,9 +19,14 @@ def test_propose_instructions_for_program(demo_candidates):
     program = Predict("question -> answer")
     trainset = []
 
-    proposer = GroundedProposer(prompt_model=prompt_model, program=program, trainset=trainset, verbose=False)
+    proposer = GroundedProposer(
+        prompt_model=prompt_model, program=program, trainset=trainset, verbose=False)
     result = proposer.propose_instructions_for_program(
-        trainset=trainset, program=program, demo_candidates=demo_candidates, trial_logs={}, N=1
+        trainset=trainset,
+        program=program,
+        demo_candidates=demo_candidates,
+        trial_logs={},
+        N=1,
     )
     assert isinstance(result, dict)
     assert len(result) == len(program.predictors())
@@ -42,7 +47,8 @@ def test_propose_instruction_for_predictor(demo_candidates):
             self.last_copy_kwargs = kwargs
             return super().copy(**kwargs)
 
-    prompt_model = TrackingDummyLM([{"proposed_instruction": "instruction"}] * 10)
+    prompt_model = TrackingDummyLM(
+        [{"proposed_instruction": "instruction"}] * 10)
     program = Predict("question -> answer")
 
     proposer = GroundedProposer(

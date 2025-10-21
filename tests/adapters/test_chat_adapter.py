@@ -3,7 +3,13 @@ from unittest import mock
 
 import pydantic
 import pytest
-from litellm.utils import ChatCompletionMessageToolCall, Choices, Function, Message, ModelResponse
+from litellm.utils import (
+    ChatCompletionMessageToolCall,
+    Choices,
+    Function,
+    Message,
+    ModelResponse,
+)
 
 import dspy
 
@@ -68,7 +74,8 @@ def test_chat_adapter_quotes_literals_as_expected(
 
     program = dspy.Predict(TestSignature)
 
-    dspy.configure(lm=dspy.LM(model="openai/gpt-4o"), adapter=dspy.ChatAdapter())
+    dspy.configure(lm=dspy.LM(model="openai/gpt-4o"),
+                   adapter=dspy.ChatAdapter())
 
     with mock.patch("litellm.completion") as mock_completion:
         program(input_text=input_value)
@@ -85,7 +92,8 @@ def test_chat_adapter_sync_call():
     signature = dspy.make_signature("question->answer")
     adapter = dspy.ChatAdapter()
     lm = dspy.utils.DummyLM([{"answer": "Paris"}])
-    result = adapter(lm, {}, signature, [], {"question": "What is the capital of France?"})
+    result = adapter(lm, {}, signature, [], {
+                     "question": "What is the capital of France?"})
     assert result == [{"answer": "Paris"}]
 
 
@@ -104,13 +112,17 @@ def test_chat_adapter_with_pydantic_models():
     """
 
     class DogClass(pydantic.BaseModel):
-        dog_breeds: list[str] = pydantic.Field(description="List of the breeds of dogs")
-        num_dogs: int = pydantic.Field(description="Number of dogs the owner has", ge=0, le=10)
+        dog_breeds: list[str] = pydantic.Field(
+            description="List of the breeds of dogs")
+        num_dogs: int = pydantic.Field(
+            description="Number of dogs the owner has", ge=0, le=10)
 
     class PetOwner(pydantic.BaseModel):
         name: str = pydantic.Field(description="Name of the owner")
-        num_pets: int = pydantic.Field(description="Amount of pets the owner has", ge=0, le=100)
-        dogs: DogClass = pydantic.Field(description="Nested Pydantic class with dog specific information ")
+        num_pets: int = pydantic.Field(
+            description="Amount of pets the owner has", ge=0, le=100)
+        dogs: DogClass = pydantic.Field(
+            description="Nested Pydantic class with dog specific information ")
 
     class Answer(pydantic.BaseModel):
         result: str
@@ -121,12 +133,18 @@ def test_chat_adapter_with_pydantic_models():
         question: str = dspy.InputField()
         output: Answer = dspy.OutputField()
 
-    dspy.configure(lm=dspy.LM(model="openai/gpt-4o"), adapter=dspy.ChatAdapter())
+    dspy.configure(lm=dspy.LM(model="openai/gpt-4o"),
+                   adapter=dspy.ChatAdapter())
     program = dspy.Predict(TestSignature)
 
     with mock.patch("litellm.completion") as mock_completion:
         program(
-            owner=PetOwner(name="John", num_pets=5, dogs=DogClass(dog_breeds=["labrador", "chihuahua"], num_dogs=2)),
+            owner=PetOwner(
+                name="John",
+                num_pets=5,
+                dogs=DogClass(
+                    dog_breeds=["labrador", "chihuahua"], num_dogs=2),
+            ),
             question="How many non-dog pets does John have?",
         )
 
@@ -157,7 +175,8 @@ def test_chat_adapter_signature_information():
         input2: int = dspy.InputField(desc="Integer Input")
         output: str = dspy.OutputField(desc="String Output")
 
-    dspy.configure(lm=dspy.LM(model="openai/gpt-4o"), adapter=dspy.ChatAdapter())
+    dspy.configure(lm=dspy.LM(model="openai/gpt-4o"),
+                   adapter=dspy.ChatAdapter())
     program = dspy.Predict(TestSignature)
 
     with mock.patch("litellm.completion") as mock_completion:
@@ -194,7 +213,10 @@ def test_chat_adapter_exception_raised_on_failure():
     signature = dspy.make_signature("question->answer")
     adapter = dspy.ChatAdapter()
     invalid_completion = "{'output':'mismatched value'}"
-    with pytest.raises(dspy.utils.exceptions.AdapterParseError, match="Adapter ChatAdapter failed to parse*"):
+    with pytest.raises(
+        dspy.utils.exceptions.AdapterParseError,
+        match="Adapter ChatAdapter failed to parse*",
+    ):
         adapter.parse(signature, invalid_completion)
 
 
@@ -219,7 +241,10 @@ def test_chat_adapter_formats_image():
     assert user_message_content[2]["type"] == "text"
 
     # Assert that the image is formatted correctly
-    expected_image_content = {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}
+    expected_image_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image.jpg"},
+    }
     assert expected_image_content in user_message_content
 
 
@@ -240,7 +265,8 @@ def test_chat_adapter_formats_image_with_few_shot_examples():
             text="This is another test image",
         ),
     ]
-    messages = adapter.format(MySignature, demos, {"image": dspy.Image(url="https://example.com/image3.jpg")})
+    messages = adapter.format(MySignature, demos, {
+                              "image": dspy.Image(url="https://example.com/image3.jpg")})
 
     # 1 system message, 2 few shot examples (1 user and assistant message for each example), 1 user message
     assert len(messages) == 6
@@ -248,9 +274,18 @@ def test_chat_adapter_formats_image_with_few_shot_examples():
     assert "[[ ## completed ## ]]\n" in messages[2]["content"]
     assert "[[ ## completed ## ]]\n" in messages[4]["content"]
 
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}} in messages[1]["content"]
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}} in messages[3]["content"]
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image3.jpg"}} in messages[5]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image1.jpg"},
+    } in messages[1]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image2.jpg"},
+    } in messages[3]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image3.jpg"},
+    } in messages[5]["content"]
 
 
 def test_chat_adapter_formats_image_with_nested_images():
@@ -266,14 +301,24 @@ def test_chat_adapter_formats_image_with_nested_images():
     image2 = dspy.Image(url="https://example.com/image2.jpg")
     image3 = dspy.Image(url="https://example.com/image3.jpg")
 
-    image_wrapper = ImageWrapper(images=[image1, image2, image3], tag=["test", "example"])
+    image_wrapper = ImageWrapper(
+        images=[image1, image2, image3], tag=["test", "example"])
 
     adapter = dspy.ChatAdapter()
     messages = adapter.format(MySignature, [], {"image": image_wrapper})
 
-    expected_image1_content = {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}}
-    expected_image2_content = {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}}
-    expected_image3_content = {"type": "image_url", "image_url": {"url": "https://example.com/image3.jpg"}}
+    expected_image1_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image1.jpg"},
+    }
+    expected_image2_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image2.jpg"},
+    }
+    expected_image3_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image3.jpg"},
+    }
 
     assert expected_image1_content in messages[1]["content"]
     assert expected_image2_content in messages[1]["content"]
@@ -293,7 +338,8 @@ def test_chat_adapter_formats_image_with_few_shot_examples_with_nested_images():
     image2 = dspy.Image(url="https://example.com/image2.jpg")
     image3 = dspy.Image(url="https://example.com/image3.jpg")
 
-    image_wrapper = ImageWrapper(images=[image1, image2, image3], tag=["test", "example"])
+    image_wrapper = ImageWrapper(
+        images=[image1, image2, image3], tag=["test", "example"])
     demos = [
         dspy.Example(
             image=image_wrapper,
@@ -301,22 +347,37 @@ def test_chat_adapter_formats_image_with_few_shot_examples_with_nested_images():
         ),
     ]
 
-    image_wrapper_2 = ImageWrapper(images=[dspy.Image(url="https://example.com/image4.jpg")], tag=["test", "example"])
+    image_wrapper_2 = ImageWrapper(
+        images=[dspy.Image(url="https://example.com/image4.jpg")],
+        tag=["test", "example"],
+    )
     adapter = dspy.ChatAdapter()
     messages = adapter.format(MySignature, demos, {"image": image_wrapper_2})
 
     assert len(messages) == 4
 
     # Image information in the few-shot example's user message
-    expected_image1_content = {"type": "image_url", "image_url": {"url": "https://example.com/image1.jpg"}}
-    expected_image2_content = {"type": "image_url", "image_url": {"url": "https://example.com/image2.jpg"}}
-    expected_image3_content = {"type": "image_url", "image_url": {"url": "https://example.com/image3.jpg"}}
+    expected_image1_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image1.jpg"},
+    }
+    expected_image2_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image2.jpg"},
+    }
+    expected_image3_content = {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image3.jpg"},
+    }
     assert expected_image1_content in messages[1]["content"]
     assert expected_image2_content in messages[1]["content"]
     assert expected_image3_content in messages[1]["content"]
 
     # The query image is formatted in the last user message
-    assert {"type": "image_url", "image_url": {"url": "https://example.com/image4.jpg"}} in messages[-1]["content"]
+    assert {
+        "type": "image_url",
+        "image_url": {"url": "https://example.com/image4.jpg"},
+    } in messages[-1]["content"]
 
 
 def test_chat_adapter_with_tool():
@@ -339,7 +400,8 @@ def test_chat_adapter_with_tool():
     tools = [dspy.Tool(get_weather), dspy.Tool(get_population)]
 
     adapter = dspy.ChatAdapter()
-    messages = adapter.format(MySignature, [], {"question": "What is the weather in Tokyo?", "tools": tools})
+    messages = adapter.format(
+        MySignature, [], {"question": "What is the weather in Tokyo?", "tools": tools})
 
     assert len(messages) == 2
 
@@ -353,7 +415,8 @@ def test_chat_adapter_with_tool():
 
     # Tool arguments format should be included in the user message
     assert "{'city': {'type': 'string'}}" in messages[1]["content"]
-    assert "{'country': {'type': 'string'}, 'year': {'type': 'integer'}}" in messages[1]["content"]
+    assert "{'country': {'type': 'string'}, 'year': {'type': 'integer'}}" in messages[
+        1]["content"]
 
 
 def test_chat_adapter_with_code():
@@ -365,7 +428,8 @@ def test_chat_adapter_with_code():
         result: str = dspy.OutputField()
 
     adapter = dspy.ChatAdapter()
-    messages = adapter.format(CodeAnalysis, [], {"code": "print('Hello, world!')"})
+    messages = adapter.format(
+        CodeAnalysis, [], {"code": "print('Hello, world!')"})
 
     assert len(messages) == 2
 
@@ -385,7 +449,8 @@ def test_chat_adapter_with_code():
     adapter = dspy.ChatAdapter()
     with mock.patch("litellm.completion") as mock_completion:
         mock_completion.return_value = ModelResponse(
-            choices=[Choices(message=Message(content='[[ ## code ## ]]\nprint("Hello, world!")'))],
+            choices=[Choices(message=Message(
+                content='[[ ## code ## ]]\nprint("Hello, world!")'))],
             model="openai/gpt-4o-mini",
         )
         result = adapter(
@@ -412,7 +477,11 @@ def test_chat_adapter_formats_conversation_history():
     )
 
     adapter = dspy.ChatAdapter()
-    messages = adapter.format(MySignature, [], {"question": "What is the capital of France?", "history": history})
+    messages = adapter.format(
+        MySignature,
+        [],
+        {"question": "What is the capital of France?", "history": history},
+    )
 
     assert len(messages) == 6
     assert messages[1]["content"] == "[[ ## question ## ]]\nWhat is the capital of France?"
@@ -435,11 +504,13 @@ def test_chat_adapter_fallback_to_json_adapter_on_exception():
         lm = dspy.LM("openai/gpt-4o-mini", cache=False)
 
         with mock.patch("dspy.adapters.json_adapter.JSONAdapter.__call__") as mock_json_adapter_call:
-            adapter(lm, {}, signature, [], {"question": "What is the capital of France?"})
+            adapter(lm, {}, signature, [], {
+                    "question": "What is the capital of France?"})
             mock_json_adapter_call.assert_called_once()
 
         # The parse should succeed
-        result = adapter(lm, {}, signature, [], {"question": "What is the capital of France?"})
+        result = adapter(lm, {}, signature, [], {
+                         "question": "What is the capital of France?"})
         assert result == [{"answer": "Paris"}]
 
 
@@ -492,7 +563,8 @@ def test_chat_adapter_toolcalls_native_function_calling():
                         role="assistant",
                         tool_calls=[
                             ChatCompletionMessageToolCall(
-                                function=Function(arguments='{"city":"Paris"}', name="get_weather"),
+                                function=Function(
+                                    arguments='{"city":"Paris"}', name="get_weather"),
                                 id="call_pQm8ajtSMxgA0nrzK2ivFmxG",
                                 type="function",
                             )
@@ -511,7 +583,8 @@ def test_chat_adapter_toolcalls_native_function_calling():
         )
 
         assert result[0]["tool_calls"] == dspy.ToolCalls(
-            tool_calls=[dspy.ToolCalls.ToolCall(name="get_weather", args={"city": "Paris"})]
+            tool_calls=[dspy.ToolCalls.ToolCall(
+                name="get_weather", args={"city": "Paris"})]
         )
         # `answer` is not present, so we set it to None
         assert result[0]["answer"] is None
@@ -566,7 +639,8 @@ def test_chat_adapter_toolcalls_vague_match():
             {"question": "What is the weather in Paris?", "tools": tools},
         )
         assert result[0]["tool_calls"] == dspy.ToolCalls(
-            tool_calls=[dspy.ToolCalls.ToolCall(name="get_weather", args={"city": "Paris"})]
+            tool_calls=[dspy.ToolCalls.ToolCall(
+                name="get_weather", args={"city": "Paris"})]
         )
 
     with mock.patch("litellm.completion") as mock_completion:
@@ -589,5 +663,6 @@ def test_chat_adapter_toolcalls_vague_match():
             {"question": "What is the weather in Paris?", "tools": tools},
         )
         assert result[0]["tool_calls"] == dspy.ToolCalls(
-            tool_calls=[dspy.ToolCalls.ToolCall(name="get_weather", args={"city": "Paris"})]
+            tool_calls=[dspy.ToolCalls.ToolCall(
+                name="get_weather", args={"city": "Paris"})]
         )

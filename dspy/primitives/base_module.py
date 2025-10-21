@@ -12,7 +12,6 @@ from dspy.utils.saving import get_dependency_versions
 # NOTE: Note: It's important (temporary decision) to maintain named_parameters that's different in behavior from
 # named_sub_modules for the time being.
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -197,7 +196,8 @@ class BaseModule:
                     f"`path` must point to a directory without a suffix when `save_program=True`, but received: {path}"
                 )
             if path.exists() and not path.is_dir():
-                raise NotADirectoryError(f"The path '{path}' exists but is not a directory.")
+                raise NotADirectoryError(
+                    f"The path '{path}' exists but is not a directory.")
 
             if not path.exists():
                 # Create the directory (and any parent directories)
@@ -216,7 +216,8 @@ class BaseModule:
                     "or consider using state-only saving by setting `save_program=False`."
                 )
             with open(path / "metadata.json", "wb") as f:
-                f.write(orjson.dumps(metadata, option=orjson.OPT_INDENT_2 | orjson.OPT_APPEND_NEWLINE))
+                f.write(orjson.dumps(
+                    metadata, option=orjson.OPT_INDENT_2 | orjson.OPT_APPEND_NEWLINE))
 
             return
 
@@ -225,7 +226,12 @@ class BaseModule:
             state["metadata"] = metadata
             try:
                 with open(path, "wb") as f:
-                    f.write(orjson.dumps(state, option=orjson.OPT_INDENT_2 | orjson.OPT_APPEND_NEWLINE))
+                    f.write(
+                        orjson.dumps(
+                            state,
+                            option=orjson.OPT_INDENT_2 | orjson.OPT_APPEND_NEWLINE,
+                        )
+                    )
             except Exception as e:
                 raise RuntimeError(
                     f"Failed to save state to {path} with error: {e}. Your DSPy program may contain non "
@@ -238,7 +244,8 @@ class BaseModule:
             with open(path, "wb") as f:
                 cloudpickle.dump(state, f)
         else:
-            raise ValueError(f"`path` must end with `.json` or `.pkl` when `save_program=False`, but received: {path}")
+            raise ValueError(
+                f"`path` must end with `.json` or `.pkl` when `save_program=False`, but received: {path}")
 
     def load(self, path):
         """Load the saved module. You may also want to check out dspy.load, if you want to
@@ -256,7 +263,8 @@ class BaseModule:
             with open(path, "rb") as f:
                 state = cloudpickle.load(f)
         else:
-            raise ValueError(f"`path` must end with `.json` or `.pkl`, but received: {path}")
+            raise ValueError(
+                f"`path` must end with `.json` or `.pkl`, but received: {path}")
 
         dependency_versions = get_dependency_versions()
         saved_dependency_versions = state["metadata"]["dependency_versions"]
