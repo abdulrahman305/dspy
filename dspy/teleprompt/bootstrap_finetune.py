@@ -22,7 +22,8 @@ class FinetuneTeleprompter(Teleprompter):
         self,
         train_kwargs: dict[str, Any] | dict[LM, dict[str, Any]] | None = None,
     ):
-        self.train_kwargs: dict[LM, Any] = self.convert_to_lm_dict(train_kwargs or {})
+        self.train_kwargs: dict[LM, Any] = self.convert_to_lm_dict(
+            train_kwargs or {})
 
     @staticmethod
     def convert_to_lm_dict(arg) -> dict[LM, Any]:
@@ -58,7 +59,10 @@ class BootstrapFinetune(FinetuneTeleprompter):
         self.num_threads = num_threads
 
     def compile(
-        self, student: Module, trainset: list[Example], teacher: Module | list[Module] | None = None
+        self,
+        student: Module,
+        trainset: list[Example],
+        teacher: Module | list[Module] | None = None,
     ) -> Module:
         # TODO: Print statements can be converted to logger.info if we ensure
         # that the default DSPy logger logs info level messages in notebook
@@ -73,7 +77,8 @@ class BootstrapFinetune(FinetuneTeleprompter):
         teachers = [prepare_teacher(student, t) for t in teachers]
         num_threads = self.num_threads or dspy.settings.num_threads
         for t in teachers:
-            trace_data += bootstrap_trace_data(program=t, dataset=trainset, metric=self.metric, num_threads=num_threads)
+            trace_data += bootstrap_trace_data(
+                program=t, dataset=trainset, metric=self.metric, num_threads=num_threads)
 
         logger.info("Preparing the train data...")
         key_to_data = {}
@@ -91,7 +96,8 @@ class BootstrapFinetune(FinetuneTeleprompter):
                 train_data, data_format = self._prepare_finetune_data(
                     trace_data=trace_data, lm=pred.lm, pred_ind=data_pred_ind
                 )
-                logger.info(f"Using {len(train_data)} data points for fine-tuning the model: {pred.lm.model}")
+                logger.info(
+                    f"Using {len(train_data)} data points for fine-tuning the model: {pred.lm.model}")
                 finetune_kwargs = {
                     "lm": pred.lm,
                     "train_data": train_data,
@@ -122,14 +128,16 @@ class BootstrapFinetune(FinetuneTeleprompter):
             training_key = (pred.lm, data_pred_ind)
             finetuned_lm = key_to_lm[training_key]
             if isinstance(finetuned_lm, Exception):
-                raise RuntimeError(f"Finetuned LM for predictor {pred_ind} failed.") from finetuned_lm
+                raise RuntimeError(
+                    f"Finetuned LM for predictor {pred_ind} failed.") from finetuned_lm
             pred.lm = finetuned_lm
             # TODO: What should the correct behavior be here? Should
             # BootstrapFinetune modify the prompt demos according to the
             # train data?
             pred.demos = [] if self.exclude_demos else pred.demos
 
-        logger.info("BootstrapFinetune has finished compiling the student program")
+        logger.info(
+            "BootstrapFinetune has finished compiling the student program")
         student._compiled = True
         return student
 
@@ -170,7 +178,8 @@ class BootstrapFinetune(FinetuneTeleprompter):
         if self.metric:
             logger.info(f"Collected data for {len(trace_data)} examples")
             trace_data = [d for d in trace_data if d["score"]]
-            logger.info(f"After filtering with the metric, {len(trace_data)} examples remain")
+            logger.info(
+                f"After filtering with the metric, {len(trace_data)} examples remain")
 
         data = []
         adapter = self.adapter[lm] or settings.adapter or ChatAdapter()
@@ -180,7 +189,10 @@ class BootstrapFinetune(FinetuneTeleprompter):
                 include_data = pred_ind is None or pred_ind == pred_ind
                 if include_data:
                     call_data = build_call_data_from_trace(
-                        trace=item["trace"], pred_ind=pred_ind, adapter=adapter, exclude_demos=self.exclude_demos
+                        trace=item["trace"],
+                        pred_ind=pred_ind,
+                        adapter=adapter,
+                        exclude_demos=self.exclude_demos,
                     )
                     data.append(call_data)
 
@@ -287,7 +299,8 @@ def assert_structural_equivalency(program1: object, program2: object):
     err = f"Structurally equivalent programs must have the the number of predictors. The number of predictors for the two modules do not match: {num1} != {num2}"
     assert num1 == num2, err
 
-    pzip = zip(program1.named_predictors(), program2.named_predictors(), strict=False)
+    pzip = zip(program1.named_predictors(),
+               program2.named_predictors(), strict=False)
     for ind, ((name1, pred1), (name2, pred2)) in enumerate(pzip):
         err = f"Program predictor names must match at  corresponding indices for structural equivalency. The predictor names for the programs do not match at index {ind}: '{name1}' != '{name2}'"
         assert name1 == name2, err
