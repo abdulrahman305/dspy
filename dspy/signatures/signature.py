@@ -136,7 +136,8 @@ class SignatureMeta(type(BaseModel)):
 
     def __new__(mcs, signature_name, bases, namespace, **kwargs):
         # At this point, the orders have been swapped already.
-        field_order = [name for name, value in namespace.items() if isinstance(value, FieldInfo)]
+        field_order = [name for name, value in namespace.items()
+                       if isinstance(value, FieldInfo)]
         # Set `str` as the default type for all fields
         raw_annotations = namespace.get("__annotations__", {})
         for name, field in namespace.items():
@@ -145,9 +146,11 @@ class SignatureMeta(type(BaseModel)):
             if not name.startswith("__") and name not in raw_annotations:
                 raw_annotations[name] = str
         # Create ordered annotations dictionary that preserves field order
-        ordered_annotations = {name: raw_annotations[name] for name in field_order if name in raw_annotations}
+        ordered_annotations = {
+            name: raw_annotations[name] for name in field_order if name in raw_annotations}
         # Add any remaining annotations that weren't in field_order
-        ordered_annotations.update({k: v for k, v in raw_annotations.items() if k not in ordered_annotations})
+        ordered_annotations.update(
+            {k: v for k, v in raw_annotations.items() if k not in ordered_annotations})
         namespace["__annotations__"] = ordered_annotations
 
         # Let Pydantic do its thing
@@ -238,7 +241,7 @@ class SignatureMeta(type(BaseModel)):
 
 
 class Signature(BaseModel, metaclass=SignatureMeta):
-    ""
+    """"""
 
     # Note: Don't put a docstring here, as it will become the default instructions
     # for any signature that doesn't define it's own instructions.
@@ -491,7 +494,8 @@ def ensure_signature(signature: str | type[Signature], instructions=None) -> typ
     if isinstance(signature, str):
         return Signature(signature, instructions)
     if instructions is not None:
-        raise ValueError("Don't specify instructions when initializing with a Signature")
+        raise ValueError(
+            "Don't specify instructions when initializing with a Signature")
     return signature
 
 
@@ -541,36 +545,49 @@ def make_signature(
         names = dict(typing.__dict__)
         names.update(custom_types)
 
-    fields = _parse_signature(signature, names) if isinstance(signature, str) else signature
+    fields = _parse_signature(signature, names) if isinstance(
+        signature, str) else signature
 
     # Validate the fields, this is important because we sometimes forget the
     # slightly unintuitive syntax with tuples of (type, Field)
     fixed_fields = {}
     for name, type_field in fields.items():
         if not isinstance(name, str):
-            raise ValueError(f"Field names must be strings, but received: {name}.")
+            raise ValueError(
+                f"Field names must be strings, but received: {name}.")
         if isinstance(type_field, FieldInfo):
             type_ = type_field.annotation
             field = type_field
         else:
             if not isinstance(type_field, tuple):
-                raise ValueError(f"Field values must be tuples, but received: {type_field}.")
+                raise ValueError(
+                    f"Field values must be tuples, but received: {type_field}.")
             type_, field = type_field
         # It might be better to be explicit about the type, but it currently would break
         # program of thought and teleprompters, so we just silently default to string.
         if type_ is None:
             type_ = str
         if not isinstance(
-            type_, (type, typing._GenericAlias, types.GenericAlias, typing._SpecialForm, types.UnionType)
+            type_,
+            (
+                type,
+                typing._GenericAlias,
+                types.GenericAlias,
+                typing._SpecialForm,
+                types.UnionType,
+            ),
         ):
-            raise ValueError(f"Field types must be types, but received: {type_} of type {type(type_)}.")
+            raise ValueError(
+                f"Field types must be types, but received: {type_} of type {type(type_)}.")
         if not isinstance(field, FieldInfo):
-            raise ValueError(f"Field values must be Field instances, but received: {field}.")
+            raise ValueError(
+                f"Field values must be Field instances, but received: {field}.")
         fixed_fields[name] = (type_, field)
 
     # Default prompt when no instructions are provided
     if instructions is None:
-        sig = Signature(signature, "")  # Simple way to parse input/output fields
+        # Simple way to parse input/output fields
+        sig = Signature(signature, "")
         instructions = _default_instructions(sig)
 
     return create_model(
@@ -583,7 +600,8 @@ def make_signature(
 
 def _parse_signature(signature: str, names=None) -> dict[str, tuple[type, Field]]:
     if signature.count("->") != 1:
-        raise ValueError(f"Invalid signature format: '{signature}', must contain exactly one '->'.")
+        raise ValueError(
+            f"Invalid signature format: '{signature}', must contain exactly one '->'.")
 
     inputs_str, outputs_str = signature.split("->")
 
@@ -606,7 +624,8 @@ def _parse_field_string(field_string: str, names=None) -> dict[str, str]:
 
     args = ast.parse(f"def f({field_string}): pass").body[0].args.args
     field_names = [arg.arg for arg in args]
-    types = [str if arg.annotation is None else _parse_type_node(arg.annotation, names) for arg in args]
+    types = [str if arg.annotation is None else _parse_type_node(
+        arg.annotation, names) for arg in args]
     return zip(field_names, types, strict=False)
 
 
@@ -647,7 +666,20 @@ def _parse_type_node(node, names=None) -> Any:
         if type_name in names:
             return names[type_name]
         # Common built-in types
-        builtin_types = [int, str, float, bool, list, tuple, dict, set, frozenset, complex, bytes, bytearray]
+        builtin_types = [
+            int,
+            str,
+            float,
+            bool,
+            list,
+            tuple,
+            dict,
+            set,
+            frozenset,
+            complex,
+            bytes,
+            bytearray,
+        ]
 
         # Check if it matches any known built-in type by name
         for t in builtin_types:
@@ -668,7 +700,8 @@ def _parse_type_node(node, names=None) -> Any:
 
     if isinstance(node, ast.Module):
         if len(node.body) != 1:
-            raise ValueError(f"Code is not syntactically valid: {ast.dump(node)}")
+            raise ValueError(
+                f"Code is not syntactically valid: {ast.dump(node)}")
         return _parse_type_node(node.body[0], names)
 
     if isinstance(node, ast.Expr):
@@ -698,7 +731,8 @@ def _parse_type_node(node, names=None) -> Any:
             slice_node = slice_node.value
 
         if isinstance(slice_node, ast.Tuple):
-            arg_types = tuple(_parse_type_node(elt, names) for elt in slice_node.elts)
+            arg_types = tuple(_parse_type_node(elt, names)
+                              for elt in slice_node.elts)
         else:
             arg_types = (_parse_type_node(slice_node, names),)
 
@@ -707,7 +741,8 @@ def _parse_type_node(node, names=None) -> Any:
             return typing.Union[arg_types]
         if base_type is typing.Optional:
             if len(arg_types) != 1:
-                raise ValueError("Optional must have exactly one type argument")
+                raise ValueError(
+                    "Optional must have exactly one type argument")
             return typing.Optional[arg_types[0]]
 
         return base_type[arg_types]
